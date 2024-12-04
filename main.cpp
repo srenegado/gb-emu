@@ -3,32 +3,22 @@
 #include "SDL.h"
 
 
+typedef uint8_t Register8;
 
-class Register {
-    private:
-        uint8_t hi;
-        uint8_t lo;
+struct Register16 {
+    Register8 hi;
+    Register8 lo;
 
-    public:
-        // Constructor
-        Register() {
-            hi = 0x0000;
-            lo = 0x0000;
-        }
+    // Constructor
+    Register16() {
+        hi = 0x0000;
+        lo = 0x0000;
+    }
 
-        // Destructor
-        ~Register() {
-            
-        }
-
-        void set_hi(uint8_t val) {
-            hi = val;
-        }
-
-        void set_lo(uint8_t val) {
-            lo = val;
-        }
-
+    // Destructor
+    ~Register16() {
+        
+    }
 };
 
 
@@ -36,10 +26,10 @@ class CPU {
     private:
 
         // Registers
-        Register AF;    // Accumulator and flags
-        Register BC;    // General registers
-        Register DE;
-        Register HL;
+        Register16 AF;    // Accumulator and flags
+        Register16 BC;    // General registers
+        Register16 DE;
+        Register16 HL;
 
         uint16_t PC;    // Program counter
         uint16_t SP;    // Stack pointer        
@@ -47,6 +37,11 @@ class CPU {
 
         // Memory
         uint8_t mem[0x10000];
+
+        // Opcodes
+        void LD_R8_R8(Register8 dest, Register8 src) {
+            dest = src;
+        }
 
     public:
     
@@ -67,9 +62,107 @@ class CPU {
             // Fetch
             uint8_t opcode = mem[PC];
 
-            // Decode
+            // Decode and execute
+            switch (opcode) {
+                
+                case 0x00: // NOP
+                    break;
 
-            // Execute
+                // LD R8, R8
+                case 0x40:
+                    LD_R8_R8(BC.hi, BC.hi);
+                    break;
+                case 0x41:
+                    break;
+                case 0x42:
+                    break;
+                case 0x44:
+                    break;
+                case 0x45:
+                    break;
+                case 0x47:
+                    break;
+                case 0x48:
+                    break;
+                case 0x49:
+                    break;
+                case 0x4A:
+                    break;
+                case 0x4B:
+                    break;
+                case 0x4C:
+                    break;
+                case 0x4D:
+                    break;
+                case 0x4F:
+                    break;
+                case 0x50:
+                    break;
+                case 0x51:
+                    break;
+                case 0x52:
+                    break;
+                case 0x54:
+                    break;
+                case 0x55:
+                    break;
+                case 0x57:
+                    break;
+                case 0x58:
+                    break;
+                case 0x59:
+                    break;
+                case 0x5A:
+                    break;
+                case 0x5B:
+                    break;
+                case 0x5C:
+                    break;
+                case 0x5D:
+                    break;
+                case 0x5F:
+                    break;
+                case 0x60:
+                    break;
+                case 0x61:
+                    break;
+                case 0x62:
+                    break;
+                case 0x64:
+                    break;
+                case 0x65:
+                    break;
+                case 0x67:
+                    break;
+                case 0x68:
+                    break;
+                case 0x69:
+                    break;
+                case 0x6A:
+                    break;
+                case 0x6B:
+                    break;
+                case 0x6C:
+                    break;
+                case 0x6D:
+                    break;
+                case 0x6F:
+                    break;
+                case 0x78:
+                    break;
+                case 0x79:
+                    break;
+                case 0x7A:
+                    break;
+                case 0x7B:
+                    break;
+                case 0x7C:
+                    break;
+                case 0x7D:
+                    break;
+                case 0x7F:
+                    break;
+            }
         
         }
 
