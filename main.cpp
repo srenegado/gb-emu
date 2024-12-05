@@ -4,6 +4,29 @@
 #include "SDL.h"
 
 
+class Memory {
+    private:
+        uint8_t map[0x10000];
+    
+    public:
+        // Constructor
+        Memory() {
+            std::memset(map, 0, sizeof(map));
+        }
+
+        // Destructor
+        ~Memory() {}
+
+        uint8_t read(uint16_t addr) {
+            return map[addr];
+        }
+
+        void write(uint16_t addr, uint8_t val) {
+            map[addr] = val;
+        }
+};
+
+
 typedef uint8_t Register8;
 
 struct Register16 {
@@ -18,6 +41,14 @@ struct Register16 {
 
     // Destructor
     ~Register16() {}
+
+    /**
+     * Combine values in hi and lo and return 
+     * the resulting 2-byte address 
+     */
+    uint16_t get_addr() {
+        return ((uint16_t)hi << 8) | (uint16_t)lo;
+    }
 };
 
 
@@ -33,32 +64,59 @@ class CPU {
         uint16_t PC;    // Program counter
         uint16_t SP;    // Stack pointer        
 
-        // Memory: 0x0000 - 0xFFFF
-        uint8_t mem[0x10000];
+        // Memory
+        Memory mem;
 
         // Opcodes
-        void LD_R8_R8(Register8 &dest, Register8 &src) {
+
+        /**
+         * Load value in src register into dest resigter
+         */
+        uint32_t LD_R8_R8(Register8 &dest, Register8 src) {
             dest = src;
+            return 1;
+        }
+
+        /**
+         * Load value in src register into memory at address HL
+         */
+        uint32_t LD_HL_R8(Register8 src) {
+            mem.write(HL.get_addr(), src); 
+            return 2;
+        }
+
+        /**
+         * Load value in memory at address HL into dest register
+         */
+        uint32_t LD_R8_HL(Register8 &dest) {
+            dest = mem.read(HL.get_addr());
+            return 2;
         }
 
     public:
     
         // Constructor
-        CPU(): AF(), BC(), DE(), HL() // Initialize registers 
+        CPU(): AF(), BC(), DE(), HL(), mem() 
         {
             PC = 0x0000;
             SP = 0x0000;
-
-            // Initialize memory
-            std::memset(mem, 0, sizeof(mem));
         }
 
         // Destructor
         ~CPU() {}
 
-        void emulate_cycle() {
+
+        /**
+         * Fetch, decode, and execute and opcode then 
+         * return the number of m-cycles that opcode took
+         */
+        uint32_t emulate_cycles() {
+            uint32_t m_cycles = 0;
+
             // Fetch
-            uint8_t opcode = mem[PC];
+            uint8_t opcode = mem.read(PC);
+
+            PC++; // Point to next byte
 
             // Decode and execute
             switch (opcode) {
@@ -68,153 +126,205 @@ class CPU {
 
                 // LD R8, R8
                 case 0x40:
-                    LD_R8_R8(BC.hi, BC.hi);
+                    m_cycles += LD_R8_R8(BC.hi, BC.hi);
                     break;
                 case 0x41:
-                    LD_R8_R8(BC.hi, BC.lo);
+                    m_cycles += LD_R8_R8(BC.hi, BC.lo);
                     break;
                 case 0x42: 
-                    LD_R8_R8(BC.hi, DE.hi);
+                    m_cycles += LD_R8_R8(BC.hi, DE.hi);
                     break;
                 case 0x43:
-                    LD_R8_R8(BC.hi, DE.lo);
+                    m_cycles += LD_R8_R8(BC.hi, DE.lo);
                     break;
                 case 0x44:
-                    LD_R8_R8(BC.hi, HL.hi);
+                    m_cycles += LD_R8_R8(BC.hi, HL.hi);
                     break;
                 case 0x45:
-                    LD_R8_R8(BC.hi, HL.lo);
+                    m_cycles += LD_R8_R8(BC.hi, HL.lo);
                     break;
                 case 0x47:
-                    LD_R8_R8(BC.hi, AF.hi);
+                    m_cycles += LD_R8_R8(BC.hi, AF.hi);
                     break;
                 case 0x48:
-                    LD_R8_R8(BC.lo, BC.hi);
+                    m_cycles += LD_R8_R8(BC.lo, BC.hi);
                     break;
                 case 0x49:
-                    LD_R8_R8(BC.lo, BC.lo);
+                    m_cycles += LD_R8_R8(BC.lo, BC.lo);
                     break;
                 case 0x4A:
-                    LD_R8_R8(BC.lo, DE.hi);
+                    m_cycles += LD_R8_R8(BC.lo, DE.hi);
                     break;
                 case 0x4B:
-                    LD_R8_R8(BC.lo, DE.lo);
+                    m_cycles += LD_R8_R8(BC.lo, DE.lo);
                     break;
                 case 0x4C:
-                    LD_R8_R8(BC.lo, HL.hi);
+                    m_cycles += LD_R8_R8(BC.lo, HL.hi);
                     break;
                 case 0x4D:
-                    LD_R8_R8(BC.lo, HL.lo);
+                    m_cycles += LD_R8_R8(BC.lo, HL.lo);
                     break;
                 case 0x4F:
-                    LD_R8_R8(BC.lo, AF.hi);
+                    m_cycles += LD_R8_R8(BC.lo, AF.hi);
                     break;
                 case 0x50:
-                    LD_R8_R8(DE.hi, BC.hi);
+                    m_cycles += LD_R8_R8(DE.hi, BC.hi);
                     break;
                 case 0x51:
-                    LD_R8_R8(DE.hi, BC.lo);
+                    m_cycles += LD_R8_R8(DE.hi, BC.lo);
                     break;
                 case 0x52:
-                    LD_R8_R8(DE.hi, DE.hi);
+                    m_cycles += LD_R8_R8(DE.hi, DE.hi);
                     break;
                 case 0x53:
-                    LD_R8_R8(DE.hi, DE.lo);
+                    m_cycles += LD_R8_R8(DE.hi, DE.lo);
                     break;
                 case 0x54:
-                    LD_R8_R8(DE.hi, HL.hi);
+                    m_cycles += LD_R8_R8(DE.hi, HL.hi);
                     break;
                 case 0x55:
-                    LD_R8_R8(DE.hi, HL.lo);
+                    m_cycles += LD_R8_R8(DE.hi, HL.lo);
                     break;
                 case 0x57:
-                    LD_R8_R8(DE.hi, AF.hi);
+                    m_cycles += LD_R8_R8(DE.hi, AF.hi);
                     break;
                 case 0x58:
-                    LD_R8_R8(DE.lo, BC.hi);
+                    m_cycles += LD_R8_R8(DE.lo, BC.hi);
                     break;
                 case 0x59:
-                    LD_R8_R8(DE.lo, BC.lo);
+                    m_cycles += LD_R8_R8(DE.lo, BC.lo);
                     break;
                 case 0x5A:
-                    LD_R8_R8(DE.lo, DE.hi);
+                    m_cycles += LD_R8_R8(DE.lo, DE.hi);
                     break;
                 case 0x5B:
-                    LD_R8_R8(DE.lo, DE.lo);
+                    m_cycles += LD_R8_R8(DE.lo, DE.lo);
                     break;
                 case 0x5C:
-                    LD_R8_R8(DE.lo, HL.hi);
+                    m_cycles += LD_R8_R8(DE.lo, HL.hi);
                     break;
                 case 0x5D:
-                    LD_R8_R8(DE.lo, HL.lo);
+                    m_cycles += LD_R8_R8(DE.lo, HL.lo);
                     break;
                 case 0x5F:
-                    LD_R8_R8(DE.lo, AF.hi);
+                    m_cycles += LD_R8_R8(DE.lo, AF.hi);
                     break;
                 case 0x60:
-                    LD_R8_R8(HL.hi, BC.hi);
+                    m_cycles += LD_R8_R8(HL.hi, BC.hi);
                     break;
                 case 0x61:
-                    LD_R8_R8(HL.hi, BC.lo);
+                    m_cycles += LD_R8_R8(HL.hi, BC.lo);
                     break;
                 case 0x62:
-                    LD_R8_R8(HL.hi, DE.hi);
+                    m_cycles += LD_R8_R8(HL.hi, DE.hi);
                     break;
                 case 0x63:
-                    LD_R8_R8(HL.hi, DE.lo);
+                    m_cycles += LD_R8_R8(HL.hi, DE.lo);
                     break;
                 case 0x64:
-                    LD_R8_R8(HL.hi, HL.hi);
+                    m_cycles += LD_R8_R8(HL.hi, HL.hi);
                     break;
                 case 0x65:
-                    LD_R8_R8(HL.hi, HL.lo);
+                    m_cycles += LD_R8_R8(HL.hi, HL.lo);
                     break;
                 case 0x67:
-                    LD_R8_R8(HL.hi, AF.hi);
+                    m_cycles += LD_R8_R8(HL.hi, AF.hi);
                     break;
                 case 0x68:
-                    LD_R8_R8(HL.lo, BC.hi);
+                    m_cycles += LD_R8_R8(HL.lo, BC.hi);
                     break;
                 case 0x69:
-                    LD_R8_R8(HL.lo, BC.lo);
+                    m_cycles += LD_R8_R8(HL.lo, BC.lo);
                     break;
                 case 0x6A:
-                    LD_R8_R8(HL.lo, DE.hi);
+                    m_cycles += LD_R8_R8(HL.lo, DE.hi);
                     break;
                 case 0x6B:
-                    LD_R8_R8(HL.lo, DE.lo);
+                    m_cycles += LD_R8_R8(HL.lo, DE.lo);
                     break;
                 case 0x6C:
-                    LD_R8_R8(HL.lo, HL.hi);
+                    m_cycles += LD_R8_R8(HL.lo, HL.hi);
                     break;
                 case 0x6D:
-                    LD_R8_R8(HL.lo, HL.lo);
+                    m_cycles += LD_R8_R8(HL.lo, HL.lo);
                     break;
                 case 0x6F:
-                    LD_R8_R8(HL.lo, AF.hi);
+                    m_cycles += LD_R8_R8(HL.lo, AF.hi);
                     break;
                 case 0x78:
-                    LD_R8_R8(AF.hi, BC.hi);
+                    m_cycles += LD_R8_R8(AF.hi, BC.hi);
                     break;
                 case 0x79:
-                    LD_R8_R8(AF.hi, BC.lo);
+                    m_cycles += LD_R8_R8(AF.hi, BC.lo);
                     break;
                 case 0x7A:
-                    LD_R8_R8(AF.hi, DE.hi);
+                    m_cycles += LD_R8_R8(AF.hi, DE.hi);
                     break;
                 case 0x7B:
-                    LD_R8_R8(AF.hi, DE.lo);
+                    m_cycles += LD_R8_R8(AF.hi, DE.lo);
                     break;
                 case 0x7C:
-                    LD_R8_R8(AF.hi, HL.hi);
+                    m_cycles += LD_R8_R8(AF.hi, HL.hi);
                     break;
                 case 0x7D:
-                    LD_R8_R8(AF.hi, HL.lo);
+                    m_cycles += LD_R8_R8(AF.hi, HL.lo);
                     break;
                 case 0x7F:
-                    LD_R8_R8(AF.hi, AF.hi);
+                    m_cycles += LD_R8_R8(AF.hi, AF.hi);
                     break;
+
+                // LD [HL], R8
+                case 0x70:
+                    m_cycles += LD_HL_R8(BC.hi);
+                    break;
+                case 0x71:
+                    m_cycles += LD_HL_R8(BC.lo);
+                    break;
+                case 0x72:
+                    m_cycles += LD_HL_R8(DE.hi);
+                    break;
+                case 0x73:
+                    m_cycles += LD_HL_R8(DE.lo);
+                    break;
+                case 0x74:
+                    m_cycles += LD_HL_R8(HL.hi);
+                    break;
+                case 0x75:
+                    m_cycles += LD_HL_R8(HL.lo);
+                    break;
+                case 0x77:
+                    m_cycles += LD_HL_R8(AF.hi);
+                    break;
+
+                // LD R8, [HL]
+                case 0x46:
+                    m_cycles += LD_R8_HL(BC.hi);
+                    break;
+                case 0x4E:
+                    m_cycles += LD_R8_HL(BC.lo);
+                    break;
+                case 0x56:
+                    m_cycles += LD_R8_HL(DE.hi);
+                    break;
+                case 0x5E:
+                    m_cycles += LD_R8_HL(DE.lo);
+                    break;
+                case 0x66:
+                    m_cycles += LD_R8_HL(HL.hi);
+                    break;
+                case 0x6E:
+                    m_cycles += LD_R8_HL(HL.lo);
+                    break;
+                case 0x7E:
+                    m_cycles += LD_R8_HL(AF.hi);
+                    break;
+
+                case 0x76: // TODO: HALT
+                    break;
+
             }
+
+            return m_cycles;
         
         }
 
