@@ -68,6 +68,7 @@ class CPU {
         Memory mem;
 
         // Opcodes
+        // Each opcode returns the number of m-cycles they use
 
         /**
          * Load value in src register into dest resigter
@@ -91,6 +92,22 @@ class CPU {
         uint32_t LD_R8_HL(Register8 &dest) {
             dest = mem.read(HL.get_addr());
             return 2;
+        }
+
+        /**
+         * Load value n8 into dest register
+         */
+        uint32_t LD_R8_n8(Register8 &dest, uint8_t n8) {
+            dest = n8;
+            return 2;
+        }
+
+        /**
+         * Load value n8 into memory at address HL 
+         */
+        uint32_t LD_HL_n8(uint8_t n8) {
+            mem.write(HL.get_addr(), n8);
+            return 3;
         }
 
     public:
@@ -320,6 +337,33 @@ class CPU {
                     break;
 
                 case 0x76: // TODO: HALT
+                    break;
+
+                // LD R8, n8
+                case 0x06:
+                    m_cycles += LD_R8_n8(BC.hi, mem.read(PC++));
+                    break;
+                case 0x0E:
+                    m_cycles += LD_R8_n8(BC.lo, mem.read(PC++));
+                    break;
+                case 0x16:
+                    m_cycles += LD_R8_n8(DE.hi, mem.read(PC++));
+                    break;
+                case 0x1E:
+                    m_cycles += LD_R8_n8(DE.lo, mem.read(PC++));
+                    break;
+                case 0x26:
+                    m_cycles += LD_R8_n8(HL.hi, mem.read(PC++));
+                    break;
+                case 0x2E:
+                    m_cycles += LD_R8_n8(HL.lo, mem.read(PC++));
+                    break;
+                case 0x3E:
+                    m_cycles += LD_R8_n8(BC.hi, mem.read(PC++));
+                    break;
+
+                case 0x36: // LD [HL], n8
+                    m_cycles += LD_HL_n8(mem.read(PC++));
                     break;
 
             }
