@@ -44,10 +44,42 @@ struct Register16 {
 
     /**
      * Combine values in hi and lo and return 
-     * the resulting 2-byte address 
+     * the resulting 2-byte value 
      */
-    uint16_t get_addr() {
+    uint16_t get_data16() const {
         return ((uint16_t)hi << 8) | (uint16_t)lo;
+    }
+
+    // Postfix increment
+    Register16 operator++(int) {
+        // Store temp state to return later
+        Register16 temp = *this;
+
+        // Combine hi and lo into 16-bit value, and increment it
+        uint16_t full_value = ((uint16_t)hi << 8) | (uint16_t)lo;
+        full_value++;
+
+        // Update hi and lo
+        hi = (uint8_t)(full_value >> 8);   // msb
+        lo = (uint8_t)(full_value & 0xFF); // lsb
+
+        return temp;
+    }
+
+    // Postfix decrement
+    Register16 operator--(int) {
+        // Store temp state to return later
+        Register16 temp = *this;
+
+        // Combine hi and lo into 16-bit value, and increment it
+        uint16_t full_value = ((uint16_t)hi << 8) | (uint16_t)lo;
+        full_value--;
+
+        // Update hi and lo
+        hi = (uint8_t)(full_value >> 8);   // msb
+        lo = (uint8_t)(full_value & 0xFF); // lsb
+
+        return temp;
     }
 };
 
@@ -79,18 +111,18 @@ class CPU {
         }
 
         /**
-         * Load value in src register into memory at address HL
+         * Load value in src register into memory[HL]
          */
         uint32_t LD_HL_R8(Register8 src) {
-            mem.write(HL.get_addr(), src); 
+            mem.write(HL.get_data16(), src); 
             return 2;
         }
 
         /**
-         * Load value in memory at address HL into dest register
+         * Load value in memory[HL] into dest register
          */
         uint32_t LD_R8_HL(Register8 &dest) {
-            dest = mem.read(HL.get_addr());
+            dest = mem.read(HL.get_data16());
             return 2;
         }
 
@@ -103,11 +135,19 @@ class CPU {
         }
 
         /**
-         * Load value n8 into memory at address HL 
+         * Load value n8 into memory[HL] 
          */
         uint32_t LD_HL_n8(uint8_t n8) {
-            mem.write(HL.get_addr(), n8);
+            mem.write(HL.get_data16(), n8);
             return 3;
+        }
+
+        /** 
+         * Load value in A register into memory[dest]
+         */
+        uint32_t LD_R16_A(const Register16 &dest) {
+            mem.write(dest.get_data16(), AF.hi);
+            return 2;
         }
 
     public:
@@ -364,6 +404,20 @@ class CPU {
 
                 case 0x36: // LD [HL], n8
                     m_cycles += LD_HL_n8(mem.read(PC++));
+                    break;
+
+                // LD R16, A
+                case 0x02:
+                    m_cycles += LD_R16_A(BC);
+                    break;
+                case 0x12:
+                    m_cycles += LD_R16_A(DE);
+                    break;
+                case 0x22:
+                    m_cycles += LD_R16_A(HL++);
+                    break;
+                case 0x32:
+                    m_cycles += LD_R16_A(HL--);
                     break;
 
             }
