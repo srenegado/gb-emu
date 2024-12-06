@@ -100,9 +100,9 @@ class CPU {
         Register16 BC;    // General registers
         Register16 DE;
         Register16 HL;
+        Register16 SP;    // Stack pointer
 
-        uint16_t PC;    // Program counter
-        uint16_t SP;    // Stack pointer        
+        uint16_t PC;      // Program counter  
 
         // Memory
         Memory mem;
@@ -122,7 +122,7 @@ class CPU {
         }
 
         /**
-         * Load value in src register into memory[HL]
+         * Store value in src register into memory[HL]
          */
         uint32_t LD_HL_R8(Register8 src) {
             mem.write(HL.get_data16(), src); 
@@ -152,7 +152,7 @@ class CPU {
         }
 
         /**
-         * Load immediate 8-bit value n8 into memory[HL]
+         * Store immediate 8-bit value n8 into memory[HL]
          *
          * Assumes PC is pointing to n8 before call 
          */
@@ -166,7 +166,7 @@ class CPU {
         }
 
         /** 
-         * Load value in A register into memory[dest]
+         * Store value in register A into memory[dest]
          */
         uint32_t LD_R16_A(const Register16 &dest) {
             mem.write(dest.get_data16(), AF.hi);
@@ -174,7 +174,7 @@ class CPU {
         }
 
         /**
-         * Load value in memory[dest] into A register 
+         * Load value in memory[dest] into register A 
          */
         uint32_t LD_A_R16(const Register16 &dest) {
             AF.hi = mem.read(dest.get_data16());
@@ -197,23 +197,6 @@ class CPU {
             return 3;
         }
 
-        /**
-         * Load the immediate little-endian 16-bit value n16 into SP
-         *
-         * Assumes PC is pointing to n16 before call 
-         */
-        uint32_t LD_SP_n16() {
-            
-            // Get n16 and move PC to next instruction
-            uint8_t lsb = mem.read(PC++);
-            uint8_t msb = mem.read(PC++);
-            uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb;
-            
-            SP = n16;
-            return 3;
-        }
-
-
         /** 
          * Store the value in SP into memory[n16], where n16 is the
          * immediate little-endian 16-bit value
@@ -228,8 +211,8 @@ class CPU {
             uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb;
 
             // Store SP least-significant byte first
-            mem.write(n16, SP & 0xFF);
-            mem.write(n16 + 1, SP >> 8);
+            mem.write(n16, SP.lo);
+            mem.write(n16 + 1, SP.hi);
 
             return 5;
         }
@@ -274,7 +257,7 @@ class CPU {
          * Load value in HL into SP 
          */
         uint32_t LD_SP_HL() {
-            SP = HL.get_data16();
+            SP.set_data16(HL.get_data16());
             return 2;
         }
 
@@ -326,16 +309,44 @@ class CPU {
         }
 
         /**
+         * Load SP + e8 into HL, where e8 is the immediate signed 8-bit value
+         * Reset Z and N flags.  The flags H and C are set accordingly
          * 
+         * Assumes PC is point to n8 before call
          */
+        uint32_t LD_HL_SP_e8() {
+            
+            // Get e8 and move PC to next instruction
+            int8_t e8 = (int8_t) mem.read(PC++);
+
+            AF.lo &= 0x7F; // Reset Z
+            AF.lo &= 0xBF; // Reset N
+
+            uint8_t e8_lo_nib = ((uint8_t)e8) & 0x0F;
+            uint8_t SP_lo_nib = ((uint8_t)SP.lo) & 0x0F;
+
+            uint8_t set_H = SP_lo_nib + e8_lo_nib >= 16;
+            uint8_t set_C = ((uint8_t)e8 + SP.lo) < SP.lo;
+
+            if (set_H) // Set H
+                AF.lo |= 0x20;
+            
+            if (set_C) // Set C
+                AF.lo |= 0x10;
+
+            // Do signed arithmetic
+            HL.set_data16((uint16_t)((int16_t)SP.get_data16() + (int16_t)e8));
+
+            return 3;
+        }
 
     public:
     
         // Constructor
-        CPU(): AF(), BC(), DE(), HL(), mem() 
+        CPU(): AF(), BC(), DE(), HL(), SP(), mem() 
         {
-            PC = 0x0000;
-            SP = 0x0000;
+            PC = 0x0100;
+            SP.set_data16(0xFFFE);
         }
 
         // Destructor
@@ -624,7 +635,7 @@ class CPU {
                     m_cycles += LD_R16_n16(HL);
                     break;
                 case 0x31:
-                    m_cycles += LD_SP_n16();
+                    m_cycles += LD_R16_n16(SP);
                     break;
 
                 case 0x08: // LD [n16], SP
@@ -660,10 +671,8 @@ class CPU {
                     break;
 
                 case 0xF8: // LD HL, SP + n8
+                    m_cycles += LD_HL_SP_e8();
                     break;
-                
-                
-
             }
 
             return m_cycles;
