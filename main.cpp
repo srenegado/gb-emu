@@ -43,11 +43,19 @@ struct Register16 {
     ~Register16() {}
 
     /**
-     * Combine values in hi and lo and return 
-     * the resulting 2-byte value 
+     * Combine values in hi and lo then 
+     * return the resulting 2-byte value 
      */
     uint16_t get_data16() const {
         return ((uint16_t)hi << 8) | (uint16_t)lo;
+    }
+
+    /** 
+     * Store a 16-bit value into the register
+     */
+    void set_data16(uint16_t data) {
+        hi = (uint8_t)(data >> 8);
+        lo = (uint8_t)(data & 0xFF);
     }
 
     // Postfix increment
@@ -127,17 +135,27 @@ class CPU {
         }
 
         /**
-         * Load value n8 into dest register
+         * Load immediate 8-bit value n8 into dest register
+         * Assumes PC is pointing to n8 before call
          */
-        uint32_t LD_R8_n8(Register8 &dest, uint8_t n8) {
+        uint32_t LD_R8_n8(Register8 &dest) {
+
+            // Get n8 and move PC to next instruction
+            uint8_t n8 = mem.read(PC++);
+
             dest = n8;
             return 2;
         }
 
         /**
-         * Load value n8 into memory[HL] 
+         * Load immediate 8-bit value n8 into memory[HL]
+         * Assumes PC is pointing to n8 before call 
          */
-        uint32_t LD_HL_n8(uint8_t n8) {
+        uint32_t LD_HL_n8() {
+
+            // Get n8 and move PC to next instruction
+            uint8_t n8 = mem.read(PC++);
+
             mem.write(HL.get_data16(), n8);
             return 3;
         }
@@ -148,6 +166,42 @@ class CPU {
         uint32_t LD_R16_A(const Register16 &dest) {
             mem.write(dest.get_data16(), AF.hi);
             return 2;
+        }
+
+        /**
+         * Load value in memory[dest] into A register 
+         */
+        uint32_t LD_A_R16(const Register16 &dest) {
+            AF.hi = mem.read(dest.get_data16());
+            return 2;    
+        }
+
+        /**
+         * Load the immediate little-endian 16-bit value n16 into dest register
+         * Assumes PC is pointing to n16 before call 
+         */
+        uint32_t LD_R16_n16(Register16 &dest) {
+            
+            uint8_t lsb = mem.read(PC++);
+            uint8_t msb = mem.read(PC++);
+            uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb; 
+            
+            dest.set_data16(n16);
+            return 3;
+        }
+
+        /**
+         * Load the immediate little-endian 16-bit value n16 into SP
+         * Assumes PC is pointing to n16 before call 
+         */
+        uint32_t LD_SP_n16() {
+            
+            uint8_t lsb = mem.read(PC++);
+            uint8_t msb = mem.read(PC++);
+            uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb;
+            
+            SP = n16;
+            return 3;
         }
 
     public:
@@ -381,29 +435,29 @@ class CPU {
 
                 // LD R8, n8
                 case 0x06:
-                    m_cycles += LD_R8_n8(BC.hi, mem.read(PC++));
+                    m_cycles += LD_R8_n8(BC.hi);
                     break;
                 case 0x0E:
-                    m_cycles += LD_R8_n8(BC.lo, mem.read(PC++));
+                    m_cycles += LD_R8_n8(BC.lo);
                     break;
                 case 0x16:
-                    m_cycles += LD_R8_n8(DE.hi, mem.read(PC++));
+                    m_cycles += LD_R8_n8(DE.hi);
                     break;
                 case 0x1E:
-                    m_cycles += LD_R8_n8(DE.lo, mem.read(PC++));
+                    m_cycles += LD_R8_n8(DE.lo);
                     break;
                 case 0x26:
-                    m_cycles += LD_R8_n8(HL.hi, mem.read(PC++));
+                    m_cycles += LD_R8_n8(HL.hi);
                     break;
                 case 0x2E:
-                    m_cycles += LD_R8_n8(HL.lo, mem.read(PC++));
+                    m_cycles += LD_R8_n8(HL.lo);
                     break;
                 case 0x3E:
-                    m_cycles += LD_R8_n8(BC.hi, mem.read(PC++));
+                    m_cycles += LD_R8_n8(BC.hi);
                     break;
 
                 case 0x36: // LD [HL], n8
-                    m_cycles += LD_HL_n8(mem.read(PC++));
+                    m_cycles += LD_HL_n8();
                     break;
 
                 // LD R16, A
@@ -418,6 +472,34 @@ class CPU {
                     break;
                 case 0x32:
                     m_cycles += LD_R16_A(HL--);
+                    break;
+
+                // LD A, R16
+                case 0x0A:
+                    m_cycles += LD_A_R16(BC);
+                    break;
+                case 0x1A:
+                    m_cycles += LD_A_R16(DE);
+                    break;
+                case 0x2A:
+                    m_cycles += LD_A_R16(HL++);
+                    break;
+                case 0x3A:
+                    m_cycles += LD_A_R16(HL--);
+                    break;
+
+                // LD R16, n16
+                case 0x01:
+                    m_cycles += LD_R16_n16(BC);
+                    break;
+                case 0x11:
+                    m_cycles += LD_R16_n16(DE);
+                    break;
+                case 0x21:
+                    m_cycles += LD_R16_n16(HL);
+                    break;
+                case 0x31:
+                    m_cycles += LD_SP_n16();
                     break;
 
             }
