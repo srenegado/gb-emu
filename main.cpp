@@ -107,9 +107,12 @@ class CPU {
         // Memory
         Memory mem;
 
-        // Opcodes
-        // Each opcode returns the number of m-cycles they use
-
+        /** 
+         * Opcodes
+         * 
+         * Each opcode returns the number of m-cycles they use
+         */ 
+    
         /**
          * Load value in src register into dest resigter
          */
@@ -136,6 +139,7 @@ class CPU {
 
         /**
          * Load immediate 8-bit value n8 into dest register
+         *
          * Assumes PC is pointing to n8 before call
          */
         uint32_t LD_R8_n8(Register8 &dest) {
@@ -149,6 +153,7 @@ class CPU {
 
         /**
          * Load immediate 8-bit value n8 into memory[HL]
+         *
          * Assumes PC is pointing to n8 before call 
          */
         uint32_t LD_HL_n8() {
@@ -178,10 +183,12 @@ class CPU {
 
         /**
          * Load the immediate little-endian 16-bit value n16 into dest register
+         *
          * Assumes PC is pointing to n16 before call 
          */
         uint32_t LD_R16_n16(Register16 &dest) {
             
+            // Get n16 and move PC to next instruction
             uint8_t lsb = mem.read(PC++);
             uint8_t msb = mem.read(PC++);
             uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb; 
@@ -192,10 +199,12 @@ class CPU {
 
         /**
          * Load the immediate little-endian 16-bit value n16 into SP
+         *
          * Assumes PC is pointing to n16 before call 
          */
         uint32_t LD_SP_n16() {
             
+            // Get n16 and move PC to next instruction
             uint8_t lsb = mem.read(PC++);
             uint8_t msb = mem.read(PC++);
             uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb;
@@ -203,6 +212,122 @@ class CPU {
             SP = n16;
             return 3;
         }
+
+
+        /** 
+         * Store the value in SP into memory[n16], where n16 is the
+         * immediate little-endian 16-bit value
+         *
+         * Assumes PC is pointing to n16 before call
+         */
+        uint32_t LD_n16_SP() {
+            
+            // Get n16 and move PC to next instruction
+            uint8_t lsb = mem.read(PC++);
+            uint8_t msb = mem.read(PC++);
+            uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb;
+
+            // Store SP least-significant byte first
+            mem.write(n16, SP & 0xFF);
+            mem.write(n16 + 1, SP >> 8);
+
+            return 5;
+        }
+
+        /** 
+         * Store the value in register A into memory[n16], where n16 is the
+         * immediate little-endian 16-bit value
+         *
+         * Assumes PC is pointing to n16 before call
+         */
+        uint32_t LD_n16_A() {
+            
+            // Get n16 and move PC to next instruction
+            uint8_t lsb = mem.read(PC++);
+            uint8_t msb = mem.read(PC++);
+            uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb;
+
+            mem.write(n16, AF.hi);
+
+            return 4;
+        }
+
+        /** 
+         * Load the value in memory[n16] into register A, where n16 is the
+         * immediate little-endian 16-bit value
+         *
+         * Assumes PC is pointing to n16 before call
+         */
+        uint32_t LD_A_n16() {
+            
+            // Get n16 and move PC to next instruction
+            uint8_t lsb = mem.read(PC++);
+            uint8_t msb = mem.read(PC++);
+            uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb;
+
+            AF.hi = mem.read(n16);
+
+            return 4;
+        }
+
+        /**
+         * Load value in HL into SP 
+         */
+        uint32_t LD_SP_HL() {
+            SP = HL.get_data16();
+            return 2;
+        }
+
+        /**
+         * Store value in register A into memory[0xFF00 + C]
+         */
+        uint32_t LDH_C_A() {
+            mem.write(0xFF00 + (uint16_t)BC.lo, AF.hi);
+            return 2;
+        }
+
+        /**
+         * Load value in memory[0xFF00 + C] into register A 
+         */
+        uint32_t LDH_A_C() {
+            AF.hi = mem.read(0xFF00 + (uint16_t)BC.lo);
+            return 2;
+        }
+
+        /*
+         * Store value in register A into memory[0xFF00 + n8] where n8 is
+         * the immediate 8-bit value
+         * 
+         * Assumes PC is pointing to n8 before call
+         */
+        uint32_t LDH_n8_A() {
+
+            // Get n8 and move PC to next instruction
+            uint8_t n8 = mem.read(PC++);
+
+            mem.write(0xFF00 + (uint16_t)n8, AF.hi);
+            return 3;
+        }
+
+
+        /**
+         * Load value in memory[0xFF00 + n8] into register A where n8 is
+         * the immediate 8-bit value
+         * 
+         * Assumes PC is pointing to n8 before call
+         */
+        uint32_t LDH_A_n8() {
+
+            // Get n8 and move PC to next instruction
+            uint8_t n8 = mem.read(PC++);
+
+            AF.hi = mem.read(0xFF00 + (uint16_t)n8);
+            return 3;
+        }
+
+        /**
+         * 
+         */
 
     public:
     
@@ -460,7 +585,7 @@ class CPU {
                     m_cycles += LD_HL_n8();
                     break;
 
-                // LD R16, A
+                // LD [R16], A
                 case 0x02:
                     m_cycles += LD_R16_A(BC);
                     break;
@@ -474,7 +599,7 @@ class CPU {
                     m_cycles += LD_R16_A(HL--);
                     break;
 
-                // LD A, R16
+                // LD A, [R16]
                 case 0x0A:
                     m_cycles += LD_A_R16(BC);
                     break;
@@ -502,6 +627,43 @@ class CPU {
                     m_cycles += LD_SP_n16();
                     break;
 
+                case 0x08: // LD [n16], SP
+                    m_cycles += LD_n16_SP();
+                    break;
+
+                case 0xEA: // LD [n16], A
+                    m_cycles += LD_n16_A();
+                    break;
+
+                case 0xFA: // LD A, [n16]
+                    m_cycles += LD_A_n16();
+                    break;
+
+                case 0xF9: // LD SP, HL
+                    m_cycles += LD_SP_HL();
+                    break;
+
+                case 0xE2: // LDH [C], A
+                    m_cycles += LDH_C_A();
+                    break;
+
+                case 0xF2: // LDH A, [C]
+                    m_cycles += LDH_A_C();
+                    break;
+
+                case 0xE0: // LDH [n8], A
+                    m_cycles += LDH_n8_A();
+                    break;
+
+                case 0xF0: // LDH A, [n8]
+                    m_cycles += LDH_A_n8();
+                    break;
+
+                case 0xF8: // LD HL, SP + n8
+                    break;
+                
+                
+
             }
 
             return m_cycles;
@@ -509,10 +671,6 @@ class CPU {
         }
 
 };
-
-
-
-
 
 
 int main() {
