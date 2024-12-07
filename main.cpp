@@ -843,6 +843,225 @@ class CPU {
             return 2;
         }
 
+        /** 
+         * Add value n8 to A, where n8 is the immediate 8-bit value
+         *
+         * Reset N flag. Set Z, H, and C flags accordingly
+         *
+         * Assumes PC is pointing to n8 before call
+         */
+        uint32_t ADD_A_n8() {
+            // Get n8 and move PC to next instruction
+            uint8_t n8 = mem.read(PC++);
+
+            AF.lo &= 0xBF; // Reset N
+
+            uint8_t set_Z = AF.hi + n8 == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+
+            uint8_t set_H = (AF.hi & 0xF) + (n8 & 0xF) > 0xF;
+            if (set_H) 
+                AF.lo |= 0x20; // Set H
+
+            uint8_t set_C = (uint16_t)AF.hi + (uint16_t)n8 > 0xFF;
+            if (set_C) 
+                AF.lo |= 0x10; // Set C
+            
+            AF.hi += n8;
+            return 2;
+        }
+
+        /** 
+         * Add value n8 plus the carry flag to A, where n8 is the immediate 8-bit value
+         *
+         * Reset N flag. Set Z, H, and C flags accordingly
+         *
+         * Assumes PC is pointing to n8 before call
+         */
+        uint32_t ADC_A_n8() {
+            // Get n8 and move PC to next instruction
+            uint8_t n8 = mem.read(PC++);
+
+            // Get C flag value
+            uint8_t carry = (AF.lo & 0x10) ? 1 : 0;
+            
+            AF.lo &= 0xBF; // Reset N
+
+            uint8_t set_Z = AF.hi + n8 + carry == 0; 
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z    
+            
+            uint8_t set_H = (AF.hi & 0xF) + (n8 & 0xF) + carry > 0xF;
+            if (set_H) 
+                AF.lo |= 0x20; // Set H
+            
+            uint8_t set_C = (uint16_t)AF.hi + (uint16_t)n8 + carry > 0xFF;
+            if (set_C) 
+                AF.lo |= 0x10; // Set C
+                
+            AF.hi += (n8 + carry);
+            return 2;
+        }
+
+        /** 
+         * Subtract value n8 to A, where n8 is the immediate 8-bit value
+         *
+         * Set N flag. Set Z, H, and C flags accordingly
+         *
+         * Assumes PC is pointing to n8 before call
+         */
+        uint32_t SUB_A_n8() {
+            // Get n8 and move PC to next instruction
+            uint8_t n8 = mem.read(PC++);
+
+            AF.lo != 0x40; // Set N
+
+            uint8_t set_Z = AF.hi - n8 == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+
+            uint8_t set_H = (int8_t)(AF.hi & 0xF) - (int8_t)(n8 & 0xF) < 0;
+            if (set_H) 
+                AF.lo |= 0x20; // Set H
+
+            uint8_t set_C = (int8_t)AF.hi - (int8_t)n8 < 0;
+            if (set_C) 
+                AF.lo |= 0x10; // Set C
+            
+            AF.hi -= n8;
+            return 2;
+        }
+
+        /** 
+         * Subtract value n8 and carry flag from A, where n8 is the immediate 8-bit value
+         *
+         * Set N flag. Set Z, H, and C flags accordingly
+         *
+         * Assumes PC is pointing to n8 before call
+         */
+        uint32_t SBC_A_n8() {
+            // Get n8 and move PC to next instruction
+            uint8_t n8 = mem.read(PC++);
+
+            // Get C flag value
+            uint8_t carry = (AF.lo & 0x10) ? 1 : 0;
+
+            AF.lo != 0x40; // Set N
+
+            uint8_t set_Z = AF.hi - n8 - carry == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+
+            uint8_t set_H = (int8_t)(AF.hi & 0xF) - (int8_t)(n8 & 0xF + carry) < 0;
+            if (set_H) 
+                AF.lo |= 0x20; // Set H
+
+            uint8_t set_C = (int8_t)AF.hi - (int8_t)(n8 + carry) < 0;
+            if (set_C) 
+                AF.lo |= 0x10; // Set C
+            
+            AF.hi -= (n8 + carry);
+            return 2;
+        }
+
+        /** 
+         * Bitwise AND the value n8 to A, where n8 is the immediate 8-bit value
+         *
+         * Reset N and C flags. Set H flag. Set Z flag accordingly.
+         *
+         * Assumes PC is pointing to n8 before call
+         */
+        uint32_t AND_A_n8() {
+            // Get n8 and move PC to next instruction
+            uint8_t n8 = mem.read(PC++);
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo |= 0x20; // Set H
+            AF.lo &= 0xEF; // Reset C
+            
+            uint8_t set_Z = AF.hi & n8 == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+            
+            AF.hi &= n8;
+            return 2;
+        }
+
+        /** 
+         * Bitwise XOR the value n8 to A, where n8 is the immediate 8-bit value
+         *
+         * Reset N, H, and C flags. Set Z flag accordingly.
+         *
+         * Assumes PC is pointing to n8 before call
+         */
+        uint32_t XOR_A_n8() {
+            // Get n8 and move PC to next instruction
+            uint8_t n8 = mem.read(PC++);
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            AF.lo &= 0xEF; // Reset C
+            
+            uint8_t set_Z = AF.hi ^ n8 == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+            
+            AF.hi ^= n8;
+            return 2;
+        }
+
+        /** 
+         * Bitwise OR the value n8 to A,  where n8 is the immediate 8-bit value
+         *
+         * Reset N, H, and C flags. Set Z flag accordingly.
+         *
+         * Assumes PC is pointing to n8 before call
+         */
+        uint32_t OR_A_n8() {
+            // Get n8 and move PC to next instruction
+            uint8_t n8 = mem.read(PC++);
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            AF.lo &= 0xEF; // Reset C
+            
+            uint8_t set_Z = AF.hi | n8 == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+            
+            AF.hi |= n8;
+            return 2;
+        }
+
+        /** 
+         * Subtract value n8 to A, but don't store the result, 
+         * where n8 is the immediate 8-bit value
+         *
+         * Set N flag. Set Z, H, and C flags accordingly
+         *
+         * Assumes PC is pointing to n8 before call
+         */
+        uint32_t CP_A_n8() {
+            // Get n8 and move PC to next instruction
+            uint8_t n8 = mem.read(PC++);
+
+            AF.lo != 0x40; // Set N
+
+            uint8_t set_Z = AF.hi - n8 == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+
+            uint8_t set_H = (int8_t)(AF.hi & 0xF) - (int8_t)(n8 & 0xF) < 0;
+            if (set_H) 
+                AF.lo |= 0x20; // Set H
+
+            uint8_t set_C = (int8_t)AF.hi - (int8_t)n8 < 0;
+            if (set_C) 
+                AF.lo |= 0x10; // Set C
+            
+            return 2;
+        }
 
     public:
     
@@ -1500,6 +1719,45 @@ class CPU {
                     m_cycles += CP_A_HL();
                     break;
 
+                // ADD A, n8
+                case 0xC6:
+                    m_cycles += ADD_A_n8();
+                    break;
+
+                // ADC A, n8
+                case 0xCE:
+                    m_cycles += ADC_A_n8();
+                    break;
+
+                // SUB A, n8
+                case 0xD6:
+                    m_cycles += SUB_A_n8();
+                    break;
+
+                // SBC A, n8
+                case 0xDE:
+                    m_cycles += SBC_A_n8();
+                    break;
+
+                // AND A, n8
+                case 0xE6:
+                    m_cycles += AND_A_n8();
+                    break;
+
+                // XOR A, n8
+                case 0xEE:
+                    m_cycles += XOR_A_n8();
+                    break;
+
+                // OR A, n8
+                case 0xF6:
+                    m_cycles += OR_A_n8();
+                    break;
+
+                // CP A, n8
+                case 0xFE:
+                    m_cycles += CP_A_n8();
+                    break;
             
             }
 
