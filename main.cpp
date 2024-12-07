@@ -300,7 +300,6 @@ class CPU {
             return 3;
         }
 
-
         /**
          * Load value in memory[0xFF00 + n8] into register A where n8 is
          * the immediate 8-bit value
@@ -330,24 +329,19 @@ class CPU {
             AF.lo &= 0x7F; // Reset Z
             AF.lo &= 0xBF; // Reset N
 
-            uint8_t e8_lo_nib = ((uint8_t)e8) & 0x0F;
-            uint8_t SP_lo_nib = SP.lo & 0x0F;
-
-            uint8_t set_H = SP_lo_nib + e8_lo_nib > 0xF;
-            uint8_t set_C = ((uint16_t)e8 + (uint16_t)SP.lo) > 0xFF;
-
-            if (set_H)
-                AF.lo |= 0x20;
+            uint8_t set_H = (SP.lo & 0x0F) + ((uint8_t)e8 & 0x0F) > 0xF;
+            if (set_H) 
+                AF.lo |= 0x20; // Set H
             
+            uint8_t set_C = ((uint16_t)e8 + (uint16_t)SP.lo) > 0xFF;
             if (set_C) 
-                AF.lo |= 0x10;
-
+                AF.lo |= 0x10; // Set C
+        
             // Do signed arithmetic
-            HL.set_data16((uint16_t)((int16_t)SP.get_data16() + (int16_t)e8));
+            HL.set_data16((uint16_t)((int16_t)SP.get_data16() + e8));
 
             return 3;
         }
-
 
         /** 
          * Increment value in register by 1
@@ -371,23 +365,21 @@ class CPU {
          * Reset N flag. Set H and C flag appropriately
          */
         uint32_t ADD_HL_R16(Register16 &reg) {
-            
             AF.lo &= 0xBF; // Reset N
 
             uint16_t HL_data16 = HL.get_data16();
             uint16_t reg_data16 = reg.get_data16();
 
             uint8_t set_H = HL_data16 & 0x0FFF + reg_data16 & 0x0FFF > 0x0FFF;
-            uint8_t set_C = (uint32_t)HL_data16 + (uint32_t)reg_data16 > 0xFFFF;
-
             if (set_H) 
-                AF.lo |= 0x20;
+                AF.lo |= 0x20; // Set H
             
+            
+            uint8_t set_C = (uint32_t)HL_data16 + (uint32_t)reg_data16 > 0xFFFF;
             if (set_C) 
-                AF.lo |= 0x10;
+                AF.lo |= 0x10; // Set C
             
             HL += reg;
-            
             return 2;
         }
 
@@ -401,14 +393,14 @@ class CPU {
             AF.lo &= 0xBF; // Reset N
             
             uint8_t set_Z = (reg + 0x01) == 0;
-            uint8_t set_H = (reg & 0xF) + 0x1 >= 0xF;
-
             if (set_Z)
-                AF.lo |= 0x80;            
+                AF.lo |= 0x80; // Set Z            
 
-            if (set_H) 
-                AF.lo |= 0x20;
-            
+            uint8_t set_H = (reg & 0xF) + 0x1 > 0xF;
+            if (set_H) {
+                AF.lo |= 0x20; // Set H
+            }
+
             reg++;
             return 1;
         }
@@ -419,19 +411,17 @@ class CPU {
          * Reset N flag. Set Z and H flag accordingly
          */
         uint32_t INC_HL() {
+            uint8_t HLmem = mem.read(HL.get_data16());
 
             AF.lo &= 0xBF; // Reset N
-
-            uint8_t HLmem = mem.read(HL.get_data16());
             
             uint8_t set_Z = HLmem + 0x01 == 0;
-            uint8_t set_H = (HLmem & 0xF) + 0x1 > 0xF;
-
             if (set_Z)
-                AF.lo |= 0x80;            
+                AF.lo |= 0x80; // Set Z           
 
+            uint8_t set_H = (HLmem & 0xF) + 0x1 > 0xF;
             if (set_H) 
-                AF.lo |= 0x20;
+                AF.lo |= 0x20; // Set H
             
             mem.write(HL.get_data16(), HLmem + 0x01);
             return 3;
@@ -443,17 +433,15 @@ class CPU {
          * Set N flag. Set Z and H flag accordingly
          */
         uint32_t DEC_R8(Register8 &reg) {
-
             AF.lo != 0x40; // Set N
 
             uint8_t set_Z = reg - 0x01 == 0;
-            uint8_t set_H = ((int8_t)(reg & 0xF)) - 0x1 < 0; 
-
             if (set_Z)
-                AF.lo |= 0x80;            
+                AF.lo |= 0x80; // Set Z            
 
+            uint8_t set_H = ((int8_t)(reg & 0xF)) - 0x1 < 0; 
             if (set_H) 
-                AF.lo |= 0x20;
+                AF.lo |= 0x20; // Set H
 
             reg--;
             return 1;
@@ -465,25 +453,396 @@ class CPU {
          * Set N flag. Set Z and H flag accordingly
          */
         uint32_t DEC_HL() {
+            uint8_t HLmem = mem.read(HL.get_data16());
 
             AF.lo != 0x40; // Set N
-
-            uint8_t HLmem = mem.read(HL.get_data16());
             
             uint8_t set_Z = HLmem - 0x01 == 0;
-            uint8_t set_H = (int8_t)(HLmem & 0xF) < 0;
-
             if (set_Z)
-                AF.lo |= 0x80;            
+                AF.lo |= 0x80; // Set Z           
 
+            uint8_t set_H = (int8_t)(HLmem & 0xF) - 0x1 < 0;
             if (set_H) 
-                AF.lo |= 0x20;
+                AF.lo |= 0x20; // Set H
 
             mem.write(HL.get_data16(), HLmem - 0x01);
             return 3;
         }
 
-    
+        /** 
+         * Add value in register to A
+         *
+         * Reset N flag. Set Z, H, and C flags accordingly
+         */
+        uint32_t ADD_A_R8(Register8 reg) {
+            AF.lo &= 0xBF; // Reset N
+
+            uint8_t set_Z = AF.hi + reg == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+
+            uint8_t set_H = (AF.hi & 0xF) + (reg & 0xF) > 0xF;
+            if (set_H) 
+                AF.lo |= 0x20; // Set H
+
+            uint8_t set_C = (uint16_t)AF.hi + (uint16_t)reg > 0xFF;
+            if (set_C) 
+                AF.lo |= 0x10; // Set C
+            
+            AF.hi += reg;
+            return 1;
+        }
+
+        /** 
+         * Add value in memory[HL] to A
+         *
+         * Reset N flag. Set Z, H, and C flags accordingly
+         */
+        uint32_t ADD_A_HL() {
+            AF.lo &= 0xBF; // Reset N
+
+            uint8_t HLmem = mem.read(HL.get_data16());
+
+            uint8_t set_Z = AF.hi + HLmem == 0; 
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+
+            uint8_t set_H = (AF.hi & 0xF) + (HLmem & 0xF) > 0xF;
+            if (set_H) 
+                AF.lo |= 0x20; // Set H
+
+            uint8_t set_C = (uint16_t)AF.hi + (uint16_t)HLmem > 0xFF;
+            if (set_C) 
+                AF.lo |= 0x10; // Set C
+
+            AF.hi += HLmem;
+            return 2;
+        }
+
+        /** 
+         * Add value in register plus the carry flag to A
+         *
+         * Reset N flag. Set Z, H, and C flags accordingly
+         */
+        uint32_t ADC_A_R8(Register8 reg) {
+            // Get C flag value
+            uint8_t carry = (AF.lo & 0x10) ? 1 : 0;
+            
+            AF.lo &= 0xBF; // Reset N
+
+            uint8_t set_Z = AF.hi + reg + carry == 0; 
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z    
+            
+            uint8_t set_H = (AF.hi & 0xF) + (reg & 0xF) + carry > 0xF;
+            if (set_H) 
+                AF.lo |= 0x20; // Set H
+            
+            uint8_t set_C = (uint16_t)AF.hi + (uint16_t)reg + carry > 0xFF;
+            if (set_C) 
+                AF.lo |= 0x10; // Set C
+                
+            AF.hi += (reg + carry);
+            return 1;
+        }
+
+        /** 
+         * Add value in memory[HL] plus the carry flag to A
+         *
+         * Reset N flag. Set Z, H, and C flags accordingly
+         */
+        uint32_t ADC_A_HL() {
+            uint8_t HLmem = mem.read(HL.get_data16());
+
+            // Get C flag value
+            uint8_t carry = (AF.lo & 0x10) ? 1 : 0;
+
+            AF.lo &= 0xBF; // Reset N
+
+            uint8_t set_Z = AF.hi + HLmem + carry == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z   
+
+            uint8_t set_H = (AF.hi & 0xF) + (HLmem & 0xF) + carry > 0xF;
+            if (set_H) 
+                AF.lo |= 0x20; // Set H
+
+            uint8_t set_C = (uint16_t)AF.hi + (uint16_t)HLmem + carry > 0xFF;
+            if (set_C)
+                AF.lo |= 0x10; // Set C
+
+            AF.hi += (HLmem + carry);
+            return 2;
+        }
+
+        /** 
+         * Subtract value in register to A
+         *
+         * Set N flag. Set Z, H, and C flags accordingly
+         */
+        uint32_t SUB_A_R8(Register8 reg) {
+            AF.lo != 0x40; // Set N
+
+            uint8_t set_Z = AF.hi - reg == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+
+            uint8_t set_H = (int8_t)(AF.hi & 0xF) - (int8_t)(reg & 0xF) < 0;
+            if (set_H) 
+                AF.lo |= 0x20; // Set H
+
+            uint8_t set_C = (int8_t)AF.hi - (int8_t)reg < 0;
+            if (set_C) 
+                AF.lo |= 0x10; // Set C
+            
+            AF.hi -= reg;
+            return 1;
+        }
+
+        /** 
+         * Subtract value in memory[HL] from A
+         *
+         * Set N flag. Set Z, H, and C flags accordingly
+         */
+        uint32_t SUB_A_HL() {
+            uint8_t HLmem = mem.read(HL.get_data16());
+
+            AF.lo != 0x40; // Set N
+
+            uint8_t set_Z = AF.hi - HLmem == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+
+            uint8_t set_H = (int8_t)(AF.hi & 0xF) - (int8_t)(HLmem & 0xF) < 0;
+            if (set_H) 
+                AF.lo |= 0x20; // Set H
+
+            uint8_t set_C = (int8_t)AF.hi - (int8_t)HLmem < 0;
+            if (set_C) 
+                AF.lo |= 0x10; // Set C
+            
+            AF.hi -= HLmem;
+            return 2;
+        }
+
+        /** 
+         * Subtract value in register and carry flag from A
+         *
+         * Set N flag. Set Z, H, and C flags accordingly
+         */
+        uint32_t SBC_A_R8(Register8 reg) {
+            // Get C flag value
+            uint8_t carry = (AF.lo & 0x10) ? 1 : 0;
+
+            AF.lo != 0x40; // Set N
+
+            uint8_t set_Z = AF.hi - reg - carry == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+
+            uint8_t set_H = (int8_t)(AF.hi & 0xF) - (int8_t)(reg & 0xF + carry) < 0;
+            if (set_H) 
+                AF.lo |= 0x20; // Set H
+
+            uint8_t set_C = (int8_t)AF.hi - (int8_t)(reg + carry) < 0;
+            if (set_C) 
+                AF.lo |= 0x10; // Set C
+            
+            AF.hi -= (reg + carry);
+            return 1;
+        }
+
+        /** 
+         * Subtract value in memory[HL] and carry flag from A
+         *
+         * Set N flag. Set Z, H, and C flags accordingly
+         */
+        uint32_t SBC_A_HL() {
+            uint8_t HLmem = mem.read(HL.get_data16());
+
+            // Get C flag value
+            uint8_t carry = (AF.lo & 0x10) ? 1 : 0;
+
+            AF.lo != 0x40; // Set N
+
+            uint8_t set_Z = AF.hi - HLmem - carry == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+
+            uint8_t set_H = (int8_t)(AF.hi & 0xF) - (int8_t)(HLmem & 0xF + carry) < 0;
+            if (set_H) 
+                AF.lo |= 0x20; // Set H
+
+            uint8_t set_C = (int8_t)AF.hi - (int8_t)(HLmem + carry) < 0;
+            if (set_C) 
+                AF.lo |= 0x10; // Set C
+            
+            AF.hi -= (HLmem + carry);
+            return 2;
+        }
+
+        /** 
+         * Bitwise AND the value in register to A
+         *
+         * Reset N and C flags. Set H flag. Set Z flag accordingly.
+         */
+        uint32_t AND_A_R8(Register8 reg) {
+            AF.lo &= 0xBF; // Reset N
+            AF.lo |= 0x20; // Set H
+            AF.lo &= 0xEF; // Reset C
+            
+            uint8_t set_Z = AF.hi & reg == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+            
+            AF.hi &= reg;
+            return 1;
+        }
+
+        /** 
+         * Bitwise AND the value in memory[HL] to A
+         *
+         * Reset N and C flags. Set H flag. Set Z flag accordingly.
+         */
+        uint32_t AND_A_HL() {
+            uint8_t HLmem = mem.read(HL.get_data16());
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo |= 0x20; // Set H
+            AF.lo &= 0xEF; // Reset C
+            
+            uint8_t set_Z = AF.hi & HLmem == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+            
+            AF.hi &= HLmem;
+            return 2;
+        }
+
+        /** 
+         * Bitwise XOR the value in register to A
+         *
+         * Reset N, H, and C flags. Set Z flag accordingly.
+         */
+        uint32_t XOR_A_R8(Register8 reg) {
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            AF.lo &= 0xEF; // Reset C
+            
+            uint8_t set_Z = AF.hi ^ reg == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+            
+            AF.hi ^= reg;
+            return 1;
+        }
+
+        /** 
+         * Bitwise XOR the value in memory[HL] to A
+         *
+         * Reset N, H, and C flags. Set Z flag accordingly.
+         */
+        uint32_t XOR_A_HL() {
+            uint8_t HLmem = mem.read(HL.get_data16());
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            AF.lo &= 0xEF; // Reset C
+            
+            uint8_t set_Z = AF.hi ^ HLmem == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+            
+            AF.hi ^= HLmem;
+            return 2;
+        }
+
+        /** 
+         * Bitwise OR the value in register to A
+         *
+         * Reset N, H, and C flags. Set Z flag accordingly.
+         */
+        uint32_t OR_A_R8(Register8 reg) {
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            AF.lo &= 0xEF; // Reset C
+            
+            uint8_t set_Z = AF.hi | reg == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+            
+            AF.hi |= reg;
+            return 1;
+        }
+
+        /** 
+         * Bitwise OR the value in memory[HL] to A
+         *
+         * Reset N, H, and C flags. Set Z flag accordingly.
+         */
+        uint32_t OR_A_HL() {
+            uint8_t HLmem = mem.read(HL.get_data16());
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            AF.lo &= 0xEF; // Reset C
+            
+            uint8_t set_Z = AF.hi | HLmem == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+            
+            AF.hi |= HLmem;
+            return 2;
+        }
+
+        /** 
+         * Subtract value in register to A, but don't store the result
+         *
+         * Set N flag. Set Z, H, and C flags accordingly
+         */
+        uint32_t CP_A_R8(Register8 reg) {
+            AF.lo != 0x40; // Set N
+
+            uint8_t set_Z = AF.hi - reg == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+
+            uint8_t set_H = (int8_t)(AF.hi & 0xF) - (int8_t)(reg & 0xF) < 0;
+            if (set_H) 
+                AF.lo |= 0x20; // Set H
+
+            uint8_t set_C = (int8_t)AF.hi - (int8_t)reg < 0;
+            if (set_C) 
+                AF.lo |= 0x10; // Set C
+            
+            return 1;
+        }
+
+        /** 
+         * Subtract value in memory[HL] from A, but don't store the result
+         *
+         * Set N flag. Set Z, H, and C flags accordingly
+         */
+        uint32_t CP_A_HL() {
+            uint8_t HLmem = mem.read(HL.get_data16());
+
+            AF.lo != 0x40; // Set N
+
+            uint8_t set_Z = AF.hi - HLmem == 0;
+            if (set_Z)
+                AF.lo |= 0x80; // Set Z
+
+            uint8_t set_H = (int8_t)(AF.hi & 0xF) - (int8_t)(HLmem & 0xF) < 0;
+            if (set_H) 
+                AF.lo |= 0x20; // Set H
+
+            uint8_t set_C = (int8_t)AF.hi - (int8_t)HLmem < 0;
+            if (set_C) 
+                AF.lo |= 0x10; // Set C
+            
+            return 2;
+        }
+
 
     public:
     
@@ -916,8 +1275,232 @@ class CPU {
                 case 0x35:
                     m_cycles += DEC_HL();
                     break;
+
+                // ADD A,R8
+                case 0x80:
+                    m_cycles += ADD_A_R8(BC.hi);
+                    break;
+                case 0x81:
+                    m_cycles += ADD_A_R8(BC.lo);
+                    break;
+                case 0x82:
+                    m_cycles += ADD_A_R8(DE.hi);
+                    break;
+                case 0x83:
+                    m_cycles += ADD_A_R8(DE.lo);
+                    break;
+                case 0x84:
+                    m_cycles += ADD_A_R8(HL.hi);
+                    break;
+                case 0x85:
+                    m_cycles += ADD_A_R8(HL.lo);
+                    break;
+                case 0x87:
+                    m_cycles += ADD_A_R8(AF.hi);
+                    break;
+
+                // ADD A,[HL]
+                case 0x86:
+                    m_cycles += ADD_A_HL();
+                    break;
+
+                // ADC A,R8
+                case 0x88:
+                    m_cycles += ADC_A_R8(BC.hi);
+                    break;
+                case 0x89:
+                    m_cycles += ADC_A_R8(BC.lo);
+                    break;
+                case 0x8A:
+                    m_cycles += ADC_A_R8(DE.hi);
+                    break;
+                case 0x8B:
+                    m_cycles += ADC_A_R8(DE.lo);
+                    break;
+                case 0x8C:
+                    m_cycles += ADC_A_R8(HL.hi);
+                    break;
+                case 0x8D:
+                    m_cycles += ADC_A_R8(HL.lo);
+                    break;
+                case 0x8F:
+                    m_cycles += ADC_A_R8(AF.hi);
+                    break;
                 
+                // ADC A,[HL]
+                case 0x8E:
+                    m_cycles += ADC_A_HL();
+                    break;
+
+                // SUB A,R8
+                case 0x90:
+                    m_cycles += SUB_A_R8(BC.hi);
+                    break;
+                case 0x91:
+                    m_cycles += SUB_A_R8(BC.lo);
+                    break;
+                case 0x92:
+                    m_cycles += SUB_A_R8(DE.hi);
+                    break;
+                case 0x93:
+                    m_cycles += SUB_A_R8(DE.lo);
+                    break;
+                case 0x94:
+                    m_cycles += SUB_A_R8(HL.hi);
+                    break;
+                case 0x95:
+                    m_cycles += SUB_A_R8(HL.lo);
+                    break;
+                case 0x97:
+                    m_cycles += SUB_A_R8(AF.hi);
+                    break;
+
+                // SUB A,[HL]
+                case 0x96:
+                    m_cycles += SUB_A_HL();
+                    break;
+
+                // SBC A,R8
+                case 0x98:
+                    m_cycles += SBC_A_R8(BC.hi);
+                    break;
+                case 0x99:
+                    m_cycles += SBC_A_R8(BC.lo);
+                    break;
+                case 0x9A:
+                    m_cycles += SBC_A_R8(DE.hi);
+                    break;
+                case 0x9B:
+                    m_cycles += SBC_A_R8(DE.lo);
+                    break;
+                case 0x9C:
+                    m_cycles += SBC_A_R8(HL.hi);
+                    break;
+                case 0x9D:
+                    m_cycles += SBC_A_R8(HL.lo);
+                    break;
+                case 0x9F:
+                    m_cycles += SBC_A_R8(AF.hi);
+                    break;
                 
+                // SBC A,[HL]
+                case 0x9E:
+                    m_cycles += SBC_A_HL();
+                    break;
+
+                // AND A,R8
+                case 0xA0:
+                    m_cycles += AND_A_R8(BC.hi);
+                    break;
+                case 0xA1:
+                    m_cycles += AND_A_R8(BC.lo);
+                    break;
+                case 0xA2:
+                    m_cycles += AND_A_R8(DE.hi);
+                    break;
+                case 0xA3:
+                    m_cycles += AND_A_R8(DE.lo);
+                    break;
+                case 0xA4:
+                    m_cycles += AND_A_R8(HL.hi);
+                    break;
+                case 0xA5:
+                    m_cycles += AND_A_R8(HL.lo);
+                    break;
+                case 0xA7:
+                    m_cycles += AND_A_R8(AF.hi);
+                    break;
+
+                // AND A,[HL]
+                case 0xA6:
+                    m_cycles += AND_A_HL();
+                    break;
+
+                // XOR A,R8
+                case 0xA8:
+                    m_cycles += XOR_A_R8(BC.hi);
+                    break;
+                case 0xA9:
+                    m_cycles += XOR_A_R8(BC.lo);
+                    break;
+                case 0xAA:
+                    m_cycles += XOR_A_R8(DE.hi);
+                    break;
+                case 0xAB:
+                    m_cycles += XOR_A_R8(DE.lo);
+                    break;
+                case 0xAC:
+                    m_cycles += XOR_A_R8(HL.hi);
+                    break;
+                case 0xAD:
+                    m_cycles += XOR_A_R8(HL.lo);
+                    break;
+                case 0xAF:
+                    m_cycles += XOR_A_R8(AF.hi);
+                    break;
+                
+                // XOR A,[HL]
+                case 0xAE:
+                    m_cycles += XOR_A_HL();
+                    break;
+
+                // OR A,R8
+                case 0xB0:
+                    m_cycles += OR_A_R8(BC.hi);
+                    break;
+                case 0xB1:
+                    m_cycles += OR_A_R8(BC.lo);
+                    break;
+                case 0xB2:
+                    m_cycles += OR_A_R8(DE.hi);
+                    break;
+                case 0xB3:
+                    m_cycles += OR_A_R8(DE.lo);
+                    break;
+                case 0xB4:
+                    m_cycles += OR_A_R8(HL.hi);
+                    break;
+                case 0xB5:
+                    m_cycles += OR_A_R8(HL.lo);
+                    break;
+                case 0xB7:
+                    m_cycles += OR_A_R8(AF.hi);
+                    break;
+
+                // OR A,[HL]
+                case 0xB6:
+                    m_cycles += OR_A_HL();
+                    break;
+
+                // CP A,R8
+                case 0xB8:
+                    m_cycles += CP_A_R8(BC.hi);
+                    break;
+                case 0xB9:
+                    m_cycles += CP_A_R8(BC.lo);
+                    break;
+                case 0xBA:
+                    m_cycles += CP_A_R8(DE.hi);
+                    break;
+                case 0xBB:
+                    m_cycles += CP_A_R8(DE.lo);
+                    break;
+                case 0xBC:
+                    m_cycles += CP_A_R8(HL.hi);
+                    break;
+                case 0xBD:
+                    m_cycles += CP_A_R8(HL.lo);
+                    break;
+                case 0xBF:
+                    m_cycles += CP_A_R8(AF.hi);
+                    break;
+                
+                // CP A,[HL]
+                case 0xBE:
+                    m_cycles += CP_A_HL();
+                    break;
+
+            
             }
 
             return m_cycles;
