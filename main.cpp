@@ -58,6 +58,14 @@ struct Register16 {
         lo = (uint8_t)(data & 0xFF);
     }
 
+    // Addition assignment
+    Register16& operator+=(Register16 reg) {
+        uint16_t sum = this->get_data16() + reg.get_data16();
+        this->hi = (uint8_t)(sum >> 8);
+        this->lo = (uint8_t)(sum & 0xFF);
+        return *this;
+    }
+
     // Postfix increment
     Register16 operator++(int) {
         // Store temp state to return later
@@ -323,15 +331,15 @@ class CPU {
             AF.lo &= 0xBF; // Reset N
 
             uint8_t e8_lo_nib = ((uint8_t)e8) & 0x0F;
-            uint8_t SP_lo_nib = ((uint8_t)SP.lo) & 0x0F;
+            uint8_t SP_lo_nib = SP.lo & 0x0F;
 
-            uint8_t set_H = SP_lo_nib + e8_lo_nib >= 16;
-            uint8_t set_C = ((uint8_t)e8 + SP.lo) < SP.lo;
+            uint8_t set_H = SP_lo_nib + e8_lo_nib > 0xF;
+            uint8_t set_C = ((uint16_t)e8 + (uint16_t)SP.lo) > 0xFF;
 
-            if (set_H) // Set H
+            if (set_H)
                 AF.lo |= 0x20;
             
-            if (set_C) // Set C
+            if (set_C) 
                 AF.lo |= 0x10;
 
             // Do signed arithmetic
@@ -339,6 +347,143 @@ class CPU {
 
             return 3;
         }
+
+
+        /** 
+         * Increment value in register by 1
+         */
+        uint32_t INC_R16(Register16 &reg) {
+            reg++;
+            return 2;
+        }
+
+        /** 
+         * Decrement value in register by 1
+         */
+        uint32_t DEC_R16(Register16 &reg) {
+            reg--;
+            return 2;
+        }
+
+        /**
+         * Add value in register to HL
+         *
+         * Reset N flag. Set H and C flag appropriately
+         */
+        uint32_t ADD_HL_R16(Register16 &reg) {
+            
+            AF.lo &= 0xBF; // Reset N
+
+            uint16_t HL_data16 = HL.get_data16();
+            uint16_t reg_data16 = reg.get_data16();
+
+            uint8_t set_H = HL_data16 & 0x0FFF + reg_data16 & 0x0FFF > 0x0FFF;
+            uint8_t set_C = (uint32_t)HL_data16 + (uint32_t)reg_data16 > 0xFFFF;
+
+            if (set_H) 
+                AF.lo |= 0x20;
+            
+            if (set_C) 
+                AF.lo |= 0x10;
+            
+            HL += reg;
+            
+            return 2;
+        }
+
+        /**
+         * Increment register by 1
+         *
+         * Reset N flag. Set Z and H flag accordingly
+         */
+        uint32_t INC_R8(Register8 &reg) {
+
+            AF.lo &= 0xBF; // Reset N
+            
+            uint8_t set_Z = (reg + 0x01) == 0;
+            uint8_t set_H = (reg & 0xF) + 0x1 >= 0xF;
+
+            if (set_Z)
+                AF.lo |= 0x80;            
+
+            if (set_H) 
+                AF.lo |= 0x20;
+            
+            reg++;
+            return 1;
+        }
+
+        /**
+         * Increment memory[HL] by 1
+         *
+         * Reset N flag. Set Z and H flag accordingly
+         */
+        uint32_t INC_HL() {
+
+            AF.lo &= 0xBF; // Reset N
+
+            uint8_t HLmem = mem.read(HL.get_data16());
+            
+            uint8_t set_Z = HLmem + 0x01 == 0;
+            uint8_t set_H = (HLmem & 0xF) + 0x1 > 0xF;
+
+            if (set_Z)
+                AF.lo |= 0x80;            
+
+            if (set_H) 
+                AF.lo |= 0x20;
+            
+            mem.write(HL.get_data16(), HLmem + 0x01);
+            return 3;
+        }
+        
+        /**
+         * Decrement register by 1
+         *
+         * Set N flag. Set Z and H flag accordingly
+         */
+        uint32_t DEC_R8(Register8 &reg) {
+
+            AF.lo != 0x40; // Set N
+
+            uint8_t set_Z = reg - 0x01 == 0;
+            uint8_t set_H = ((int8_t)(reg & 0xF)) - 0x1 < 0; 
+
+            if (set_Z)
+                AF.lo |= 0x80;            
+
+            if (set_H) 
+                AF.lo |= 0x20;
+
+            reg--;
+            return 1;
+        }
+
+        /**
+         * Decrement memory[HL] by 1
+         *
+         * Set N flag. Set Z and H flag accordingly
+         */
+        uint32_t DEC_HL() {
+
+            AF.lo != 0x40; // Set N
+
+            uint8_t HLmem = mem.read(HL.get_data16());
+            
+            uint8_t set_Z = HLmem - 0x01 == 0;
+            uint8_t set_H = (int8_t)(HLmem & 0xF) < 0;
+
+            if (set_Z)
+                AF.lo |= 0x80;            
+
+            if (set_H) 
+                AF.lo |= 0x20;
+
+            mem.write(HL.get_data16(), HLmem - 0x01);
+            return 3;
+        }
+
+    
 
     public:
     
@@ -673,6 +818,106 @@ class CPU {
                 case 0xF8: // LD HL, SP + n8
                     m_cycles += LD_HL_SP_e8();
                     break;
+
+                // INC R16
+                case 0x03:
+                    m_cycles += INC_R16(BC);
+                    break;
+                case 0x13:
+                    m_cycles += INC_R16(DE);
+                    break;
+                case 0x23:
+                    m_cycles += INC_R16(HL);
+                    break;
+                case 0x33:
+                    m_cycles += INC_R16(SP);
+                    break;
+
+                // DEC R16
+                case 0x0B:
+                    m_cycles += DEC_R16(BC);
+                    break;
+                case 0x1B:
+                    m_cycles += DEC_R16(DE);
+                    break;
+                case 0x2B:
+                    m_cycles += DEC_R16(HL);
+                    break;
+                case 0x3B:
+                    m_cycles += DEC_R16(SP);
+                    break;
+
+                // ADD HL, R16
+                case 0x09:
+                    m_cycles += ADD_HL_R16(BC);
+                    break;
+                case 0x19:
+                    m_cycles += ADD_HL_R16(DE);
+                    break;
+                case 0x29:
+                    m_cycles += ADD_HL_R16(HL);
+                    break;
+                case 0x39:
+                    m_cycles += ADD_HL_R16(SP);
+                    break;
+
+                // INC R8
+                case 0x04:
+                    m_cycles += INC_R8(BC.hi);
+                    break;
+                case 0x0C:
+                    m_cycles += INC_R8(BC.lo);
+                    break;
+                case 0x14:
+                    m_cycles += INC_R8(DE.hi);
+                    break;
+                case 0x1C:
+                    m_cycles += INC_R8(DE.lo);
+                    break;
+                case 0x24:
+                    m_cycles += INC_R8(HL.hi);
+                    break;
+                case 0x2C:
+                    m_cycles += INC_R8(HL.lo);
+                    break;
+                case 0x3C:
+                    m_cycles += INC_R8(AF.hi);
+                    break;
+                
+                // INC [HL]
+                case 0x34:
+                    m_cycles += INC_HL();
+                    break;
+
+                // DEC R8
+                case 0x05:
+                    m_cycles += DEC_R8(BC.hi);
+                    break;
+                case 0x0D:
+                    m_cycles += DEC_R8(BC.lo);
+                    break;
+                case 0x15:
+                    m_cycles += DEC_R8(DE.hi);
+                    break;
+                case 0x1D:
+                    m_cycles += DEC_R8(DE.lo);
+                    break;
+                case 0x25:
+                    m_cycles += DEC_R8(HL.hi);
+                    break;
+                case 0x2D:
+                    m_cycles += DEC_R8(HL.lo);
+                    break;
+                case 0x3D:
+                    m_cycles += DEC_R8(AF.hi);
+                    break;
+                        
+                // DEC [HL]
+                case 0x35:
+                    m_cycles += DEC_HL();
+                    break;
+                
+                
             }
 
             return m_cycles;
