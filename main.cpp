@@ -1063,6 +1063,75 @@ class CPU {
             return 2;
         }
 
+        /** 
+         * Push address n16 onto the stack, where n16 is the
+         * immediate little-endian 16-bit value
+         *
+         * Assumes PC is pointing to n16 before call
+         */
+        uint32_t CALL_n16() {
+            // Get bytes of n16 and move PC to next instruction
+            uint8_t lsb = mem.read(PC++);
+            uint8_t msb = mem.read(PC++);
+
+            mem.write(SP.get_data16(), msb);
+            SP--;
+            mem.write(SP.get_data16(), lsb);
+            SP--;
+            
+            return 6;
+        }
+
+        /** 
+         * Push address n16 onto the stack if condition cc is met 
+         * where n16 is the immediate little-endian 16-bit value
+         *
+         * Assumes PC is pointing to n16 before call
+         */
+        uint32_t CALL_cc_n16(uint8_t cc) {
+            // Get bytes of n16 and move PC to next instruction
+            uint8_t lsb = mem.read(PC++);
+            uint8_t msb = mem.read(PC++);
+
+            if (cc) {
+                // Push address onto stack
+                mem.write(SP.get_data16(), msb);
+                SP--;
+                mem.write(SP.get_data16(), lsb);
+                SP--;
+                return 6;
+            } else { 
+                // Nuh uh
+                return 3;
+            }
+
+        }
+
+        /** 
+         * Load PC with address in HL
+         */
+        uint32_t JP_HL() {
+            PC = HL.get_data16();
+            return 1;
+        }
+
+        /** 
+         * Load PC with value n16, where n16 is the 
+         * immediate little-endian 16-bit value
+         *
+         * Assumes PC is pointing to n16 before call
+         */
+        uint32_t JP_n16() {
+            // Get n16 and move PC to next instruction
+            uint8_t lsb = mem.read(PC++);
+            uint8_t msb = mem.read(PC++);
+            uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb; 
+
+            PC = n16;
+            return 4;
+        }
+
+
     public:
     
         // Constructor
@@ -1758,6 +1827,38 @@ class CPU {
                 case 0xFE:
                     m_cycles += CP_A_n8();
                     break;
+
+                // CALL n16
+                case 0xCD:
+                    m_cycles += CALL_n16();
+                    break;
+
+                // CALL cc, n16
+                case 0xC4:
+                    m_cycles += CALL_cc_n16(!(AF.lo & 0x80));
+                    break;
+                case 0xCC:
+                    m_cycles += CALL_cc_n16(AF.lo & 0x80);
+                    break;
+                case 0xD4:
+                    m_cycles += CALL_cc_n16(!(AF.lo & 0x10));
+                    break;
+                case 0xDC:
+                    m_cycles += CALL_cc_n16(AF.lo & 0x10);
+                    break;
+
+                // JP HL
+                case 0xE9:
+                    m_cycles += JP_HL();
+                    break;
+
+                // JP n16
+                case 0xC3:
+                    m_cycles += JP_n16();
+                    break;
+
+                
+                    
             
             }
 
