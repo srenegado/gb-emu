@@ -151,7 +151,7 @@ class CPU {
          * Assumes PC is pointing to n8 before call
          */
         uint32_t LD_R8_n8(Register8 &dest) {
-
+            
             // Get n8 and move PC to next instruction
             uint8_t n8 = mem.read(PC++);
 
@@ -1131,6 +1131,40 @@ class CPU {
             return 4;
         }
 
+        /** 
+         * Add value e8 to PC where e8 is the immediate
+         * signed 8-bit value
+         *
+         * Assumes PC is pointing to e8 before call
+         */
+        uint16_t JR_e8() {
+            int8_t e8 = (int8_t)mem.read(PC);
+
+            // e8 could be positive or negative
+            PC = (uint16_t)((int16_t)PC + (int16_t)e8);
+            
+            return 3;
+        }
+
+        /** 
+         * Add value e8 to PC if condition cc is met, 
+         * where e8 is the immediate signed 8-bit value
+         *
+         * Assumes PC is pointing to e8 before call
+         */
+        uint16_t JR_cc_e8(uint8_t cc) {
+            int8_t e8 = (int8_t)mem.read(PC);
+
+            if (cc) {
+                // e8 could be positive or negative
+                PC = (uint16_t)((int16_t)PC + (int16_t)e8);
+                return 3;
+            } else {
+                PC++;
+                return 2;
+            }
+        }
+
 
     public:
     
@@ -1153,9 +1187,7 @@ class CPU {
             uint32_t m_cycles = 0;
 
             // Fetch
-            uint8_t opcode = mem.read(PC);
-
-            PC++; // Point to next byte
+            uint8_t opcode = mem.read(PC++); // Point to next byte
 
             // Decode and execute
             switch (opcode) {
@@ -1835,16 +1867,16 @@ class CPU {
 
                 // CALL cc, n16
                 case 0xC4:
-                    m_cycles += CALL_cc_n16(!(AF.lo & 0x80));
+                    m_cycles += CALL_cc_n16(!(AF.lo & 0x80)); // NZ
                     break;
                 case 0xCC:
-                    m_cycles += CALL_cc_n16(AF.lo & 0x80);
+                    m_cycles += CALL_cc_n16(AF.lo & 0x80); // Z
                     break;
                 case 0xD4:
-                    m_cycles += CALL_cc_n16(!(AF.lo & 0x10));
+                    m_cycles += CALL_cc_n16(!(AF.lo & 0x10)); // NC
                     break;
                 case 0xDC:
-                    m_cycles += CALL_cc_n16(AF.lo & 0x10);
+                    m_cycles += CALL_cc_n16(AF.lo & 0x10); // C
                     break;
 
                 // JP HL
@@ -1855,6 +1887,25 @@ class CPU {
                 // JP n16
                 case 0xC3:
                     m_cycles += JP_n16();
+                    break;
+
+                // JR e8
+                case 0x18:
+                    m_cycles += JR_e8();
+                    break;
+
+                // JR cc, e8
+                case 0x20:
+                    m_cycles += JR_cc_e8(!(AF.lo & 0x80)); // NZ
+                    break;
+                case 0x28:
+                    m_cycles += JR_cc_e8(AF.lo & 0x80); // Z
+                    break;
+                case 0x30:
+                    m_cycles += JR_cc_e8(!(AF.lo & 0x10)); // NC
+                    break;
+                case 0x38:
+                    m_cycles += JR_cc_e8(AF.lo & 0x10); // C
                     break;
 
                 
