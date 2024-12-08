@@ -333,12 +333,11 @@ class CPU {
             if (set_H) 
                 AF.lo |= 0x20; // Set H
             
-            uint8_t set_C = ((uint16_t)e8 + (uint16_t)SP.lo) > 0xFF;
+            uint8_t set_C = ((uint8_t)e8 + SP.lo) > 0xFF;
             if (set_C) 
                 AF.lo |= 0x10; // Set C
         
-            // Do signed arithmetic
-            HL.set_data16((uint16_t)((int16_t)SP.get_data16() + e8));
+            HL.set_data16(SP.get_data16() + e8);
 
             return 3;
         }
@@ -370,12 +369,12 @@ class CPU {
             uint16_t HL_data16 = HL.get_data16();
             uint16_t reg_data16 = reg.get_data16();
 
-            uint8_t set_H = HL_data16 & 0x0FFF + reg_data16 & 0x0FFF > 0x0FFF;
+            uint8_t set_H = (HL_data16 & 0x0FFF) + (reg_data16 & 0x0FFF) > 0x0FFF;
             if (set_H) 
                 AF.lo |= 0x20; // Set H
             
             
-            uint8_t set_C = (uint32_t)HL_data16 + (uint32_t)reg_data16 > 0xFFFF;
+            uint8_t set_C = HL_data16 + reg_data16 > 0xFFFF;
             if (set_C) 
                 AF.lo |= 0x10; // Set C
             
@@ -439,7 +438,7 @@ class CPU {
             if (set_Z)
                 AF.lo |= 0x80; // Set Z            
 
-            uint8_t set_H = ((int8_t)(reg & 0xF)) - 0x1 < 0; 
+            uint8_t set_H = reg & 0xF < 0x1 ; 
             if (set_H) 
                 AF.lo |= 0x20; // Set H
 
@@ -461,7 +460,7 @@ class CPU {
             if (set_Z)
                 AF.lo |= 0x80; // Set Z           
 
-            uint8_t set_H = (int8_t)(HLmem & 0xF) - 0x1 < 0;
+            uint8_t set_H = HLmem & 0xF < 0x1 ;
             if (set_H) 
                 AF.lo |= 0x20; // Set H
 
@@ -485,7 +484,7 @@ class CPU {
             if (set_H) 
                 AF.lo |= 0x20; // Set H
 
-            uint8_t set_C = (uint16_t)AF.hi + (uint16_t)reg > 0xFF;
+            uint8_t set_C = AF.hi + reg > 0xFF;
             if (set_C) 
                 AF.lo |= 0x10; // Set C
             
@@ -511,7 +510,7 @@ class CPU {
             if (set_H) 
                 AF.lo |= 0x20; // Set H
 
-            uint8_t set_C = (uint16_t)AF.hi + (uint16_t)HLmem > 0xFF;
+            uint8_t set_C = AF.hi + HLmem > 0xFF;
             if (set_C) 
                 AF.lo |= 0x10; // Set C
 
@@ -538,7 +537,7 @@ class CPU {
             if (set_H) 
                 AF.lo |= 0x20; // Set H
             
-            uint8_t set_C = (uint16_t)AF.hi + (uint16_t)reg + carry > 0xFF;
+            uint8_t set_C = AF.hi + reg + carry > 0xFF;
             if (set_C) 
                 AF.lo |= 0x10; // Set C
                 
@@ -567,7 +566,7 @@ class CPU {
             if (set_H) 
                 AF.lo |= 0x20; // Set H
 
-            uint8_t set_C = (uint16_t)AF.hi + (uint16_t)HLmem + carry > 0xFF;
+            uint8_t set_C = AF.hi + HLmem + carry > 0xFF;
             if (set_C)
                 AF.lo |= 0x10; // Set C
 
@@ -576,7 +575,7 @@ class CPU {
         }
 
         /** 
-         * Subtract value in register to A
+         * Subtract value in register from A
          *
          * Set N flag. Set Z, H, and C flags accordingly
          */
@@ -587,11 +586,11 @@ class CPU {
             if (set_Z)
                 AF.lo |= 0x80; // Set Z
 
-            uint8_t set_H = (int8_t)(AF.hi & 0xF) - (int8_t)(reg & 0xF) < 0;
+            uint8_t set_H = (AF.hi & 0xF) < (reg & 0xF);
             if (set_H) 
                 AF.lo |= 0x20; // Set H
 
-            uint8_t set_C = (int8_t)AF.hi - (int8_t)reg < 0;
+            uint8_t set_C = AF.hi < reg;
             if (set_C) 
                 AF.lo |= 0x10; // Set C
             
@@ -613,11 +612,11 @@ class CPU {
             if (set_Z)
                 AF.lo |= 0x80; // Set Z
 
-            uint8_t set_H = (int8_t)(AF.hi & 0xF) - (int8_t)(HLmem & 0xF) < 0;
+            uint8_t set_H = (AF.hi & 0xF) < (HLmem & 0xF);
             if (set_H) 
                 AF.lo |= 0x20; // Set H
 
-            uint8_t set_C = (int8_t)AF.hi - (int8_t)HLmem < 0;
+            uint8_t set_C = AF.hi < HLmem;
             if (set_C) 
                 AF.lo |= 0x10; // Set C
             
@@ -640,11 +639,11 @@ class CPU {
             if (set_Z)
                 AF.lo |= 0x80; // Set Z
 
-            uint8_t set_H = (int8_t)(AF.hi & 0xF) - (int8_t)(reg & 0xF + carry) < 0;
+            uint8_t set_H = (AF.hi & 0xF) < (reg & 0xF + carry);
             if (set_H) 
                 AF.lo |= 0x20; // Set H
 
-            uint8_t set_C = (int8_t)AF.hi - (int8_t)(reg + carry) < 0;
+            uint8_t set_C = AF.hi < (reg + carry);
             if (set_C) 
                 AF.lo |= 0x10; // Set C
             
@@ -669,11 +668,11 @@ class CPU {
             if (set_Z)
                 AF.lo |= 0x80; // Set Z
 
-            uint8_t set_H = (int8_t)(AF.hi & 0xF) - (int8_t)(HLmem & 0xF + carry) < 0;
+            uint8_t set_H = (AF.hi & 0xF) < (HLmem & 0xF + carry);
             if (set_H) 
                 AF.lo |= 0x20; // Set H
 
-            uint8_t set_C = (int8_t)AF.hi - (int8_t)(HLmem + carry) < 0;
+            uint8_t set_C = AF.hi < (HLmem + carry);
             if (set_C) 
                 AF.lo |= 0x10; // Set C
             
@@ -807,11 +806,11 @@ class CPU {
             if (set_Z)
                 AF.lo |= 0x80; // Set Z
 
-            uint8_t set_H = (int8_t)(AF.hi & 0xF) - (int8_t)(reg & 0xF) < 0;
+            uint8_t set_H = (AF.hi & 0xF) < (reg & 0xF);
             if (set_H) 
                 AF.lo |= 0x20; // Set H
 
-            uint8_t set_C = (int8_t)AF.hi - (int8_t)reg < 0;
+            uint8_t set_C = AF.hi < reg ;
             if (set_C) 
                 AF.lo |= 0x10; // Set C
             
@@ -832,11 +831,11 @@ class CPU {
             if (set_Z)
                 AF.lo |= 0x80; // Set Z
 
-            uint8_t set_H = (int8_t)(AF.hi & 0xF) - (int8_t)(HLmem & 0xF) < 0;
+            uint8_t set_H = (AF.hi & 0xF) < (HLmem & 0xF) ;
             if (set_H) 
                 AF.lo |= 0x20; // Set H
 
-            uint8_t set_C = (int8_t)AF.hi - (int8_t)HLmem < 0;
+            uint8_t set_C = AF.hi < HLmem ;
             if (set_C) 
                 AF.lo |= 0x10; // Set C
             
@@ -864,7 +863,7 @@ class CPU {
             if (set_H) 
                 AF.lo |= 0x20; // Set H
 
-            uint8_t set_C = (uint16_t)AF.hi + (uint16_t)n8 > 0xFF;
+            uint8_t set_C = AF.hi + n8 > 0xFF;
             if (set_C) 
                 AF.lo |= 0x10; // Set C
             
@@ -896,7 +895,7 @@ class CPU {
             if (set_H) 
                 AF.lo |= 0x20; // Set H
             
-            uint8_t set_C = (uint16_t)AF.hi + (uint16_t)n8 + carry > 0xFF;
+            uint8_t set_C = AF.hi + n8 + carry > 0xFF;
             if (set_C) 
                 AF.lo |= 0x10; // Set C
                 
@@ -921,11 +920,11 @@ class CPU {
             if (set_Z)
                 AF.lo |= 0x80; // Set Z
 
-            uint8_t set_H = (int8_t)(AF.hi & 0xF) - (int8_t)(n8 & 0xF) < 0;
+            uint8_t set_H = (AF.hi & 0xF) < (n8 & 0xF) ;
             if (set_H) 
                 AF.lo |= 0x20; // Set H
 
-            uint8_t set_C = (int8_t)AF.hi - (int8_t)n8 < 0;
+            uint8_t set_C = AF.hi < n8 ;
             if (set_C) 
                 AF.lo |= 0x10; // Set C
             
@@ -953,11 +952,11 @@ class CPU {
             if (set_Z)
                 AF.lo |= 0x80; // Set Z
 
-            uint8_t set_H = (int8_t)(AF.hi & 0xF) - (int8_t)(n8 & 0xF + carry) < 0;
+            uint8_t set_H = (AF.hi & 0xF) < (n8 & 0xF + carry) ;
             if (set_H) 
                 AF.lo |= 0x20; // Set H
 
-            uint8_t set_C = (int8_t)AF.hi - (int8_t)(n8 + carry) < 0;
+            uint8_t set_C = AF.hi < (n8 + carry) ;
             if (set_C) 
                 AF.lo |= 0x10; // Set C
             
@@ -1052,11 +1051,11 @@ class CPU {
             if (set_Z)
                 AF.lo |= 0x80; // Set Z
 
-            uint8_t set_H = (int8_t)(AF.hi & 0xF) - (int8_t)(n8 & 0xF) < 0;
+            uint8_t set_H = (AF.hi & 0xF) < (n8 & 0xF);
             if (set_H) 
                 AF.lo |= 0x20; // Set H
 
-            uint8_t set_C = (int8_t)AF.hi - (int8_t)n8 < 0;
+            uint8_t set_C = AF.hi < n8;
             if (set_C) 
                 AF.lo |= 0x10; // Set C
             
