@@ -112,6 +112,8 @@ class CPU {
 
         uint16_t PC;      // Program counter  
 
+        uint32_t IME;     // Interrupt master enable flag
+
         // Memory
         Memory mem;
 
@@ -1063,21 +1065,26 @@ class CPU {
         }
 
         /** 
-         * Push address n16 onto the stack, where n16 is the
-         * immediate little-endian 16-bit value
+         * Push address of next instruction onto the stack, then jump to address n16,
+         * where n16 is the immediate little-endian 16-bit value
          *
          * Assumes PC is pointing to n16 before call
          */
         uint32_t CALL_n16() {
             // Get bytes of n16 and move PC to next instruction
-            uint8_t lsb = mem.read(PC++);
-            uint8_t msb = mem.read(PC++);
+            uint16_t lsb = mem.read(PC++);
+            uint16_t msb = mem.read(PC++);
 
-            mem.write(SP.get_data16(), msb);
+            // PC now is loaded with address of next instruction
+
+            // Push PC onto stack
             SP--;
-            mem.write(SP.get_data16(), lsb);
-            SP--;
-            
+            mem.write(SP.get_data16(), PC >> 8);   // msb of PC
+            SP--;            
+            mem.write(SP.get_data16(), PC & 0xFF); // lsb of PC
+
+            // Jump to n16
+            PC = (msb << 8) | lsb;    
             return 6;
         }
 
@@ -1089,18 +1096,23 @@ class CPU {
          */
         uint32_t CALL_cc_n16(uint8_t cc) {
             // Get bytes of n16 and move PC to next instruction
-            uint8_t lsb = mem.read(PC++);
-            uint8_t msb = mem.read(PC++);
+            uint16_t lsb = mem.read(PC++);
+            uint16_t msb = mem.read(PC++);
+
+            // PC now is loaded with address of next instruction
 
             if (cc) {
-                // Push address onto stack
-                mem.write(SP.get_data16(), msb);
+                // Push PC onto stack
                 SP--;
-                mem.write(SP.get_data16(), lsb);
-                SP--;
+                mem.write(SP.get_data16(), (uint8_t)(PC >> 8));   // msb of PC
+                SP--;            
+                mem.write(SP.get_data16(), (uint8_t)(PC & 0xFF)); // lsb of PC
+
+                // Jump to n16
+                PC = (msb << 8) | lsb;   
+
                 return 6;
             } else { 
-                // Nuh uh
                 return 3;
             }
 
@@ -1122,9 +1134,9 @@ class CPU {
          */
         uint32_t JP_n16() {
             // Get n16 and move PC to next instruction
-            uint8_t lsb = mem.read(PC++);
-            uint8_t msb = mem.read(PC++);
-            uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb; 
+            uint16_t lsb = mem.read(PC++);
+            uint16_t msb = mem.read(PC++);
+            uint16_t n16 = (msb << 8) | lsb; 
 
             PC = n16;
             return 4;
@@ -1136,11 +1148,9 @@ class CPU {
          *
          * Assumes PC is pointing to e8 before call
          */
-        uint16_t JR_e8() {
+        uint32_t JR_e8() {
             int8_t e8 = (int8_t)mem.read(PC);
-
-            // e8 could be positive or negative
-            PC = (uint16_t)((int16_t)PC + (int16_t)e8);
+            PC += e8;
             
             return 3;
         }
@@ -1151,17 +1161,124 @@ class CPU {
          *
          * Assumes PC is pointing to e8 before call
          */
-        uint16_t JR_cc_e8(uint8_t cc) {
+        uint32_t JR_cc_e8(uint8_t cc) {
             int8_t e8 = (int8_t)mem.read(PC);
 
             if (cc) {
-                // e8 could be positive or negative
-                PC = (uint16_t)((int16_t)PC + (int16_t)e8);
+                PC += e8;
                 return 3;
             } else {
                 PC++;
                 return 2;
             }
+        }
+
+        /** 
+         * Return from subroutine.
+         */
+        uint32_t RET() {
+            uint16_t lsb = mem.read(SP.get_data16());
+            SP++;
+            uint16_t msb = mem.read(SP.get_data16());
+            SP++;
+            PC = (msb << 8) | lsb;
+            return 4;
+        }
+
+        /** 
+         * Return from subroutine and enable interupts
+         */
+        uint32_t RETI() {
+            uint16_t lsb = mem.read(SP.get_data16());
+            SP++;
+            uint16_t msb = mem.read(SP.get_data16());
+            SP++;
+            PC = (msb << 8) | lsb;
+            IME = 1;
+            return 4;
+        }
+
+        /** 
+         * Return from subroutine if condition c is met
+         */
+        uint32_t RET_cc(uint8_t cc) {
+            if (cc) {
+                uint16_t lsb = mem.read(SP.get_data16());
+                SP++;
+                uint16_t msb = mem.read(SP.get_data16());
+                SP++;
+                PC = (msb << 8) | lsb;
+                return 5;
+            } else {
+                return 2;
+            }
+        }
+
+        /** 
+         * Call address vec
+         */
+        uint32_t RST_vec(uint16_t vec) {
+            // PC is currently pointing to the next instruction
+
+            // Push PC onto the stack
+            SP--;
+            mem.write(SP.get_data16(), (uint8_t)(PC >> 8));   // msb of PC
+            SP--;
+            mem.write(SP.get_data16(), (uint8_t)(PC & 0xFF)); // lsb of PC
+
+            // Jump to address vec
+            PC = vec;
+            return 4;
+        }
+
+        /**
+         * Add immediate 8-bit signed value e8 to SP
+         *
+         * Reset Z and N flag. Sets H and C flags accordingly
+         *
+         * Assumes PC is pointing to e8 before call
+         */
+        uint32_t ADD_SP_e8() {
+            int8_t e8 = (int8_t)mem.read(PC++);
+
+            AF.lo &= 0x7F; // Reset Z
+            AF.lo &= 0xBF; // Reset N
+            
+            uint8_t set_H = SP.lo & 0xF + (uint8_t)e8 & 0xF > 0xF;
+            if (set_H) 
+                AF.lo |= 0x20; // Set H
+
+            uint8_t set_C = SP.get_data16() + (uint8_t)e8 > 0xFF;
+            if (set_C) 
+                AF.lo |= 0x10; // Set C
+
+            SP.set_data16(SP.get_data16() + e8);
+            return 4;
+        }
+
+        /** 
+         * Load register with address pointed by the stack pointer
+         * Loading register AF modifies all flags Z, N, H, and C by the popped low byte
+         */
+        uint32_t POP_R16(Register16 &reg) {
+            uint16_t lsb = mem.read(SP.get_data16());
+            SP++;
+            uint16_t msb = mem.read(SP.get_data16());
+            SP++;
+            reg.hi = msb;
+            reg.lo = lsb;
+            return 3;
+        }
+
+        /** 
+         * Store stack with address in register
+         */
+        uint32_t PUSH_R16(Register16 &reg) {
+            SP--;            
+            mem.write(SP.get_data16(), reg.hi);
+            SP--;
+            mem.write(SP.get_data16(), reg.lo);
+            return 4;
         }
 
 
@@ -1172,6 +1289,7 @@ class CPU {
         {
             PC = 0x0100;
             SP.set_data16(0xFFFE);
+            IME = 0; // Disable interrupts
         }
 
         // Destructor
@@ -1907,9 +2025,89 @@ class CPU {
                     m_cycles += JR_cc_e8(AF.lo & 0x10); // C
                     break;
 
-                
-                    
-            
+                // RET
+                case 0xC9:
+                    m_cycles += RET();
+                    break;
+
+                // RETI
+                case 0xD9:
+                    m_cycles += RETI();
+                    break;
+
+                // RET cc
+                case 0xC0:
+                    m_cycles += RET_cc(!(AF.lo & 0x80)); // NZ
+                    break;
+                case 0xC8:
+                    m_cycles += RET_cc(AF.lo & 0x80); // Z
+                    break;
+                case 0xD0:
+                    m_cycles += RET_cc(!(AF.lo & 0x10)); // NC
+                    break;
+                case 0xD8:
+                    m_cycles += RET_cc(AF.lo & 0x10); // C
+                    break;
+
+                // RST vec
+                case 0xC7:
+                    m_cycles += RST_vec(0x0000);
+                    break;
+                case 0xCF:
+                    m_cycles += RST_vec(0x0008);
+                    break;
+                case 0xD7:
+                    m_cycles += RST_vec(0x0010);
+                    break;
+                case 0xDF:
+                    m_cycles += RST_vec(0x0018);
+                    break;
+                case 0xE7:
+                    m_cycles += RST_vec(0x0020);
+                    break;
+                case 0xEF:
+                    m_cycles += RST_vec(0x0028);
+                    break;
+                case 0xF7:
+                    m_cycles += RST_vec(0x0030);
+                    break;
+                case 0xFF:
+                    m_cycles += RST_vec(0x0038);
+                    break;
+
+                // ADD SP,e8
+                case 0xE8:
+                    m_cycles += ADD_SP_e8();
+                    break;
+
+                // POP R16
+                case 0xC1:
+                    m_cycles += POP_R16(BC);
+                    break;
+                case 0xD1:
+                    m_cycles += POP_R16(DE);
+                    break;
+                case 0xE1:
+                    m_cycles += POP_R16(HL);
+                    break;
+                case 0xF1:
+                    m_cycles += POP_R16(AF);
+                    break;
+
+                // PUSH R16
+                case 0xC5:
+                    m_cycles += PUSH_R16(BC);
+                    break;
+                case 0xD5:
+                    m_cycles += PUSH_R16(DE);
+                    break;
+                case 0xE5:
+                    m_cycles += PUSH_R16(HL);
+                    break;
+                case 0xF5:
+                    m_cycles += PUSH_R16(AF);
+                    break;
+    
             }
 
             return m_cycles;
