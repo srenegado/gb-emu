@@ -1338,16 +1338,205 @@ class CPU {
          * Reset N and H flags. Set Z accordingly
          */
         uint32_t RLC_R8(Register8 &r8) {
-            r8 <<= r8;
-
+            r8 <<= 1;
+            
             // Load C flag
-            AF.lo = (AF.lo & 0xEF) | ((r8 & 0x01) << 4); 
+            uint8_t b7 = r8 & 0x01;
+            AF.lo = (AF.lo & 0xEF) | (b7 << 4); 
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
             
             if (r8 == 0)
                 AF.lo |= 0x80; // Set Z   
 
             return 2;
         }
+
+        /** 
+         * Rotate memory[HL] left
+         *
+         * Load C flag with memory[HL]'s most significant bit (before shift)
+         * 
+         * Reset N and H flags. Set Z accordingly
+         */
+        uint32_t RLC_HL() {
+            uint16_t addr = HL.get_data16();
+            uint8_t mem_data = mem.read(addr); 
+            mem_data <<= 1;
+            mem.write(addr, mem_data);
+
+            // Load C flag
+            uint8_t b7 = mem_data & 0x01;
+            AF.lo = (AF.lo & 0xEF) | (b7 << 4); 
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            
+            if (mem_data == 0)
+                AF.lo |= 0x80; // Set Z   
+
+            return 4;
+        }
+
+        /** 
+         * Rotate register left through the carry flag
+         *
+         * Load C flag with register's most significant bit (before shift)
+         * 
+         * Reset N and H flags. Set Z accordingly
+         */
+        uint32_t RL_R8(Register8 &r8) {
+            r8 <<= 1;
+            uint8_t b7 = r8 & 0x01; // Most significant bit in r8 is in 0th pos
+            uint8_t C = AF.lo & 0x10;
+            r8 = (r8 & 0xFE) | (C >> 4); // C goes in least sig bit
+
+            // Load C flag
+            AF.lo = (AF.lo & 0xEF) | (b7 << 4); 
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            
+            if (r8 == 0)
+                AF.lo |= 0x80; // Set Z   
+
+            return 2;
+        }
+
+        /** 
+        * Rotate register left through the carry flag
+        *
+        * Load C flag with most significant bit (before shift)
+        * 
+        * Reset N and H flags. Set Z accordingly
+        */
+        uint32_t RL_HL() {
+            uint16_t addr = HL.get_data16();
+            uint8_t mem_data = mem.read(addr); 
+
+            mem_data <<= 1;
+            uint8_t b7 = mem_data & 0x01; // Most significant bit is in 0th pos
+            uint8_t C = AF.lo & 0x10;
+            mem_data = (mem_data & 0xFE) | (C >> 4); // C goes in least sig bit
+            mem.write(addr, mem_data);
+
+            // Load C flag
+            AF.lo = (AF.lo & 0xEF) | (b7 << 4); 
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            
+            if (mem_data == 0)
+                AF.lo |= 0x80; // Set Z   
+
+            return 4;
+        }
+
+        /** 
+         * Rotate register right
+         *
+         * Load C flag with register's least significant bit (before shift)
+         * 
+         * Reset N and H flags. Set Z accordingly
+         */
+        uint32_t RRC_R8(Register8 &r8) {
+            uint8_t b0 = r8 & 0x01;
+            r8 >>= 1;
+
+            // Load C flag
+            AF.lo = (AF.lo & 0xEF) | (b0 << 4); 
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            
+            if (r8 == 0)
+                AF.lo |= 0x80; // Set Z   
+
+            return 2;
+        }
+
+        /** 
+         * Rotate memory[HL] right
+         *
+         * Load C flag with least significant bit (before shift)
+         * 
+         * Reset N and H flags. Set Z accordingly
+         */
+        uint32_t RRC_HL() {
+            uint16_t addr = HL.get_data16();
+            uint8_t mem_data = mem.read(addr); 
+
+            uint8_t b0 = mem_data & 0x01;
+            mem_data >>= 1;
+            mem.write(addr, mem_data);
+
+            // Load C flag
+            AF.lo = (AF.lo & 0xEF) | (b0 << 4); 
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            
+            if (mem_data == 0)
+                AF.lo |= 0x80; // Set Z   
+
+            return 4;
+        }
+
+        /** 
+         * Rotate register right through the carry flag
+         *
+         * Load C flag with register's least significant bit (before shift)
+         * 
+         * Reset N and H flags. Set Z accordingly
+         */
+        uint32_t RR_R8(Register8 &r8) {
+            int8_t b0 = r8 & 0x01;
+            uint8_t C = AF.lo & 0x10;
+            r8 >>= 1;
+            r8 = (r8 & 0x7F) | (C << 3); // C goes in most sig bit
+
+            // Load C flag 
+            AF.lo = (AF.lo & 0xEF) | (b0 << 4); 
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            
+            if (r8 == 0)
+                AF.lo |= 0x80; // Set Z   
+
+            return 2;
+        }
+
+        /** 
+        * Rotate memory[HL] through the carry flag
+        *
+        * Load C flag with most significant bit (before shift)
+        * 
+        * Reset N and H flags. Set Z accordingly
+        */
+        uint32_t RR_HL() {
+            uint16_t addr = HL.get_data16();
+            uint8_t mem_data = mem.read(addr); 
+
+            uint8_t b0 = mem_data & 0x01; 
+            uint8_t C = AF.lo & 0x10;
+            mem_data >>= 1;
+            mem_data = (mem_data & 0x7F) | (C << 3); // C goes in most sig bit
+            mem.write(addr, mem_data);
+
+            // Load C flag
+            AF.lo = (AF.lo & 0xEF) | (b0 << 4); 
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            
+            if (mem_data == 0)
+                AF.lo |= 0x80; // Set Z   
+
+            return 4;
+        }
+
 
     public:
     
@@ -2233,6 +2422,97 @@ class CPU {
                         case 0x07:
                             m_cycles += RLC_R8(AF.hi);
                             break;
+
+                        // RLC [HL]
+                        case 0x06:
+                            m_cycles += RLC_HL();
+                            break;
+
+                        // RL R8
+                        case 0x10:
+                            m_cycles += RL_R8(BC.hi);
+                            break;
+                        case 0x11:
+                            m_cycles += RL_R8(BC.lo);
+                            break;
+                        case 0x12:
+                            m_cycles += RL_R8(DE.hi);
+                            break;
+                        case 0x13:
+                            m_cycles += RL_R8(DE.lo);
+                            break;
+                        case 0x14:
+                            m_cycles += RL_R8(HL.hi);
+                            break;
+                        case 0x15:
+                            m_cycles += RL_R8(HL.lo);
+                            break;
+                        case 0x17:
+                            m_cycles += RL_R8(AF.hi);
+                            break;
+
+                        // RL [HL]
+                        case 0x16:
+                            m_cycles += RL_HL();
+                            break;
+
+                        // RRC R8
+                        case 0x08:
+                            m_cycles += RRC_R8(BC.hi);
+                            break;
+                        case 0x09:
+                            m_cycles += RRC_R8(BC.lo);
+                            break;
+                        case 0x0A:
+                            m_cycles += RRC_R8(DE.hi);
+                            break;
+                        case 0x0B:
+                            m_cycles += RRC_R8(DE.lo);
+                            break;
+                        case 0x0C:
+                            m_cycles += RRC_R8(HL.hi);
+                            break;
+                        case 0x0D:
+                            m_cycles += RRC_R8(HL.lo);
+                            break;
+                        case 0x0F:
+                            m_cycles += RRC_R8(AF.hi);
+                            break;
+
+                        // RRC [HL]
+                        case 0x0E:
+                            m_cycles += RRC_HL();
+                            break;
+                        
+                        // RR R8
+                        case 0x18:
+                            m_cycles += RR_R8(BC.hi);
+                            break;
+                        case 0x19:
+                            m_cycles += RR_R8(BC.lo);
+                            break;
+                        case 0x1A:
+                            m_cycles += RR_R8(DE.hi);
+                            break;
+                        case 0x1B:
+                            m_cycles += RR_R8(DE.lo);
+                            break;
+                        case 0x1C:
+                            m_cycles += RR_R8(HL.hi);
+                            break;
+                        case 0x1D:
+                            m_cycles += RR_R8(HL.lo);
+                            break;
+                        case 0x1F:
+                            m_cycles += RR_R8(AF.hi);
+                            break;
+
+                        // RR [HL]
+                        case 0x1E:
+                            m_cycles += RR_HL();
+                            break;
+
+                        
                         
                     }
                     
