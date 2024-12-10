@@ -1753,6 +1753,46 @@ class CPU {
             return 3;
         }
 
+        /** 
+         * Reset register bit at position b3
+         */
+        uint32_t RES_b3_R8(uint8_t b3, Register8 &r8) {
+            r8 = r8 & (~(0x01 << b3));
+            return 2;
+        }
+
+        /** 
+         * Reset memory[HL] bit at position b3
+         */
+        uint32_t RES_b3_HL(uint8_t b3) {
+            uint16_t addr = HL.get_data16();
+            uint8_t mem_data = mem.read(addr);
+            mem_data = mem_data & (~(0x01 << b3));
+            mem.write(addr, mem_data);
+            return 4;
+        }
+
+        /** 
+         * Set register bit at position b3
+         */
+        uint32_t SET_b3_R8(uint8_t b3, Register8 &r8) {
+            r8 = r8 & (0x01 << b3);
+            return 2;
+        }
+
+        /** 
+         * Set memory[HL] bit at position b3
+         */
+        uint32_t SET_b3_HL(uint8_t b3) {
+            uint16_t addr = HL.get_data16();
+            uint8_t mem_data = mem.read(addr);
+            mem_data = mem_data & (0x01 << b3);
+            mem.write(addr, mem_data);
+            return 4;
+        }
+
+
+
     public:
     
         // Constructor
@@ -3033,6 +3073,398 @@ class CPU {
                             break;
                         case 0x7E:
                             m_cycles += BIT_b3_HL(7);
+                            break;
+
+                        // RES b3,R8
+                        case 0x80:
+                            m_cycles += RES_b3_R8(0, BC.hi);
+                            break;
+                        case 0x81:
+                            m_cycles += RES_b3_R8(0, BC.lo);
+                            break;
+                        case 0x82:
+                            m_cycles += RES_b3_R8(0, DE.hi);
+                            break;
+                        case 0x83:
+                            m_cycles += RES_b3_R8(0, DE.lo);
+                            break;
+                        case 0x84:
+                            m_cycles += RES_b3_R8(0, HL.hi);
+                            break;
+                        case 0x85:
+                            m_cycles += RES_b3_R8(0, HL.lo);
+                            break;
+                        case 0x87:
+                            m_cycles += RES_b3_R8(0, AF.hi);
+                            break;
+                        case 0x88:
+                            m_cycles += RES_b3_R8(1, BC.hi);
+                            break;
+                        case 0x89:
+                            m_cycles += RES_b3_R8(1, BC.lo);
+                            break;
+                        case 0x8A:
+                            m_cycles += RES_b3_R8(1, DE.hi);
+                            break;
+                        case 0x8B:
+                            m_cycles += RES_b3_R8(1, DE.lo);
+                            break;
+                        case 0x8C:
+                            m_cycles += RES_b3_R8(1, HL.hi);
+                            break;
+                        case 0x8D:
+                            m_cycles += RES_b3_R8(1, HL.lo);
+                            break;
+                        case 0x8F:
+                            m_cycles += RES_b3_R8(1, AF.hi);
+                            break;
+                        case 0x90:
+                            m_cycles += RES_b3_R8(2, BC.hi);
+                            break;
+                        case 0x91:
+                            m_cycles += RES_b3_R8(2, BC.lo);
+                            break;
+                        case 0x92:
+                            m_cycles += RES_b3_R8(2, DE.hi);
+                            break;
+                        case 0x93:
+                            m_cycles += RES_b3_R8(2, DE.lo);
+                            break;
+                        case 0x94:
+                            m_cycles += RES_b3_R8(2, HL.hi);
+                            break;
+                        case 0x95:
+                            m_cycles += RES_b3_R8(2, HL.lo);
+                            break;
+                        case 0x97:
+                            m_cycles += RES_b3_R8(2, AF.hi);
+                            break;
+                        case 0x98:
+                            m_cycles += RES_b3_R8(3, BC.hi);
+                            break;
+                        case 0x99:
+                            m_cycles += RES_b3_R8(3, BC.lo);
+                            break;
+                        case 0x9A:
+                            m_cycles += RES_b3_R8(3, DE.hi);
+                            break;
+                        case 0x9B:
+                            m_cycles += RES_b3_R8(3, DE.lo);
+                            break;
+                        case 0x9C:
+                            m_cycles += RES_b3_R8(3, HL.hi);
+                            break;
+                        case 0x9D:
+                            m_cycles += RES_b3_R8(3, HL.lo);
+                            break;
+                        case 0x9F:
+                            m_cycles += RES_b3_R8(3, AF.hi);
+                            break;
+                        case 0xA0:
+                            m_cycles += RES_b3_R8(4, BC.hi);
+                            break;
+                        case 0xA1:
+                            m_cycles += RES_b3_R8(4, BC.lo);
+                            break;
+                        case 0xA2:
+                            m_cycles += RES_b3_R8(4, DE.hi);
+                            break;
+                        case 0xA3:
+                            m_cycles += RES_b3_R8(4, DE.lo);
+                            break;
+                        case 0xA4:
+                            m_cycles += RES_b3_R8(4, HL.hi);
+                            break;
+                        case 0xA5:
+                            m_cycles += RES_b3_R8(4, HL.lo);
+                            break;
+                        case 0xA7:
+                            m_cycles += RES_b3_R8(4, AF.hi);
+                            break;   
+                        case 0xA8:
+                            m_cycles += RES_b3_R8(5, BC.hi);
+                            break;
+                        case 0xA9:
+                            m_cycles += RES_b3_R8(5, BC.lo);
+                            break;
+                        case 0xAA:
+                            m_cycles += RES_b3_R8(5, DE.hi);
+                            break;
+                        case 0xAB:
+                            m_cycles += RES_b3_R8(5, DE.lo);
+                            break;
+                        case 0xAC:
+                            m_cycles += RES_b3_R8(5, HL.hi);
+                            break;
+                        case 0xAD:
+                            m_cycles += RES_b3_R8(5, HL.lo);
+                            break;
+                        case 0xAF:
+                            m_cycles += RES_b3_R8(5, AF.hi);
+                            break;
+                        case 0xB0:
+                            m_cycles += RES_b3_R8(6, BC.hi);
+                            break;
+                        case 0xB1:
+                            m_cycles += RES_b3_R8(6, BC.lo);
+                            break;
+                        case 0xB2:
+                            m_cycles += RES_b3_R8(6, DE.hi);
+                            break;
+                        case 0xB3:
+                            m_cycles += RES_b3_R8(6, DE.lo);
+                            break;
+                        case 0xB4:
+                            m_cycles += RES_b3_R8(6, HL.hi);
+                            break;
+                        case 0xB5:
+                            m_cycles += RES_b3_R8(6, HL.lo);
+                            break;
+                        case 0xB7:
+                            m_cycles += RES_b3_R8(6, AF.hi);
+                            break;
+                        case 0xB8:
+                            m_cycles += RES_b3_R8(7, BC.hi);
+                            break;
+                        case 0xB9:
+                            m_cycles += RES_b3_R8(7, BC.lo);
+                            break;
+                        case 0xBA:
+                            m_cycles += RES_b3_R8(7, DE.hi);
+                            break;
+                        case 0xBB:
+                            m_cycles += RES_b3_R8(7, DE.lo);
+                            break;
+                        case 0xBC:
+                            m_cycles += RES_b3_R8(7, HL.hi);
+                            break;
+                        case 0xBD:
+                            m_cycles += RES_b3_R8(7, HL.lo);
+                            break;
+                        case 0xBF:
+                            m_cycles += RES_b3_R8(7, AF.hi);
+                            break;
+
+                        // RES b3,[HL]
+                        case 0x86:
+                            m_cycles += RES_b3_HL(0);
+                            break;
+                        case 0x8E:
+                            m_cycles += RES_b3_HL(1);
+                            break;
+                        case 0x96:
+                            m_cycles += RES_b3_HL(2);
+                            break;
+                        case 0x9E:
+                            m_cycles += RES_b3_HL(3);
+                            break;
+                        case 0xA6:
+                            m_cycles += RES_b3_HL(4);
+                            break;
+                        case 0xAE:
+                            m_cycles += RES_b3_HL(5);
+                            break;
+                        case 0xB6:
+                            m_cycles += RES_b3_HL(6);
+                            break;
+                        case 0xBE:
+                            m_cycles += RES_b3_HL(7);
+                            break;
+
+                        // SET b3,R8
+                        case 0xC0:
+                            m_cycles += SET_b3_R8(0, BC.hi);
+                            break;
+                        case 0xC1:
+                            m_cycles += SET_b3_R8(0, BC.lo);
+                            break;
+                        case 0xC2:
+                            m_cycles += SET_b3_R8(0, DE.hi);
+                            break;
+                        case 0xC3:
+                            m_cycles += SET_b3_R8(0, DE.lo);
+                            break;
+                        case 0xC4:
+                            m_cycles += SET_b3_R8(0, HL.hi);
+                            break;
+                        case 0xC5:
+                            m_cycles += SET_b3_R8(0, HL.lo);
+                            break;
+                        case 0xC7:
+                            m_cycles += SET_b3_R8(0, AF.hi);
+                            break;
+                        case 0xC8:
+                            m_cycles += SET_b3_R8(1, BC.hi);
+                            break;
+                        case 0xC9:
+                            m_cycles += SET_b3_R8(1, BC.lo);
+                            break;
+                        case 0xCA:
+                            m_cycles += SET_b3_R8(1, DE.hi);
+                            break;
+                        case 0xCB:
+                            m_cycles += SET_b3_R8(1, DE.lo);
+                            break;
+                        case 0xCC:
+                            m_cycles += SET_b3_R8(1, HL.hi);
+                            break;
+                        case 0xCD:
+                            m_cycles += SET_b3_R8(1, HL.lo);
+                            break;
+                        case 0xCF:
+                            m_cycles += SET_b3_R8(1, AF.hi);
+                            break;
+                        case 0xD0:
+                            m_cycles += SET_b3_R8(2, BC.hi);
+                            break;
+                        case 0xD1:
+                            m_cycles += SET_b3_R8(2, BC.lo);
+                            break;
+                        case 0xD2:
+                            m_cycles += SET_b3_R8(2, DE.hi);
+                            break;
+                        case 0xD3:
+                            m_cycles += SET_b3_R8(2, DE.lo);
+                            break;
+                        case 0xD4:
+                            m_cycles += SET_b3_R8(2, HL.hi);
+                            break;
+                        case 0xD5:
+                            m_cycles += SET_b3_R8(2, HL.lo);
+                            break;
+                        case 0xD7:
+                            m_cycles += SET_b3_R8(2, AF.hi);
+                            break;
+                        case 0xD8:
+                            m_cycles += SET_b3_R8(3, BC.hi);
+                            break;
+                        case 0xD9:
+                            m_cycles += SET_b3_R8(3, BC.lo);
+                            break;
+                        case 0xDA:
+                            m_cycles += SET_b3_R8(3, DE.hi);
+                            break;
+                        case 0xDB:
+                            m_cycles += SET_b3_R8(3, DE.lo);
+                            break;
+                        case 0xDC:
+                            m_cycles += SET_b3_R8(3, HL.hi);
+                            break;
+                        case 0xDD:
+                            m_cycles += SET_b3_R8(3, HL.lo);
+                            break;
+                        case 0xDF:
+                            m_cycles += SET_b3_R8(3, AF.hi);
+                            break;
+                        case 0xE0:
+                            m_cycles += SET_b3_R8(4, BC.hi);
+                            break;
+                        case 0xE1:
+                            m_cycles += SET_b3_R8(4, BC.lo);
+                            break;
+                        case 0xE2:
+                            m_cycles += SET_b3_R8(4, DE.hi);
+                            break;
+                        case 0xE3:
+                            m_cycles += SET_b3_R8(4, DE.lo);
+                            break;
+                        case 0xE4:
+                            m_cycles += SET_b3_R8(4, HL.hi);
+                            break;
+                        case 0xE5:
+                            m_cycles += SET_b3_R8(4, HL.lo);
+                            break;
+                        case 0xE7:
+                            m_cycles += SET_b3_R8(4, AF.hi);
+                            break;   
+                        case 0xE8:
+                            m_cycles += SET_b3_R8(5, BC.hi);
+                            break;
+                        case 0xE9:
+                            m_cycles += SET_b3_R8(5, BC.lo);
+                            break;
+                        case 0xEA:
+                            m_cycles += SET_b3_R8(5, DE.hi);
+                            break;
+                        case 0xEB:
+                            m_cycles += SET_b3_R8(5, DE.lo);
+                            break;
+                        case 0xEC:
+                            m_cycles += SET_b3_R8(5, HL.hi);
+                            break;
+                        case 0xED:
+                            m_cycles += SET_b3_R8(5, HL.lo);
+                            break;
+                        case 0xEF:
+                            m_cycles += SET_b3_R8(5, AF.hi);
+                            break;
+                        case 0xF0:
+                            m_cycles += SET_b3_R8(6, BC.hi);
+                            break;
+                        case 0xF1:
+                            m_cycles += SET_b3_R8(6, BC.lo);
+                            break;
+                        case 0xF2:
+                            m_cycles += SET_b3_R8(6, DE.hi);
+                            break;
+                        case 0xF3:
+                            m_cycles += SET_b3_R8(6, DE.lo);
+                            break;
+                        case 0xF4:
+                            m_cycles += SET_b3_R8(6, HL.hi);
+                            break;
+                        case 0xF5:
+                            m_cycles += SET_b3_R8(6, HL.lo);
+                            break;
+                        case 0xF7:
+                            m_cycles += SET_b3_R8(6, AF.hi);
+                            break;
+                        case 0xF8:
+                            m_cycles += SET_b3_R8(7, BC.hi);
+                            break;
+                        case 0xF9:
+                            m_cycles += SET_b3_R8(7, BC.lo);
+                            break;
+                        case 0xFA:
+                            m_cycles += SET_b3_R8(7, DE.hi);
+                            break;
+                        case 0xFB:
+                            m_cycles += SET_b3_R8(7, DE.lo);
+                            break;
+                        case 0xFC:
+                            m_cycles += SET_b3_R8(7, HL.hi);
+                            break;
+                        case 0xFD:
+                            m_cycles += SET_b3_R8(7, HL.lo);
+                            break;
+                        case 0xFF:
+                            m_cycles += SET_b3_R8(7, AF.hi);
+                            break;
+
+                        // SET b3,[HL]
+                        case 0xC6:
+                            m_cycles += SET_b3_HL(0);
+                            break;
+                        case 0xCE:
+                            m_cycles += SET_b3_HL(1);
+                            break;
+                        case 0xD6:
+                            m_cycles += SET_b3_HL(2);
+                            break;
+                        case 0xDE:
+                            m_cycles += SET_b3_HL(3);
+                            break;
+                        case 0xE6:
+                            m_cycles += SET_b3_HL(4);
+                            break;
+                        case 0xEE:
+                            m_cycles += SET_b3_HL(5);
+                            break;
+                        case 0xF6:
+                            m_cycles += SET_b3_HL(6);
+                            break;
+                        case 0xFE:
+                            m_cycles += SET_b3_HL(7);
                             break;
                     }
                     
