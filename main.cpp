@@ -1727,8 +1727,31 @@ class CPU {
             return 4;
         }
 
-       
+        /** 
+         * Set Z flag if register bit at index b3 is not set. Reset N flag. Set H flag
+         */
+        uint32_t BIT_b3_R8(uint8_t b3, const Register8 r8) {
+            uint8_t bit = (r8 >> b3) & 0x01;
+            if (!bit)
+                AF.lo |= 0x80; // Set Z  
+            AF.lo &= 0xBF; // Reset N
+            AF.lo |= 0x20; // Set H
+            return 2;
+        }
 
+        /** 
+         * Set Z flag if bit at index b3 is not set. Reset N flag. Set H flag
+         */
+        uint32_t BIT_b3_HL(uint8_t b3) {
+            uint16_t addr = HL.get_data16();
+            uint8_t mem_data = mem.read(addr);
+            uint8_t bit = (mem_data >> b3) & 0x01;
+            if (!bit)
+                AF.lo |= 0x80; // Set Z  
+            AF.lo &= 0xBF; // Reset N
+            AF.lo |= 0x20; // Set H
+            return 3;
+        }
 
     public:
     
@@ -2814,6 +2837,202 @@ class CPU {
                         // SWAP [HL]
                         case 0x36:
                             m_cycles += SWAP_HL();
+                            break;
+
+                        // BIT b3,R8
+                        case 0x40:
+                            m_cycles += BIT_b3_R8(0, BC.hi);
+                            break;
+                        case 0x41:
+                            m_cycles += BIT_b3_R8(0, BC.lo);
+                            break;
+                        case 0x42:
+                            m_cycles += BIT_b3_R8(0, DE.hi);
+                            break;
+                        case 0x43:
+                            m_cycles += BIT_b3_R8(0, DE.lo);
+                            break;
+                        case 0x44:
+                            m_cycles += BIT_b3_R8(0, HL.hi);
+                            break;
+                        case 0x45:
+                            m_cycles += BIT_b3_R8(0, HL.lo);
+                            break;
+                        case 0x47:
+                            m_cycles += BIT_b3_R8(0, AF.hi);
+                            break;
+                        case 0x48:
+                            m_cycles += BIT_b3_R8(1, BC.hi);
+                            break;
+                        case 0x49:
+                            m_cycles += BIT_b3_R8(1, BC.lo);
+                            break;
+                        case 0x4A:
+                            m_cycles += BIT_b3_R8(1, DE.hi);
+                            break;
+                        case 0x4B:
+                            m_cycles += BIT_b3_R8(1, DE.lo);
+                            break;
+                        case 0x4C:
+                            m_cycles += BIT_b3_R8(1, HL.hi);
+                            break;
+                        case 0x4D:
+                            m_cycles += BIT_b3_R8(1, HL.lo);
+                            break;
+                        case 0x4F:
+                            m_cycles += BIT_b3_R8(1, AF.hi);
+                            break;
+                        case 0x50:
+                            m_cycles += BIT_b3_R8(2, BC.hi);
+                            break;
+                        case 0x51:
+                            m_cycles += BIT_b3_R8(2, BC.lo);
+                            break;
+                        case 0x52:
+                            m_cycles += BIT_b3_R8(2, DE.hi);
+                            break;
+                        case 0x53:
+                            m_cycles += BIT_b3_R8(2, DE.lo);
+                            break;
+                        case 0x54:
+                            m_cycles += BIT_b3_R8(2, HL.hi);
+                            break;
+                        case 0x55:
+                            m_cycles += BIT_b3_R8(2, HL.lo);
+                            break;
+                        case 0x57:
+                            m_cycles += BIT_b3_R8(2, AF.hi);
+                            break;
+                        case 0x58:
+                            m_cycles += BIT_b3_R8(3, BC.hi);
+                            break;
+                        case 0x59:
+                            m_cycles += BIT_b3_R8(3, BC.lo);
+                            break;
+                        case 0x5A:
+                            m_cycles += BIT_b3_R8(3, DE.hi);
+                            break;
+                        case 0x5B:
+                            m_cycles += BIT_b3_R8(3, DE.lo);
+                            break;
+                        case 0x5C:
+                            m_cycles += BIT_b3_R8(3, HL.hi);
+                            break;
+                        case 0x5D:
+                            m_cycles += BIT_b3_R8(3, HL.lo);
+                            break;
+                        case 0x5F:
+                            m_cycles += BIT_b3_R8(3, AF.hi);
+                            break;
+                        case 0x60:
+                            m_cycles += BIT_b3_R8(4, BC.hi);
+                            break;
+                        case 0x61:
+                            m_cycles += BIT_b3_R8(4, BC.lo);
+                            break;
+                        case 0x62:
+                            m_cycles += BIT_b3_R8(4, DE.hi);
+                            break;
+                        case 0x63:
+                            m_cycles += BIT_b3_R8(4, DE.lo);
+                            break;
+                        case 0x64:
+                            m_cycles += BIT_b3_R8(4, HL.hi);
+                            break;
+                        case 0x65:
+                            m_cycles += BIT_b3_R8(4, HL.lo);
+                            break;
+                        case 0x67:
+                            m_cycles += BIT_b3_R8(4, AF.hi);
+                            break;   
+                        case 0x68:
+                            m_cycles += BIT_b3_R8(5, BC.hi);
+                            break;
+                        case 0x69:
+                            m_cycles += BIT_b3_R8(5, BC.lo);
+                            break;
+                        case 0x6A:
+                            m_cycles += BIT_b3_R8(5, DE.hi);
+                            break;
+                        case 0x6B:
+                            m_cycles += BIT_b3_R8(5, DE.lo);
+                            break;
+                        case 0x6C:
+                            m_cycles += BIT_b3_R8(5, HL.hi);
+                            break;
+                        case 0x6D:
+                            m_cycles += BIT_b3_R8(5, HL.lo);
+                            break;
+                        case 0x6F:
+                            m_cycles += BIT_b3_R8(5, AF.hi);
+                            break;
+                        case 0x70:
+                            m_cycles += BIT_b3_R8(6, BC.hi);
+                            break;
+                        case 0x71:
+                            m_cycles += BIT_b3_R8(6, BC.lo);
+                            break;
+                        case 0x72:
+                            m_cycles += BIT_b3_R8(6, DE.hi);
+                            break;
+                        case 0x73:
+                            m_cycles += BIT_b3_R8(6, DE.lo);
+                            break;
+                        case 0x74:
+                            m_cycles += BIT_b3_R8(6, HL.hi);
+                            break;
+                        case 0x75:
+                            m_cycles += BIT_b3_R8(6, HL.lo);
+                            break;
+                        case 0x77:
+                            m_cycles += BIT_b3_R8(6, AF.hi);
+                            break;
+                        case 0x78:
+                            m_cycles += BIT_b3_R8(7, BC.hi);
+                            break;
+                        case 0x79:
+                            m_cycles += BIT_b3_R8(7, BC.lo);
+                            break;
+                        case 0x7A:
+                            m_cycles += BIT_b3_R8(7, DE.hi);
+                            break;
+                        case 0x7B:
+                            m_cycles += BIT_b3_R8(7, DE.lo);
+                            break;
+                        case 0x7C:
+                            m_cycles += BIT_b3_R8(7, HL.hi);
+                            break;
+                        case 0x7D:
+                            m_cycles += BIT_b3_R8(7, HL.lo);
+                            break;
+                        case 0x7F:
+                            m_cycles += BIT_b3_R8(7, AF.hi);
+                            break;
+
+                        // BIT b3,[HL]
+                        case 0x46:
+                            m_cycles += BIT_b3_HL(0);
+                            break;
+                        case 0x4E:
+                            m_cycles += BIT_b3_HL(1);
+                            break;
+                        case 0x56:
+                            m_cycles += BIT_b3_HL(2);
+                            break;
+                        case 0x5E:
+                            m_cycles += BIT_b3_HL(3);
+                            break;
+                        case 0x66:
+                            m_cycles += BIT_b3_HL(4);
+                            break;
+                        case 0x6E:
+                            m_cycles += BIT_b3_HL(5);
+                            break;
+                        case 0x76:
+                            m_cycles += BIT_b3_HL(6);
+                            break;
+                        case 0x7E:
+                            m_cycles += BIT_b3_HL(7);
                             break;
                     }
                     
