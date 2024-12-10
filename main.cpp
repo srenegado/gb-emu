@@ -1684,6 +1684,49 @@ class CPU {
             return 4;
         }
 
+        /** 
+         * Swap upper 4 bits in register with lowers 4 bits
+         *
+         * Reset N, H, and C flags. Set Z flag accordingly
+         */
+        uint32_t SWAP_R8(Register8 &r8) {
+            uint8_t lower_nib = r8 & 0xF;
+            uint8_t upper_nib = r8 & 0xF0;
+            r8 = (lower_nib << 4) | (upper_nib >> 4); 
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            AF.lo &= 0xEF; // Reset C
+
+            if (r8 == 0)
+                AF.lo |= 0x80; // Set Z  
+            
+            return 2;
+        }
+
+        /** 
+         * Swap upper 4 bits in memory[HL] with lowers 4 bits
+         *
+         * Reset N, H, and C flags. Set Z flag accordingly
+         */
+        uint32_t SWAP_HL() {
+            uint16_t addr = HL.get_data16();
+            uint8_t mem_data = mem.read(addr);
+            uint8_t lower_nib = mem_data & 0xF;
+            uint8_t upper_nib = mem_data & 0xF0;
+            mem_data = (lower_nib << 4) | (upper_nib >> 4); 
+            mem.write(addr, mem_data);
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            AF.lo &= 0xEF; // Reset C
+
+            if (mem_data == 0)
+                AF.lo |= 0x80; // Set Z  
+            
+            return 4;
+        }
+
        
 
 
@@ -2743,6 +2786,34 @@ class CPU {
                         // SRL [HL]
                         case 0x3E:
                             m_cycles += SRL_HL();
+                            break;
+
+                        // SWAP R8
+                        case 0x30:
+                            m_cycles += SWAP_R8(BC.hi);
+                            break;
+                        case 0x31:
+                            m_cycles += SWAP_R8(BC.lo);
+                            break;
+                        case 0x32:
+                            m_cycles += SWAP_R8(DE.hi);
+                            break;
+                        case 0x33:
+                            m_cycles += SWAP_R8(DE.lo);
+                            break;
+                        case 0x34:
+                            m_cycles += SWAP_R8(HL.hi);
+                            break;
+                        case 0x35:
+                            m_cycles += SWAP_R8(HL.lo);
+                            break;
+                        case 0x37:
+                            m_cycles += SWAP_R8(AF.hi);
+                            break;
+
+                        // SWAP [HL]
+                        case 0x36:
+                            m_cycles += SWAP_HL();
                             break;
                     }
                     
