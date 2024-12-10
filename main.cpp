@@ -112,7 +112,8 @@ class CPU {
 
         uint16_t PC;      // Program counter  
 
-        uint32_t IME;     // Interrupt master enable flag
+        uint8_t IME;     // Interrupt master enable flag
+        uint8_t IME_next;
 
         // Memory
         Memory mem;
@@ -1281,6 +1282,53 @@ class CPU {
             return 4;
         }
 
+        /** 
+         * Flip the carry flag and reset N and H flags
+         */
+        uint32_t CCF() {
+            uint8_t C = (AF.lo & 0x10) >> 4;
+            C = ~C;
+            AF.lo |= (C << 4);
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            return 1; 
+        }
+
+        /** 
+         * Flip the A register and sets N and H flags
+         */
+        uint32_t CPL() {
+            AF.hi = ~AF.hi;
+            AF.lo != 0x40; // Set N
+            AF.lo |= 0x20; // Set H
+            return 1;
+        }
+
+        /** 
+         * Disable interrupts
+         */
+        uint32_t DI() {
+            IME = 0;
+            return 1;
+        }
+
+        /** 
+         * Enable interrupts after the instruction following EI
+         */
+        uint32_t EI() {
+            IME_next = 1;
+            return 1;
+        }
+
+        /** 
+         * Set the carry flag and reset the N and H flags
+         */
+        uint32_t SCF() {
+            AF.lo |= 0x10; // Set C
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            return 1;
+        }
 
     public:
     
@@ -1310,6 +1358,7 @@ class CPU {
             switch (opcode) {
                 
                 case 0x00: // NOP
+                    m_cycles += 1;
                     break;
 
                 // LD R8, R8
@@ -2107,7 +2156,43 @@ class CPU {
                 case 0xF5:
                     m_cycles += PUSH_R16(AF);
                     break;
+
+                // CCF
+                case 0x3F:
+                    m_cycles += CCF();
+                    break;
+                
+                // CPL
+                case 0x2F:
+                    m_cycles += CPL();
+                    break;
+                
+                // DI
+                case 0xF3:
+                    m_cycles += DI();
+                    break;
+
+                // EI
+                case 0xFB:
+                    m_cycles += EI();
+                    break;
+
+                // SCF
+                case 0x37:
+                    m_cycles += SCF();
+                    break;
+
+                // TODO: STOP n8
+                case 0x10:
+                    break;
+                
     
+            }
+
+            if (IME_next) { 
+                // EI was called before the current opcode
+                IME = 1; // Enable interrupts
+                IME_next = 0;
             }
 
             return m_cycles;
