@@ -1288,7 +1288,7 @@ class CPU {
         uint32_t CCF() {
             uint8_t C = (AF.lo & 0x10) >> 4;
             C = ~C;
-            AF.lo |= (C << 4);
+            AF.lo = (AF.lo & 0xEF) | (C << 4);
             AF.lo &= 0xBF; // Reset N
             AF.lo &= 0xDF; // Reset H
             return 1; 
@@ -1328,6 +1328,25 @@ class CPU {
             AF.lo &= 0xBF; // Reset N
             AF.lo &= 0xDF; // Reset H
             return 1;
+        }
+
+        /** 
+         * Rotate register left
+         *
+         * Load C flag with register's most significant bit (before shift)
+         * 
+         * Reset N and H flags. Set Z accordingly
+         */
+        uint32_t RLC_R8(Register8 &r8) {
+            r8 <<= r8;
+
+            // Load C flag
+            AF.lo = (AF.lo & 0xEF) | ((r8 & 0x01) << 4); 
+            
+            if (r8 == 0)
+                AF.lo |= 0x80; // Set Z   
+
+            return 2;
         }
 
     public:
@@ -2185,8 +2204,40 @@ class CPU {
                 // TODO: STOP n8
                 case 0x10:
                     break;
+
                 
-    
+                // Prefixed 0xCB instructions
+                case 0xCB:
+                    opcode = mem.read(PC++);
+                    switch (opcode) {
+                        
+                        // RLC r8
+                        case 0x00:
+                            m_cycles += RLC_R8(BC.hi);
+                            break;
+                        case 0x01:
+                            m_cycles += RLC_R8(BC.lo);
+                            break;
+                        case 0x02:
+                            m_cycles += RLC_R8(DE.hi);
+                            break;
+                        case 0x03:
+                            m_cycles += RLC_R8(DE.lo);
+                            break;
+                        case 0x04:
+                            m_cycles += RLC_R8(HL.hi);
+                            break;
+                        case 0x05:
+                            m_cycles += RLC_R8(HL.lo);
+                            break;
+                        case 0x07:
+                            m_cycles += RLC_R8(AF.hi);
+                            break;
+                        
+                    }
+                    
+                    break;
+            
             }
 
             if (IME_next) { 
