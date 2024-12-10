@@ -1338,11 +1338,11 @@ class CPU {
          * Reset N and H flags. Set Z accordingly
          */
         uint32_t RLC_R8(Register8 &r8) {
+            uint8_t b7 = r8 & 0x80;
             r8 <<= 1;
             
             // Load C flag
-            uint8_t b7 = r8 & 0x01;
-            AF.lo = (AF.lo & 0xEF) | (b7 << 4); 
+            AF.lo = (AF.lo & 0xEF) | (b7 >> 3); 
 
             AF.lo &= 0xBF; // Reset N
             AF.lo &= 0xDF; // Reset H
@@ -1363,12 +1363,12 @@ class CPU {
         uint32_t RLC_HL() {
             uint16_t addr = HL.get_data16();
             uint8_t mem_data = mem.read(addr); 
+            uint8_t b7 = mem_data & 0x80;
             mem_data <<= 1;
             mem.write(addr, mem_data);
 
             // Load C flag
-            uint8_t b7 = mem_data & 0x01;
-            AF.lo = (AF.lo & 0xEF) | (b7 << 4); 
+            AF.lo = (AF.lo & 0xEF) | (b7 >> 3); 
 
             AF.lo &= 0xBF; // Reset N
             AF.lo &= 0xDF; // Reset H
@@ -1387,13 +1387,13 @@ class CPU {
          * Reset N and H flags. Set Z accordingly
          */
         uint32_t RL_R8(Register8 &r8) {
+            uint8_t b7 = r8 & 0x80;
             r8 <<= 1;
-            uint8_t b7 = r8 & 0x01; // Most significant bit in r8 is in 0th pos
             uint8_t C = AF.lo & 0x10;
             r8 = (r8 & 0xFE) | (C >> 4); // C goes in least sig bit
 
             // Load C flag
-            AF.lo = (AF.lo & 0xEF) | (b7 << 4); 
+            AF.lo = (AF.lo & 0xEF) | (b7 >> 3); 
 
             AF.lo &= 0xBF; // Reset N
             AF.lo &= 0xDF; // Reset H
@@ -1414,15 +1414,14 @@ class CPU {
         uint32_t RL_HL() {
             uint16_t addr = HL.get_data16();
             uint8_t mem_data = mem.read(addr); 
-
+            uint8_t b7 = mem_data & 0x80;
             mem_data <<= 1;
-            uint8_t b7 = mem_data & 0x01; // Most significant bit is in 0th pos
             uint8_t C = AF.lo & 0x10;
             mem_data = (mem_data & 0xFE) | (C >> 4); // C goes in least sig bit
             mem.write(addr, mem_data);
 
             // Load C flag
-            AF.lo = (AF.lo & 0xEF) | (b7 << 4); 
+            AF.lo = (AF.lo & 0xEF) | (b7 >> 4); 
 
             AF.lo &= 0xBF; // Reset N
             AF.lo &= 0xDF; // Reset H
@@ -1466,7 +1465,6 @@ class CPU {
         uint32_t RRC_HL() {
             uint16_t addr = HL.get_data16();
             uint8_t mem_data = mem.read(addr); 
-
             uint8_t b0 = mem_data & 0x01;
             mem_data >>= 1;
             mem.write(addr, mem_data);
@@ -1518,7 +1516,6 @@ class CPU {
         uint32_t RR_HL() {
             uint16_t addr = HL.get_data16();
             uint8_t mem_data = mem.read(addr); 
-
             uint8_t b0 = mem_data & 0x01; 
             uint8_t C = AF.lo & 0x10;
             mem_data >>= 1;
@@ -1536,6 +1533,158 @@ class CPU {
 
             return 4;
         }
+
+        /** 
+         * Shift register arithmetically left (pad with a 0)
+         *
+         * Load C flag with most significant bit (before shift)
+         * 
+         * Reset N and H flags. Set Z accordingly
+         */
+        uint32_t SLA_R8(Register8 &r8) {
+            uint8_t b7 = r8 & 0x80; 
+            r8 <<= 1;
+            
+            // Load C flag
+            AF.lo = (AF.lo & 0xEF) | (b7 >> 3); 
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            
+            if (r8 == 0)
+                AF.lo |= 0x80; // Set Z   
+
+            return 2;
+        }
+
+         /** 
+         * Shift memory [HL] arithmetically left
+         *
+         * Load C flag with most significant bit (before shift)
+         * 
+         * Reset N and H flags. Set Z accordingly
+         */
+        uint32_t SLA_HL() {
+            uint16_t addr = HL.get_data16();
+            uint8_t mem_data = mem.read(addr);
+            uint8_t b7 = mem_data & 0x80;
+            mem_data <<= 1;
+        
+            // Load C flag
+            AF.lo = (AF.lo & 0xEF) | (b7 >> 3); 
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            
+            if (mem_data == 0)
+                AF.lo |= 0x80; // Set Z   
+
+            return 4;
+        }
+
+        /** 
+         * Shift register arithmetically right (most significant bit is unchanged)
+         *
+         * Load C flag with least significant bit (before shift)
+         * 
+         * Reset N and H flags. Set Z accordingly
+         */
+        uint32_t SRA_R8(Register8 &r8) {
+            uint8_t b0 = r8 & 0x01; 
+            uint8_t b7 = r8 & 0x80; 
+            r8 >>= 1;
+            r8 = (r8 & 0x7F) | b7;
+
+            // Load C flag
+            AF.lo = (AF.lo & 0xEF) | (b0 << 4); 
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            
+            if (r8 == 0)
+                AF.lo |= 0x80; // Set Z   
+
+            return 2;
+        }
+
+        /** 
+         * Shift memory[HL] arithmetically right (most significant bit is unchanged)
+         *
+         * Load C flag with least significant bit (before shift)
+         * 
+         * Reset N and H flags. Set Z accordingly
+         */
+        uint32_t SRA_HL() {
+            uint16_t addr = HL.get_data16();
+            uint8_t mem_data = mem.read(addr);
+            uint8_t b0 = mem_data & 0x01; 
+            uint8_t b7 = mem_data & 0x80; 
+            mem_data >>= 1;
+            mem_data = (mem_data & 0x7F) | b7;
+            mem.write(addr, mem_data);
+
+            // Load C flag
+            AF.lo = (AF.lo & 0xEF) | (b0 << 4); 
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            
+            if (mem_data == 0)
+                AF.lo |= 0x80; // Set Z   
+
+            return 4;
+        }
+
+        /** 
+         * Shift register arithmetically right (pad with a 0)
+         *
+         * Load C flag with least significant bit (before shift)
+         * 
+         * Reset N and H flags. Set Z accordingly
+         */
+        uint32_t SRL_R8(Register8 &r8) {
+            uint8_t b0 = r8 & 0x01; 
+            r8 >>= 1;
+
+            // Load C flag
+            AF.lo = (AF.lo & 0xEF) | (b0 << 4); 
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            
+            if (r8 == 0)
+                AF.lo |= 0x80; // Set Z   
+
+            return 2;
+        }
+
+        /** 
+         * Shift memory[HL] logically right (pad with a 0)
+         *
+         * Load C flag with least significant bit (before shift)
+         * 
+         * Reset N and H flags. Set Z accordingly
+         */
+        uint32_t SRL_HL() {
+            uint16_t addr = HL.get_data16();
+            uint8_t mem_data = mem.read(addr);
+            uint8_t b0 = mem_data & 0x01; 
+            mem_data >>= 1;
+            mem.write(addr, mem_data);
+
+            // Load C flag
+            AF.lo = (AF.lo & 0xEF) | (b0 << 4); 
+
+            AF.lo &= 0xBF; // Reset N
+            AF.lo &= 0xDF; // Reset H
+            
+            if (mem_data == 0)
+                AF.lo |= 0x80; // Set Z   
+
+            return 4;
+        }
+
+       
 
 
     public:
@@ -2512,8 +2661,89 @@ class CPU {
                             m_cycles += RR_HL();
                             break;
 
-                        
-                        
+                        // SLA R8
+                        case 0x20:
+                            m_cycles += SLA_R8(BC.hi);
+                            break;
+                        case 0x21:
+                            m_cycles += SLA_R8(BC.lo);
+                            break;
+                        case 0x22:
+                            m_cycles += SLA_R8(DE.hi);
+                            break;
+                        case 0x23:
+                            m_cycles += SLA_R8(DE.lo);
+                            break;
+                        case 0x24:
+                            m_cycles += SLA_R8(HL.hi);
+                            break;
+                        case 0x25:
+                            m_cycles += SLA_R8(HL.lo);
+                            break;
+                        case 0x27:
+                            m_cycles += SLA_R8(AF.hi);
+                            break;
+
+                        // SLA [HL]
+                        case 0x26:
+                            m_cycles += SLA_HL();
+                            break;
+
+                        // SRA R8
+                        case 0x28:
+                            m_cycles += SRA_R8(BC.hi);
+                            break;
+                        case 0x29:
+                            m_cycles += SRA_R8(BC.lo);
+                            break;
+                        case 0x2A:
+                            m_cycles += SRA_R8(DE.hi);
+                            break;
+                        case 0x2B:
+                            m_cycles += SRA_R8(DE.lo);
+                            break;
+                        case 0x2C:
+                            m_cycles += SRA_R8(HL.hi);
+                            break;
+                        case 0x2D:
+                            m_cycles += SRA_R8(HL.lo);
+                            break;
+                        case 0x2F:
+                            m_cycles += SRA_R8(AF.hi);
+                            break;
+
+                        // SRA [HL]
+                        case 0x2E:
+                            m_cycles += SRA_HL();
+                            break;
+
+                        // SRL R8
+                        case 0x38:
+                            m_cycles += SRL_R8(BC.hi);
+                            break;
+                        case 0x39:
+                            m_cycles += SRL_R8(BC.lo);
+                            break;
+                        case 0x3A:
+                            m_cycles += SRL_R8(DE.hi);
+                            break;
+                        case 0x3B:
+                            m_cycles += SRL_R8(DE.lo);
+                            break;
+                        case 0x3C:
+                            m_cycles += SRL_R8(HL.hi);
+                            break;
+                        case 0x3D:
+                            m_cycles += SRL_R8(HL.lo);
+                            break;
+                        case 0x3F:
+                            m_cycles += SRL_R8(AF.hi);
+                            break;
+
+                        // SRL [HL]
+                        case 0x3E:
+                            m_cycles += SRL_HL();
+                            break;
                     }
                     
                     break;
