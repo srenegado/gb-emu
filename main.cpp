@@ -112,11 +112,8 @@ class CPU {
 
         uint16_t PC;      // Program counter  
 
-        uint8_t IME;     // Interrupt master enable flag
+        uint8_t IME;      // Interrupt master enable flag
         uint8_t IME_next;
-
-        // Memory
-        Memory mem;
 
         /** 
          * Opcodes
@@ -135,7 +132,7 @@ class CPU {
         /**
          * Store value in src register into memory[HL]
          */
-        uint32_t LD_HL_R8(Register8 src) {
+        uint32_t LD_HL_R8(Register8 src, Memory &mem) {
             mem.write(HL.get_data16(), src); 
             return 2;
         }
@@ -143,7 +140,7 @@ class CPU {
         /**
          * Load value in memory[HL] into dest register
          */
-        uint32_t LD_R8_HL(Register8 &dest) {
+        uint32_t LD_R8_HL(Register8 &dest, Memory &mem) {
             dest = mem.read(HL.get_data16());
             return 2;
         }
@@ -153,7 +150,7 @@ class CPU {
          *
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t LD_R8_n8(Register8 &dest) {
+        uint32_t LD_R8_n8(Register8 &dest, Memory &mem) {
             
             // Get n8 and move PC to next instruction
             uint8_t n8 = mem.read(PC++);
@@ -167,7 +164,7 @@ class CPU {
          *
          * Assumes PC is pointing to n8 before call 
          */
-        uint32_t LD_HL_n8() {
+        uint32_t LD_HL_n8(Memory &mem) {
 
             // Get n8 and move PC to next instruction
             uint8_t n8 = mem.read(PC++);
@@ -179,7 +176,7 @@ class CPU {
         /** 
          * Store value in register A into memory[dest]
          */
-        uint32_t LD_R16_A(const Register16 &dest) {
+        uint32_t LD_R16_A(const Register16 &dest, Memory &mem) {
             mem.write(dest.get_data16(), AF.hi);
             return 2;
         }
@@ -187,7 +184,7 @@ class CPU {
         /**
          * Load value in memory[dest] into register A 
          */
-        uint32_t LD_A_R16(const Register16 &dest) {
+        uint32_t LD_A_R16(const Register16 &dest, Memory &mem) {
             AF.hi = mem.read(dest.get_data16());
             return 2;    
         }
@@ -197,7 +194,7 @@ class CPU {
          *
          * Assumes PC is pointing to n16 before call 
          */
-        uint32_t LD_R16_n16(Register16 &dest) {
+        uint32_t LD_R16_n16(Register16 &dest, Memory &mem) {
             
             // Get n16 and move PC to next instruction
             uint8_t lsb = mem.read(PC++);
@@ -214,7 +211,7 @@ class CPU {
          *
          * Assumes PC is pointing to n16 before call
          */
-        uint32_t LD_n16_SP() {
+        uint32_t LD_n16_SP(Memory &mem) {
             
             // Get n16 and move PC to next instruction
             uint8_t lsb = mem.read(PC++);
@@ -234,7 +231,7 @@ class CPU {
          *
          * Assumes PC is pointing to n16 before call
          */
-        uint32_t LD_n16_A() {
+        uint32_t LD_n16_A(Memory &mem) {
             
             // Get n16 and move PC to next instruction
             uint8_t lsb = mem.read(PC++);
@@ -252,7 +249,7 @@ class CPU {
          *
          * Assumes PC is pointing to n16 before call
          */
-        uint32_t LD_A_n16() {
+        uint32_t LD_A_n16(Memory &mem) {
             
             // Get n16 and move PC to next instruction
             uint8_t lsb = mem.read(PC++);
@@ -275,7 +272,7 @@ class CPU {
         /**
          * Store value in register A into memory[0xFF00 + C]
          */
-        uint32_t LDH_C_A() {
+        uint32_t LDH_C_A(Memory &mem) {
             mem.write(0xFF00 + (uint16_t)BC.lo, AF.hi);
             return 2;
         }
@@ -283,7 +280,7 @@ class CPU {
         /**
          * Load value in memory[0xFF00 + C] into register A 
          */
-        uint32_t LDH_A_C() {
+        uint32_t LDH_A_C(Memory &mem) {
             AF.hi = mem.read(0xFF00 + (uint16_t)BC.lo);
             return 2;
         }
@@ -294,7 +291,7 @@ class CPU {
          * 
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t LDH_n8_A() {
+        uint32_t LDH_n8_A(Memory &mem) {
 
             // Get n8 and move PC to next instruction
             uint8_t n8 = mem.read(PC++);
@@ -309,7 +306,7 @@ class CPU {
          * 
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t LDH_A_n8() {
+        uint32_t LDH_A_n8(Memory &mem) {
 
             // Get n8 and move PC to next instruction
             uint8_t n8 = mem.read(PC++);
@@ -324,7 +321,7 @@ class CPU {
          * 
          * Assumes PC is point to n8 before call
          */
-        uint32_t LD_HL_SP_e8() {
+        uint32_t LD_HL_SP_e8(Memory &mem) {
             
             // Get e8 and move PC to next instruction
             int8_t e8 = (int8_t) mem.read(PC++);
@@ -412,7 +409,7 @@ class CPU {
          *
          * Reset N flag. Set Z and H flag accordingly
          */
-        uint32_t INC_HL() {
+        uint32_t INC_HL(Memory &mem) {
             uint8_t HLmem = mem.read(HL.get_data16());
 
             AF.lo &= 0xBF; // Reset N
@@ -454,7 +451,7 @@ class CPU {
          *
          * Set N flag. Set Z and H flag accordingly
          */
-        uint32_t DEC_HL() {
+        uint32_t DEC_HL(Memory &mem) {
             uint8_t HLmem = mem.read(HL.get_data16());
 
             AF.lo != 0x40; // Set N
@@ -500,7 +497,7 @@ class CPU {
          *
          * Reset N flag. Set Z, H, and C flags accordingly
          */
-        uint32_t ADD_A_HL() {
+        uint32_t ADD_A_HL(Memory &mem) {
             AF.lo &= 0xBF; // Reset N
 
             uint8_t HLmem = mem.read(HL.get_data16());
@@ -553,7 +550,7 @@ class CPU {
          *
          * Reset N flag. Set Z, H, and C flags accordingly
          */
-        uint32_t ADC_A_HL() {
+        uint32_t ADC_A_HL(Memory &mem) {
             uint8_t HLmem = mem.read(HL.get_data16());
 
             // Get C flag value
@@ -606,7 +603,7 @@ class CPU {
          *
          * Set N flag. Set Z, H, and C flags accordingly
          */
-        uint32_t SUB_A_HL() {
+        uint32_t SUB_A_HL(Memory &mem) {
             uint8_t HLmem = mem.read(HL.get_data16());
 
             AF.lo != 0x40; // Set N
@@ -659,7 +656,7 @@ class CPU {
          *
          * Set N flag. Set Z, H, and C flags accordingly
          */
-        uint32_t SBC_A_HL() {
+        uint32_t SBC_A_HL(Memory &mem) {
             uint8_t HLmem = mem.read(HL.get_data16());
 
             // Get C flag value
@@ -706,7 +703,7 @@ class CPU {
          *
          * Reset N and C flags. Set H flag. Set Z flag accordingly.
          */
-        uint32_t AND_A_HL() {
+        uint32_t AND_A_HL(Memory &mem) {
             uint8_t HLmem = mem.read(HL.get_data16());
 
             AF.lo &= 0xBF; // Reset N
@@ -744,7 +741,7 @@ class CPU {
          *
          * Reset N, H, and C flags. Set Z flag accordingly.
          */
-        uint32_t XOR_A_HL() {
+        uint32_t XOR_A_HL(Memory &mem) {
             uint8_t HLmem = mem.read(HL.get_data16());
 
             AF.lo &= 0xBF; // Reset N
@@ -782,7 +779,7 @@ class CPU {
          *
          * Reset N, H, and C flags. Set Z flag accordingly.
          */
-        uint32_t OR_A_HL() {
+        uint32_t OR_A_HL(Memory &mem) {
             uint8_t HLmem = mem.read(HL.get_data16());
 
             AF.lo &= 0xBF; // Reset N
@@ -825,7 +822,7 @@ class CPU {
          *
          * Set N flag. Set Z, H, and C flags accordingly
          */
-        uint32_t CP_A_HL() {
+        uint32_t CP_A_HL(Memory &mem) {
             uint8_t HLmem = mem.read(HL.get_data16());
 
             AF.lo != 0x40; // Set N
@@ -852,7 +849,7 @@ class CPU {
          *
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t ADD_A_n8() {
+        uint32_t ADD_A_n8(Memory &mem) {
             // Get n8 and move PC to next instruction
             uint8_t n8 = mem.read(PC++);
 
@@ -881,7 +878,7 @@ class CPU {
          *
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t ADC_A_n8() {
+        uint32_t ADC_A_n8(Memory &mem) {
             // Get n8 and move PC to next instruction
             uint8_t n8 = mem.read(PC++);
 
@@ -913,7 +910,7 @@ class CPU {
          *
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t SUB_A_n8() {
+        uint32_t SUB_A_n8(Memory &mem) {
             // Get n8 and move PC to next instruction
             uint8_t n8 = mem.read(PC++);
 
@@ -942,7 +939,7 @@ class CPU {
          *
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t SBC_A_n8() {
+        uint32_t SBC_A_n8(Memory &mem) {
             // Get n8 and move PC to next instruction
             uint8_t n8 = mem.read(PC++);
 
@@ -974,7 +971,7 @@ class CPU {
          *
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t AND_A_n8() {
+        uint32_t AND_A_n8(Memory &mem) {
             // Get n8 and move PC to next instruction
             uint8_t n8 = mem.read(PC++);
 
@@ -997,7 +994,7 @@ class CPU {
          *
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t XOR_A_n8() {
+        uint32_t XOR_A_n8(Memory &mem) {
             // Get n8 and move PC to next instruction
             uint8_t n8 = mem.read(PC++);
 
@@ -1020,7 +1017,7 @@ class CPU {
          *
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t OR_A_n8() {
+        uint32_t OR_A_n8(Memory &mem) {
             // Get n8 and move PC to next instruction
             uint8_t n8 = mem.read(PC++);
 
@@ -1044,7 +1041,7 @@ class CPU {
          *
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t CP_A_n8() {
+        uint32_t CP_A_n8(Memory &mem) {
             // Get n8 and move PC to next instruction
             uint8_t n8 = mem.read(PC++);
 
@@ -1071,7 +1068,7 @@ class CPU {
          *
          * Assumes PC is pointing to n16 before call
          */
-        uint32_t CALL_n16() {
+        uint32_t CALL_n16(Memory &mem) {
             // Get bytes of n16 and move PC to next instruction
             uint16_t lsb = mem.read(PC++);
             uint16_t msb = mem.read(PC++);
@@ -1095,7 +1092,7 @@ class CPU {
          *
          * Assumes PC is pointing to n16 before call
          */
-        uint32_t CALL_cc_n16(uint8_t cc) {
+        uint32_t CALL_cc_n16(uint8_t cc, Memory &mem) {
             // Get bytes of n16 and move PC to next instruction
             uint16_t lsb = mem.read(PC++);
             uint16_t msb = mem.read(PC++);
@@ -1133,7 +1130,7 @@ class CPU {
          *
          * Assumes PC is pointing to n16 before call
          */
-        uint32_t JP_n16() {
+        uint32_t JP_n16(Memory &mem) {
             // Get n16 and move PC to next instruction
             uint16_t lsb = mem.read(PC++);
             uint16_t msb = mem.read(PC++);
@@ -1149,7 +1146,7 @@ class CPU {
          *
          * Assumes PC is pointing to e8 before call
          */
-        uint32_t JR_e8() {
+        uint32_t JR_e8(Memory &mem) {
             int8_t e8 = (int8_t)mem.read(PC);
             PC += e8;
             
@@ -1162,7 +1159,7 @@ class CPU {
          *
          * Assumes PC is pointing to e8 before call
          */
-        uint32_t JR_cc_e8(uint8_t cc) {
+        uint32_t JR_cc_e8(uint8_t cc, Memory &mem) {
             int8_t e8 = (int8_t)mem.read(PC);
 
             if (cc) {
@@ -1177,7 +1174,7 @@ class CPU {
         /** 
          * Return from subroutine.
          */
-        uint32_t RET() {
+        uint32_t RET(Memory &mem) {
             uint16_t lsb = mem.read(SP.get_data16());
             SP++;
             uint16_t msb = mem.read(SP.get_data16());
@@ -1189,7 +1186,7 @@ class CPU {
         /** 
          * Return from subroutine and enable interupts
          */
-        uint32_t RETI() {
+        uint32_t RETI(Memory &mem) {
             uint16_t lsb = mem.read(SP.get_data16());
             SP++;
             uint16_t msb = mem.read(SP.get_data16());
@@ -1202,7 +1199,7 @@ class CPU {
         /** 
          * Return from subroutine if condition c is met
          */
-        uint32_t RET_cc(uint8_t cc) {
+        uint32_t RET_cc(uint8_t cc, Memory &mem) {
             if (cc) {
                 uint16_t lsb = mem.read(SP.get_data16());
                 SP++;
@@ -1218,7 +1215,7 @@ class CPU {
         /** 
          * Call address vec
          */
-        uint32_t RST_vec(uint16_t vec) {
+        uint32_t RST_vec(uint16_t vec, Memory &mem) {
             // PC is currently pointing to the next instruction
 
             // Push PC onto the stack
@@ -1239,7 +1236,7 @@ class CPU {
          *
          * Assumes PC is pointing to e8 before call
          */
-        uint32_t ADD_SP_e8() {
+        uint32_t ADD_SP_e8(Memory &mem) {
             int8_t e8 = (int8_t)mem.read(PC++);
 
             AF.lo &= 0x7F; // Reset Z
@@ -1261,7 +1258,7 @@ class CPU {
          * Load register with address pointed by the stack pointer
          * Loading register AF modifies all flags Z, N, H, and C by the popped low byte
          */
-        uint32_t POP_R16(Register16 &reg) {
+        uint32_t POP_R16(Register16 &reg, Memory &mem) {
             uint16_t lsb = mem.read(SP.get_data16());
             SP++;
             uint16_t msb = mem.read(SP.get_data16());
@@ -1274,7 +1271,7 @@ class CPU {
         /** 
          * Store stack with address in register
          */
-        uint32_t PUSH_R16(Register16 &reg) {
+        uint32_t PUSH_R16(Register16 &reg, Memory &mem) {
             SP--;            
             mem.write(SP.get_data16(), reg.hi);
             SP--;
@@ -1360,7 +1357,7 @@ class CPU {
          * 
          * Reset N and H flags. Set Z accordingly
          */
-        uint32_t RLC_HL() {
+        uint32_t RLC_HL(Memory &mem) {
             uint16_t addr = HL.get_data16();
             uint8_t mem_data = mem.read(addr); 
             uint8_t b7 = mem_data & 0x80;
@@ -1411,7 +1408,7 @@ class CPU {
         * 
         * Reset N and H flags. Set Z accordingly
         */
-        uint32_t RL_HL() {
+        uint32_t RL_HL(Memory &mem) {
             uint16_t addr = HL.get_data16();
             uint8_t mem_data = mem.read(addr); 
             uint8_t b7 = mem_data & 0x80;
@@ -1462,7 +1459,7 @@ class CPU {
          * 
          * Reset N and H flags. Set Z accordingly
          */
-        uint32_t RRC_HL() {
+        uint32_t RRC_HL(Memory &mem) {
             uint16_t addr = HL.get_data16();
             uint8_t mem_data = mem.read(addr); 
             uint8_t b0 = mem_data & 0x01;
@@ -1513,7 +1510,7 @@ class CPU {
         * 
         * Reset N and H flags. Set Z accordingly
         */
-        uint32_t RR_HL() {
+        uint32_t RR_HL(Memory &mem) {
             uint16_t addr = HL.get_data16();
             uint8_t mem_data = mem.read(addr); 
             uint8_t b0 = mem_data & 0x01; 
@@ -1564,7 +1561,7 @@ class CPU {
          * 
          * Reset N and H flags. Set Z accordingly
          */
-        uint32_t SLA_HL() {
+        uint32_t SLA_HL(Memory &mem) {
             uint16_t addr = HL.get_data16();
             uint8_t mem_data = mem.read(addr);
             uint8_t b7 = mem_data & 0x80;
@@ -1614,7 +1611,7 @@ class CPU {
          * 
          * Reset N and H flags. Set Z accordingly
          */
-        uint32_t SRA_HL() {
+        uint32_t SRA_HL(Memory &mem) {
             uint16_t addr = HL.get_data16();
             uint8_t mem_data = mem.read(addr);
             uint8_t b0 = mem_data & 0x01; 
@@ -1665,7 +1662,7 @@ class CPU {
          * 
          * Reset N and H flags. Set Z accordingly
          */
-        uint32_t SRL_HL() {
+        uint32_t SRL_HL(Memory &mem) {
             uint16_t addr = HL.get_data16();
             uint8_t mem_data = mem.read(addr);
             uint8_t b0 = mem_data & 0x01; 
@@ -1709,7 +1706,7 @@ class CPU {
          *
          * Reset N, H, and C flags. Set Z flag accordingly
          */
-        uint32_t SWAP_HL() {
+        uint32_t SWAP_HL(Memory &mem) {
             uint16_t addr = HL.get_data16();
             uint8_t mem_data = mem.read(addr);
             uint8_t lower_nib = mem_data & 0xF;
@@ -1742,7 +1739,7 @@ class CPU {
         /** 
          * Set Z flag if bit at index b3 is not set. Reset N flag. Set H flag
          */
-        uint32_t BIT_b3_HL(uint8_t b3) {
+        uint32_t BIT_b3_HL(uint8_t b3, Memory &mem) {
             uint16_t addr = HL.get_data16();
             uint8_t mem_data = mem.read(addr);
             uint8_t bit = (mem_data >> b3) & 0x01;
@@ -1764,7 +1761,7 @@ class CPU {
         /** 
          * Reset memory[HL] bit at position b3
          */
-        uint32_t RES_b3_HL(uint8_t b3) {
+        uint32_t RES_b3_HL(uint8_t b3, Memory &mem) {
             uint16_t addr = HL.get_data16();
             uint8_t mem_data = mem.read(addr);
             mem_data = mem_data & (~(0x01 << b3));
@@ -1783,7 +1780,7 @@ class CPU {
         /** 
          * Set memory[HL] bit at position b3
          */
-        uint32_t SET_b3_HL(uint8_t b3) {
+        uint32_t SET_b3_HL(uint8_t b3, Memory &mem) {
             uint16_t addr = HL.get_data16();
             uint8_t mem_data = mem.read(addr);
             mem_data = mem_data & (0x01 << b3);
@@ -1796,7 +1793,7 @@ class CPU {
     public:
     
         // Constructor
-        CPU(): AF(), BC(), DE(), HL(), SP(), mem() 
+        CPU(): AF(), BC(), DE(), HL(), SP()
         {
             PC = 0x0100;
             SP.set_data16(0xFFFE);
@@ -1811,7 +1808,7 @@ class CPU {
          * Fetch, decode, and execute and opcode then 
          * return the number of m-cycles that opcode took
          */
-        uint32_t emulate_cycles() {
+        uint32_t emulate_cycles(Memory &mem) {
             uint32_t m_cycles = 0;
 
             // Fetch
@@ -1975,48 +1972,48 @@ class CPU {
 
                 // LD [HL], R8
                 case 0x70:
-                    m_cycles += LD_HL_R8(BC.hi);
+                    m_cycles += LD_HL_R8(BC.hi, mem);
                     break;
                 case 0x71:
-                    m_cycles += LD_HL_R8(BC.lo);
+                    m_cycles += LD_HL_R8(BC.lo, mem);
                     break;
                 case 0x72:
-                    m_cycles += LD_HL_R8(DE.hi);
+                    m_cycles += LD_HL_R8(DE.hi, mem);
                     break;
                 case 0x73:
-                    m_cycles += LD_HL_R8(DE.lo);
+                    m_cycles += LD_HL_R8(DE.lo, mem);
                     break;
                 case 0x74:
-                    m_cycles += LD_HL_R8(HL.hi);
+                    m_cycles += LD_HL_R8(HL.hi, mem);
                     break;
                 case 0x75:
-                    m_cycles += LD_HL_R8(HL.lo);
+                    m_cycles += LD_HL_R8(HL.lo, mem);
                     break;
                 case 0x77:
-                    m_cycles += LD_HL_R8(AF.hi);
+                    m_cycles += LD_HL_R8(AF.hi, mem);
                     break;
 
                 // LD R8, [HL]
                 case 0x46:
-                    m_cycles += LD_R8_HL(BC.hi);
+                    m_cycles += LD_R8_HL(BC.hi, mem);
                     break;
                 case 0x4E:
-                    m_cycles += LD_R8_HL(BC.lo);
+                    m_cycles += LD_R8_HL(BC.lo, mem);
                     break;
                 case 0x56:
-                    m_cycles += LD_R8_HL(DE.hi);
+                    m_cycles += LD_R8_HL(DE.hi, mem);
                     break;
                 case 0x5E:
-                    m_cycles += LD_R8_HL(DE.lo);
+                    m_cycles += LD_R8_HL(DE.lo, mem);
                     break;
                 case 0x66:
-                    m_cycles += LD_R8_HL(HL.hi);
+                    m_cycles += LD_R8_HL(HL.hi, mem);
                     break;
                 case 0x6E:
-                    m_cycles += LD_R8_HL(HL.lo);
+                    m_cycles += LD_R8_HL(HL.lo, mem);
                     break;
                 case 0x7E:
-                    m_cycles += LD_R8_HL(AF.hi);
+                    m_cycles += LD_R8_HL(AF.hi, mem);
                     break;
 
                 case 0x76: // TODO: HALT
@@ -2024,83 +2021,83 @@ class CPU {
 
                 // LD R8, n8
                 case 0x06:
-                    m_cycles += LD_R8_n8(BC.hi);
+                    m_cycles += LD_R8_n8(BC.hi, mem);
                     break;
                 case 0x0E:
-                    m_cycles += LD_R8_n8(BC.lo);
+                    m_cycles += LD_R8_n8(BC.lo, mem);
                     break;
                 case 0x16:
-                    m_cycles += LD_R8_n8(DE.hi);
+                    m_cycles += LD_R8_n8(DE.hi, mem);
                     break;
                 case 0x1E:
-                    m_cycles += LD_R8_n8(DE.lo);
+                    m_cycles += LD_R8_n8(DE.lo, mem);
                     break;
                 case 0x26:
-                    m_cycles += LD_R8_n8(HL.hi);
+                    m_cycles += LD_R8_n8(HL.hi, mem);
                     break;
                 case 0x2E:
-                    m_cycles += LD_R8_n8(HL.lo);
+                    m_cycles += LD_R8_n8(HL.lo, mem);
                     break;
                 case 0x3E:
-                    m_cycles += LD_R8_n8(BC.hi);
+                    m_cycles += LD_R8_n8(BC.hi, mem);
                     break;
 
                 case 0x36: // LD [HL], n8
-                    m_cycles += LD_HL_n8();
+                    m_cycles += LD_HL_n8(mem);
                     break;
 
                 // LD [R16], A
                 case 0x02:
-                    m_cycles += LD_R16_A(BC);
+                    m_cycles += LD_R16_A(BC, mem);
                     break;
                 case 0x12:
-                    m_cycles += LD_R16_A(DE);
+                    m_cycles += LD_R16_A(DE, mem);
                     break;
                 case 0x22:
-                    m_cycles += LD_R16_A(HL++);
+                    m_cycles += LD_R16_A(HL++, mem);
                     break;
                 case 0x32:
-                    m_cycles += LD_R16_A(HL--);
+                    m_cycles += LD_R16_A(HL--, mem);
                     break;
 
                 // LD A, [R16]
                 case 0x0A:
-                    m_cycles += LD_A_R16(BC);
+                    m_cycles += LD_A_R16(BC, mem);
                     break;
                 case 0x1A:
-                    m_cycles += LD_A_R16(DE);
+                    m_cycles += LD_A_R16(DE, mem);
                     break;
                 case 0x2A:
-                    m_cycles += LD_A_R16(HL++);
+                    m_cycles += LD_A_R16(HL++, mem);
                     break;
                 case 0x3A:
-                    m_cycles += LD_A_R16(HL--);
+                    m_cycles += LD_A_R16(HL--, mem);
                     break;
 
                 // LD R16, n16
                 case 0x01:
-                    m_cycles += LD_R16_n16(BC);
+                    m_cycles += LD_R16_n16(BC, mem);
                     break;
                 case 0x11:
-                    m_cycles += LD_R16_n16(DE);
+                    m_cycles += LD_R16_n16(DE, mem);
                     break;
                 case 0x21:
-                    m_cycles += LD_R16_n16(HL);
+                    m_cycles += LD_R16_n16(HL, mem);
                     break;
                 case 0x31:
-                    m_cycles += LD_R16_n16(SP);
+                    m_cycles += LD_R16_n16(SP, mem);
                     break;
 
                 case 0x08: // LD [n16], SP
-                    m_cycles += LD_n16_SP();
+                    m_cycles += LD_n16_SP(mem);
                     break;
 
                 case 0xEA: // LD [n16], A
-                    m_cycles += LD_n16_A();
+                    m_cycles += LD_n16_A(mem);
                     break;
 
                 case 0xFA: // LD A, [n16]
-                    m_cycles += LD_A_n16();
+                    m_cycles += LD_A_n16(mem);
                     break;
 
                 case 0xF9: // LD SP, HL
@@ -2108,23 +2105,23 @@ class CPU {
                     break;
 
                 case 0xE2: // LDH [C], A
-                    m_cycles += LDH_C_A();
+                    m_cycles += LDH_C_A(mem);
                     break;
 
                 case 0xF2: // LDH A, [C]
-                    m_cycles += LDH_A_C();
+                    m_cycles += LDH_A_C(mem);
                     break;
 
                 case 0xE0: // LDH [n8], A
-                    m_cycles += LDH_n8_A();
+                    m_cycles += LDH_n8_A(mem);
                     break;
 
                 case 0xF0: // LDH A, [n8]
-                    m_cycles += LDH_A_n8();
+                    m_cycles += LDH_A_n8(mem);
                     break;
 
                 case 0xF8: // LD HL, SP + n8
-                    m_cycles += LD_HL_SP_e8();
+                    m_cycles += LD_HL_SP_e8(mem);
                     break;
 
                 // INC R16
@@ -2194,7 +2191,7 @@ class CPU {
                 
                 // INC [HL]
                 case 0x34:
-                    m_cycles += INC_HL();
+                    m_cycles += INC_HL(mem);
                     break;
 
                 // DEC R8
@@ -2222,7 +2219,7 @@ class CPU {
                         
                 // DEC [HL]
                 case 0x35:
-                    m_cycles += DEC_HL();
+                    m_cycles += DEC_HL(mem);
                     break;
 
                 // ADD A,R8
@@ -2250,7 +2247,7 @@ class CPU {
 
                 // ADD A,[HL]
                 case 0x86:
-                    m_cycles += ADD_A_HL();
+                    m_cycles += ADD_A_HL(mem);
                     break;
 
                 // ADC A,R8
@@ -2278,7 +2275,7 @@ class CPU {
                 
                 // ADC A,[HL]
                 case 0x8E:
-                    m_cycles += ADC_A_HL();
+                    m_cycles += ADC_A_HL(mem);
                     break;
 
                 // SUB A,R8
@@ -2306,7 +2303,7 @@ class CPU {
 
                 // SUB A,[HL]
                 case 0x96:
-                    m_cycles += SUB_A_HL();
+                    m_cycles += SUB_A_HL(mem);
                     break;
 
                 // SBC A,R8
@@ -2334,7 +2331,7 @@ class CPU {
                 
                 // SBC A,[HL]
                 case 0x9E:
-                    m_cycles += SBC_A_HL();
+                    m_cycles += SBC_A_HL(mem);
                     break;
 
                 // AND A,R8
@@ -2362,7 +2359,7 @@ class CPU {
 
                 // AND A,[HL]
                 case 0xA6:
-                    m_cycles += AND_A_HL();
+                    m_cycles += AND_A_HL(mem);
                     break;
 
                 // XOR A,R8
@@ -2390,7 +2387,7 @@ class CPU {
                 
                 // XOR A,[HL]
                 case 0xAE:
-                    m_cycles += XOR_A_HL();
+                    m_cycles += XOR_A_HL(mem);
                     break;
 
                 // OR A,R8
@@ -2418,7 +2415,7 @@ class CPU {
 
                 // OR A,[HL]
                 case 0xB6:
-                    m_cycles += OR_A_HL();
+                    m_cycles += OR_A_HL(mem);
                     break;
 
                 // CP A,R8
@@ -2446,66 +2443,66 @@ class CPU {
                 
                 // CP A,[HL]
                 case 0xBE:
-                    m_cycles += CP_A_HL();
+                    m_cycles += CP_A_HL(mem);
                     break;
 
                 // ADD A, n8
                 case 0xC6:
-                    m_cycles += ADD_A_n8();
+                    m_cycles += ADD_A_n8(mem);
                     break;
 
                 // ADC A, n8
                 case 0xCE:
-                    m_cycles += ADC_A_n8();
+                    m_cycles += ADC_A_n8(mem);
                     break;
 
                 // SUB A, n8
                 case 0xD6:
-                    m_cycles += SUB_A_n8();
+                    m_cycles += SUB_A_n8(mem);
                     break;
 
                 // SBC A, n8
                 case 0xDE:
-                    m_cycles += SBC_A_n8();
+                    m_cycles += SBC_A_n8(mem);
                     break;
 
                 // AND A, n8
                 case 0xE6:
-                    m_cycles += AND_A_n8();
+                    m_cycles += AND_A_n8(mem);
                     break;
 
                 // XOR A, n8
                 case 0xEE:
-                    m_cycles += XOR_A_n8();
+                    m_cycles += XOR_A_n8(mem);
                     break;
 
                 // OR A, n8
                 case 0xF6:
-                    m_cycles += OR_A_n8();
+                    m_cycles += OR_A_n8(mem);
                     break;
 
                 // CP A, n8
                 case 0xFE:
-                    m_cycles += CP_A_n8();
+                    m_cycles += CP_A_n8(mem);
                     break;
 
                 // CALL n16
                 case 0xCD:
-                    m_cycles += CALL_n16();
+                    m_cycles += CALL_n16(mem);
                     break;
 
                 // CALL cc, n16
                 case 0xC4:
-                    m_cycles += CALL_cc_n16(!(AF.lo & 0x80)); // NZ
+                    m_cycles += CALL_cc_n16(!(AF.lo & 0x80), mem); // NZ
                     break;
                 case 0xCC:
-                    m_cycles += CALL_cc_n16(AF.lo & 0x80); // Z
+                    m_cycles += CALL_cc_n16(AF.lo & 0x80, mem); // Z
                     break;
                 case 0xD4:
-                    m_cycles += CALL_cc_n16(!(AF.lo & 0x10)); // NC
+                    m_cycles += CALL_cc_n16(!(AF.lo & 0x10), mem); // NC
                     break;
                 case 0xDC:
-                    m_cycles += CALL_cc_n16(AF.lo & 0x10); // C
+                    m_cycles += CALL_cc_n16(AF.lo & 0x10, mem); // C
                     break;
 
                 // JP HL
@@ -2515,109 +2512,109 @@ class CPU {
 
                 // JP n16
                 case 0xC3:
-                    m_cycles += JP_n16();
+                    m_cycles += JP_n16(mem);
                     break;
 
                 // JR e8
                 case 0x18:
-                    m_cycles += JR_e8();
+                    m_cycles += JR_e8(mem);
                     break;
 
                 // JR cc, e8
                 case 0x20:
-                    m_cycles += JR_cc_e8(!(AF.lo & 0x80)); // NZ
+                    m_cycles += JR_cc_e8(!(AF.lo & 0x80), mem); // NZ
                     break;
                 case 0x28:
-                    m_cycles += JR_cc_e8(AF.lo & 0x80); // Z
+                    m_cycles += JR_cc_e8(AF.lo & 0x80, mem); // Z
                     break;
                 case 0x30:
-                    m_cycles += JR_cc_e8(!(AF.lo & 0x10)); // NC
+                    m_cycles += JR_cc_e8(!(AF.lo & 0x10), mem); // NC
                     break;
                 case 0x38:
-                    m_cycles += JR_cc_e8(AF.lo & 0x10); // C
+                    m_cycles += JR_cc_e8(AF.lo & 0x10, mem); // C
                     break;
 
                 // RET
                 case 0xC9:
-                    m_cycles += RET();
+                    m_cycles += RET(mem);
                     break;
 
                 // RETI
                 case 0xD9:
-                    m_cycles += RETI();
+                    m_cycles += RETI(mem);
                     break;
 
                 // RET cc
                 case 0xC0:
-                    m_cycles += RET_cc(!(AF.lo & 0x80)); // NZ
+                    m_cycles += RET_cc(!(AF.lo & 0x80), mem); // NZ
                     break;
                 case 0xC8:
-                    m_cycles += RET_cc(AF.lo & 0x80); // Z
+                    m_cycles += RET_cc(AF.lo & 0x80, mem); // Z
                     break;
                 case 0xD0:
-                    m_cycles += RET_cc(!(AF.lo & 0x10)); // NC
+                    m_cycles += RET_cc(!(AF.lo & 0x10), mem); // NC
                     break;
                 case 0xD8:
-                    m_cycles += RET_cc(AF.lo & 0x10); // C
+                    m_cycles += RET_cc(AF.lo & 0x10, mem); // C
                     break;
 
                 // RST vec
                 case 0xC7:
-                    m_cycles += RST_vec(0x0000);
+                    m_cycles += RST_vec(0x0000, mem);
                     break;
                 case 0xCF:
-                    m_cycles += RST_vec(0x0008);
+                    m_cycles += RST_vec(0x0008, mem);
                     break;
                 case 0xD7:
-                    m_cycles += RST_vec(0x0010);
+                    m_cycles += RST_vec(0x0010, mem);
                     break;
                 case 0xDF:
-                    m_cycles += RST_vec(0x0018);
+                    m_cycles += RST_vec(0x0018, mem);
                     break;
                 case 0xE7:
-                    m_cycles += RST_vec(0x0020);
+                    m_cycles += RST_vec(0x0020, mem);
                     break;
                 case 0xEF:
-                    m_cycles += RST_vec(0x0028);
+                    m_cycles += RST_vec(0x0028, mem);
                     break;
                 case 0xF7:
-                    m_cycles += RST_vec(0x0030);
+                    m_cycles += RST_vec(0x0030, mem);
                     break;
                 case 0xFF:
-                    m_cycles += RST_vec(0x0038);
+                    m_cycles += RST_vec(0x0038, mem);
                     break;
 
                 // ADD SP,e8
                 case 0xE8:
-                    m_cycles += ADD_SP_e8();
+                    m_cycles += ADD_SP_e8(mem);
                     break;
 
                 // POP R16
                 case 0xC1:
-                    m_cycles += POP_R16(BC);
+                    m_cycles += POP_R16(BC, mem);
                     break;
                 case 0xD1:
-                    m_cycles += POP_R16(DE);
+                    m_cycles += POP_R16(DE, mem);
                     break;
                 case 0xE1:
-                    m_cycles += POP_R16(HL);
+                    m_cycles += POP_R16(HL, mem);
                     break;
                 case 0xF1:
-                    m_cycles += POP_R16(AF);
+                    m_cycles += POP_R16(AF, mem);
                     break;
 
                 // PUSH R16
                 case 0xC5:
-                    m_cycles += PUSH_R16(BC);
+                    m_cycles += PUSH_R16(BC, mem);
                     break;
                 case 0xD5:
-                    m_cycles += PUSH_R16(DE);
+                    m_cycles += PUSH_R16(DE, mem);
                     break;
                 case 0xE5:
-                    m_cycles += PUSH_R16(HL);
+                    m_cycles += PUSH_R16(HL, mem);
                     break;
                 case 0xF5:
-                    m_cycles += PUSH_R16(AF);
+                    m_cycles += PUSH_R16(AF, mem);
                     break;
 
                 // CCF
@@ -2680,7 +2677,7 @@ class CPU {
 
                         // RLC [HL]
                         case 0x06:
-                            m_cycles += RLC_HL();
+                            m_cycles += RLC_HL(mem);
                             break;
 
                         // RL R8
@@ -2708,7 +2705,7 @@ class CPU {
 
                         // RL [HL]
                         case 0x16:
-                            m_cycles += RL_HL();
+                            m_cycles += RL_HL(mem);
                             break;
 
                         // RRC R8
@@ -2736,7 +2733,7 @@ class CPU {
 
                         // RRC [HL]
                         case 0x0E:
-                            m_cycles += RRC_HL();
+                            m_cycles += RRC_HL(mem);
                             break;
                         
                         // RR R8
@@ -2764,7 +2761,7 @@ class CPU {
 
                         // RR [HL]
                         case 0x1E:
-                            m_cycles += RR_HL();
+                            m_cycles += RR_HL(mem);
                             break;
 
                         // SLA R8
@@ -2792,7 +2789,7 @@ class CPU {
 
                         // SLA [HL]
                         case 0x26:
-                            m_cycles += SLA_HL();
+                            m_cycles += SLA_HL(mem);
                             break;
 
                         // SRA R8
@@ -2820,7 +2817,7 @@ class CPU {
 
                         // SRA [HL]
                         case 0x2E:
-                            m_cycles += SRA_HL();
+                            m_cycles += SRA_HL(mem);
                             break;
 
                         // SRL R8
@@ -2848,7 +2845,7 @@ class CPU {
 
                         // SRL [HL]
                         case 0x3E:
-                            m_cycles += SRL_HL();
+                            m_cycles += SRL_HL(mem);
                             break;
 
                         // SWAP R8
@@ -2876,7 +2873,7 @@ class CPU {
 
                         // SWAP [HL]
                         case 0x36:
-                            m_cycles += SWAP_HL();
+                            m_cycles += SWAP_HL(mem);
                             break;
 
                         // BIT b3,R8
@@ -3051,28 +3048,28 @@ class CPU {
 
                         // BIT b3,[HL]
                         case 0x46:
-                            m_cycles += BIT_b3_HL(0);
+                            m_cycles += BIT_b3_HL(0, mem);
                             break;
                         case 0x4E:
-                            m_cycles += BIT_b3_HL(1);
+                            m_cycles += BIT_b3_HL(1, mem);
                             break;
                         case 0x56:
-                            m_cycles += BIT_b3_HL(2);
+                            m_cycles += BIT_b3_HL(2, mem);
                             break;
                         case 0x5E:
-                            m_cycles += BIT_b3_HL(3);
+                            m_cycles += BIT_b3_HL(3, mem);
                             break;
                         case 0x66:
-                            m_cycles += BIT_b3_HL(4);
+                            m_cycles += BIT_b3_HL(4, mem);
                             break;
                         case 0x6E:
-                            m_cycles += BIT_b3_HL(5);
+                            m_cycles += BIT_b3_HL(5, mem);
                             break;
                         case 0x76:
-                            m_cycles += BIT_b3_HL(6);
+                            m_cycles += BIT_b3_HL(6, mem);
                             break;
                         case 0x7E:
-                            m_cycles += BIT_b3_HL(7);
+                            m_cycles += BIT_b3_HL(7, mem);
                             break;
 
                         // RES b3,R8
@@ -3247,28 +3244,28 @@ class CPU {
 
                         // RES b3,[HL]
                         case 0x86:
-                            m_cycles += RES_b3_HL(0);
+                            m_cycles += RES_b3_HL(0, mem);
                             break;
                         case 0x8E:
-                            m_cycles += RES_b3_HL(1);
+                            m_cycles += RES_b3_HL(1, mem);
                             break;
                         case 0x96:
-                            m_cycles += RES_b3_HL(2);
+                            m_cycles += RES_b3_HL(2, mem);
                             break;
                         case 0x9E:
-                            m_cycles += RES_b3_HL(3);
+                            m_cycles += RES_b3_HL(3, mem);
                             break;
                         case 0xA6:
-                            m_cycles += RES_b3_HL(4);
+                            m_cycles += RES_b3_HL(4, mem);
                             break;
                         case 0xAE:
-                            m_cycles += RES_b3_HL(5);
+                            m_cycles += RES_b3_HL(5, mem);
                             break;
                         case 0xB6:
-                            m_cycles += RES_b3_HL(6);
+                            m_cycles += RES_b3_HL(6, mem);
                             break;
                         case 0xBE:
-                            m_cycles += RES_b3_HL(7);
+                            m_cycles += RES_b3_HL(7, mem);
                             break;
 
                         // SET b3,R8
@@ -3443,28 +3440,28 @@ class CPU {
 
                         // SET b3,[HL]
                         case 0xC6:
-                            m_cycles += SET_b3_HL(0);
+                            m_cycles += SET_b3_HL(0, mem);
                             break;
                         case 0xCE:
-                            m_cycles += SET_b3_HL(1);
+                            m_cycles += SET_b3_HL(1, mem);
                             break;
                         case 0xD6:
-                            m_cycles += SET_b3_HL(2);
+                            m_cycles += SET_b3_HL(2, mem);
                             break;
                         case 0xDE:
-                            m_cycles += SET_b3_HL(3);
+                            m_cycles += SET_b3_HL(3, mem);
                             break;
                         case 0xE6:
-                            m_cycles += SET_b3_HL(4);
+                            m_cycles += SET_b3_HL(4, mem);
                             break;
                         case 0xEE:
-                            m_cycles += SET_b3_HL(5);
+                            m_cycles += SET_b3_HL(5, mem);
                             break;
                         case 0xF6:
-                            m_cycles += SET_b3_HL(6);
+                            m_cycles += SET_b3_HL(6, mem);
                             break;
                         case 0xFE:
-                            m_cycles += SET_b3_HL(7);
+                            m_cycles += SET_b3_HL(7, mem);
                             break;
                     }
                     
@@ -3490,6 +3487,7 @@ int main() {
     SDL_Window *window = SDL_CreateWindow("gb-emu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 160 * 4, 144 * 4, 0);
 
     CPU cpu;
+    Memory mem;
     
     // Main loop
     int running = 1;
