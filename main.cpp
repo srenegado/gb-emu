@@ -1,6 +1,8 @@
 #include <iostream>
+#include <stdexcept>
 #include <cstdint>
 #include <cstring>
+#include <cstdio>
 #include "SDL.h"
 
 
@@ -23,6 +25,19 @@ class Memory {
 
         void write(uint16_t addr, uint8_t val) {
             map[addr] = val;
+        }
+
+        void load_ROM(char *ROM) {
+            if (ROM == nullptr)
+                return;
+
+            uint8_t *start_addr = &map[0x0000];
+            FILE *ROM_file = std::fopen(ROM, "rb");
+            if (ROM_file == nullptr)
+                throw std::invalid_argument("Opening ROM file failed");
+
+            std::fread(start_addr, 0x8000, 1, ROM_file);
+            std::fclose(ROM_file);
         }
 };
 
@@ -3556,12 +3571,21 @@ class CPU {
 };
 
 
-int main() {
+int main(int argc, char** argv) {
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window *window = SDL_CreateWindow("gb-emu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 160 * 4, 144 * 4, 0);
 
     CPU cpu;
     Memory mem;
+
+    // Load game into ROM
+    try {
+        char *ROM = argv[1];
+        mem.load_ROM(ROM);
+    } catch (std::invalid_argument &e) {
+        std::cerr << e.what() << std::endl;
+        return -1;
+    }
     
     // Main loop
     int running = 1;
