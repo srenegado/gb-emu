@@ -26,6 +26,36 @@ class Memory {
         }
 };
 
+enum InterruptType {
+    /*   In the interrupt registers (IE and IF), 
+         the following bits are mapped to each type:  */
+    Joypad, // 4
+    Serial, // 3
+    Timer,  // 2    
+    LCD,    // 1
+    VBlank  // 0
+};
+
+struct InterruptHandler {
+
+    /** 
+     * Sets bit in Interrupt flag (IF) based on requested interrupt
+     */
+    void request_interrupt(Memory &mem, InterruptType type) {
+        uint8_t enable = 0;
+        switch (type) {
+            case Joypad: enable = 0x10; break;
+            case Serial: enable = 0x08; break;
+            case Timer:  enable = 0x04; break;
+            case LCD:    enable = 0x02; break;
+            case VBlank: enable = 0x01; break;
+        }
+        mem.write(0xFF0F, mem.read(0xFF0F) | enable);
+    }
+    
+
+};
+
 
 typedef uint8_t Register8;
 
@@ -112,8 +142,12 @@ class CPU {
 
         uint16_t PC;      // Program counter  
 
+        InterruptHandler interrupt_handler;
+
         uint8_t IME;      // Interrupt master enable flag
         uint8_t IME_next;
+
+
 
         /** 
          * Opcodes
@@ -1803,6 +1837,46 @@ class CPU {
         // Destructor
         ~CPU() {}
 
+         /** 
+         * Timer and divider methods
+         *
+         * I/O Registers:
+         * FF04 - DIV Divider 
+         * FF05 - TIMA Timer counter
+         * FF06 - TMA Timer modulo
+         * FF07 - TAC Timer control
+         */
+        
+        void inc_DIV(Memory &mem) {
+            mem.write(0xFF04, mem.read(0xFF04) + 1);
+        }
+
+        void inc_TIMA(Memory &mem) {
+            uint16_t res = mem.read(0xFF05) + 1;
+            if (res > 0xFF) {
+                // Timer counter overflowed
+                mem.write(0xFF05, mem.read(0xFF06)); // TIMA <- TMA
+                interrupt_handler.request_interrupt(mem, Timer);
+            } else {
+                mem.write(0xFF05, res);
+            }
+        }
+
+        uint32_t get_timer_clock_speed(Memory &mem) {
+            uint8_t clock_select = mem.read(0xFF07) & 0x03;
+            switch (clock_select) {
+                case 0x00: return 256; break;
+                case 0x01: return 4;   break;
+                case 0x10: return 16;  break;
+                case 0x11: return 64;  break;
+            }
+        }
+
+        uint8_t is_timer_started(Memory &mem) {
+            uint8_t timer_stop = (mem.read(0xFF07) & 0x04) >> 2;
+            return timer_stop;
+        }
+        
 
         /**
          * Fetch, decode, and execute and opcode then 
