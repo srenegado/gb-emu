@@ -3,6 +3,7 @@
 #include "SDL.h"
 #include "cpu.h"
 #include "memory.h"
+#include "graphics.h"
 
 int main(int argc, char** argv) {
     SDL_Init(SDL_INIT_VIDEO);
