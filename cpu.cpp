@@ -71,6 +71,14 @@ Register16 Register16::operator--(int) {
   * 
   * Each opcode returns the number of m-cycles they use
   */ 
+#define B BC.hi
+#define C BC.lo
+#define D DE.hi
+#define E DE.lo
+#define H HL.hi
+#define L HL.lo
+#define A AF.hi
+#define F AF.lo
 
 /**
   * Load value in src register into dest resigter
@@ -128,7 +136,7 @@ uint32_t CPU::LD_HL_n8(Memory &mem) {
   * Store value in register A into memory[dest]
   */
 uint32_t CPU::LD_R16_A(const Register16 &dest, Memory &mem) {
-    mem.write(dest.get_data16(), AF.hi);
+    mem.write(dest.get_data16(), A);
     return 2;
 }
 
@@ -136,7 +144,7 @@ uint32_t CPU::LD_R16_A(const Register16 &dest, Memory &mem) {
   * Load value in memory[dest] into register A 
   */
 uint32_t CPU::LD_A_R16(const Register16 &dest, Memory &mem) {
-    AF.hi = mem.read(dest.get_data16());
+    A = mem.read(dest.get_data16());
     return 2;    
 }
 
@@ -189,7 +197,7 @@ uint32_t CPU::LD_n16_A(Memory &mem) {
     uint8_t msb = mem.read(PC++);
     uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb;
 
-    mem.write(n16, AF.hi);
+    mem.write(n16, A);
 
     return 4;
 }
@@ -207,7 +215,7 @@ uint32_t CPU::LD_A_n16(Memory &mem) {
     uint8_t msb = mem.read(PC++);
     uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb;
 
-    AF.hi = mem.read(n16);
+    A = mem.read(n16);
 
     return 4;
 }
@@ -224,7 +232,7 @@ uint32_t CPU::LD_SP_HL() {
   * Store value in register A into memory[0xFF00 + C]
   */
 uint32_t CPU::LDH_C_A(Memory &mem) {
-    mem.write(0xFF00 + (uint16_t)BC.lo, AF.hi);
+    mem.write(0xFF00 + (uint16_t)C, A);
     return 2;
 }
 
@@ -232,7 +240,7 @@ uint32_t CPU::LDH_C_A(Memory &mem) {
   * Load value in memory[0xFF00 + C] into register A 
   */
 uint32_t CPU::LDH_A_C(Memory &mem) {
-    AF.hi = mem.read(0xFF00 + (uint16_t)BC.lo);
+    A = mem.read(0xFF00 + (uint16_t)C);
     return 2;
 }
 
@@ -247,7 +255,7 @@ uint32_t CPU::LDH_n8_A(Memory &mem) {
     // Get n8 and move PC to next instruction
     uint8_t n8 = mem.read(PC++);
 
-    mem.write(0xFF00 + (uint16_t)n8, AF.hi);
+    mem.write(0xFF00 + (uint16_t)n8, A);
     return 3;
 }
 
@@ -262,7 +270,7 @@ uint32_t CPU::LDH_A_n8(Memory &mem) {
     // Get n8 and move PC to next instruction
     uint8_t n8 = mem.read(PC++);
 
-    AF.hi = mem.read(0xFF00 + (uint16_t)n8);
+    A = mem.read(0xFF00 + (uint16_t)n8);
     return 3;
 }
 
@@ -277,16 +285,16 @@ uint32_t CPU::LD_HL_SP_e8(Memory &mem) {
     // Get e8 and move PC to next instruction
     int8_t e8 = (int8_t) mem.read(PC++);
 
-    AF.lo &= 0x7F; // Reset Z
-    AF.lo &= 0xBF; // Reset N
+    F &= 0x7F; // Reset Z
+    F &= 0xBF; // Reset N
 
     uint8_t set_H = (SP.lo & 0x0F) + ((uint8_t)e8 & 0x0F) > 0xF;
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
     
     uint8_t set_C = ((uint8_t)e8 + SP.lo) > 0xFF;
     if (set_C) 
-        AF.lo |= 0x10; // Set C
+        F |= 0x10; // Set C
 
     HL.set_data16(SP.get_data16() + e8);
 
@@ -315,19 +323,19 @@ uint32_t CPU::DEC_R16(Register16 &reg) {
   * Reset N flag. Set H and C flag appropriately
   */
 uint32_t CPU::ADD_HL_R16(Register16 &reg) {
-    AF.lo &= 0xBF; // Reset N
+    F &= 0xBF; // Reset N
 
     uint16_t HL_data16 = HL.get_data16();
     uint16_t reg_data16 = reg.get_data16();
 
     uint8_t set_H = (HL_data16 & 0x0FFF) + (reg_data16 & 0x0FFF) > 0x0FFF;
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
     
     
     uint8_t set_C = HL_data16 + reg_data16 > 0xFFFF;
     if (set_C) 
-        AF.lo |= 0x10; // Set C
+        F |= 0x10; // Set C
     
     HL += reg;
     return 2;
@@ -340,15 +348,15 @@ uint32_t CPU::ADD_HL_R16(Register16 &reg) {
   */
 uint32_t CPU::INC_R8(Register8 &reg) {
 
-    AF.lo &= 0xBF; // Reset N
+    F &= 0xBF; // Reset N
     
     uint8_t set_Z = (reg + 0x01) == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z            
+        F |= 0x80; // Set Z            
 
     uint8_t set_H = (reg & 0xF) + 0x1 > 0xF;
     if (set_H) {
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
     }
 
     reg++;
@@ -363,15 +371,15 @@ uint32_t CPU::INC_R8(Register8 &reg) {
 uint32_t CPU::INC_HL(Memory &mem) {
     uint8_t HLmem = mem.read(HL.get_data16());
 
-    AF.lo &= 0xBF; // Reset N
+    F &= 0xBF; // Reset N
     
     uint8_t set_Z = HLmem + 0x01 == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z           
+        F |= 0x80; // Set Z           
 
     uint8_t set_H = (HLmem & 0xF) + 0x1 > 0xF;
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
     
     mem.write(HL.get_data16(), HLmem + 0x01);
     return 3;
@@ -383,15 +391,15 @@ uint32_t CPU::INC_HL(Memory &mem) {
   * Set N flag. Set Z and H flag accordingly
   */
 uint32_t CPU::DEC_R8(Register8 &reg) {
-    AF.lo != 0x40; // Set N
+    F != 0x40; // Set N
 
     uint8_t set_Z = reg - 0x01 == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z            
+        F |= 0x80; // Set Z            
 
     uint8_t set_H = reg & 0xF < 0x1 ; 
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
 
     reg--;
     return 1;
@@ -405,15 +413,15 @@ uint32_t CPU::DEC_R8(Register8 &reg) {
 uint32_t CPU::DEC_HL(Memory &mem) {
     uint8_t HLmem = mem.read(HL.get_data16());
 
-    AF.lo != 0x40; // Set N
+    F != 0x40; // Set N
     
     uint8_t set_Z = HLmem - 0x01 == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z           
+        F |= 0x80; // Set Z           
 
     uint8_t set_H = HLmem & 0xF < 0x1 ;
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
 
     mem.write(HL.get_data16(), HLmem - 0x01);
     return 3;
@@ -425,21 +433,21 @@ uint32_t CPU::DEC_HL(Memory &mem) {
   * Reset N flag. Set Z, H, and C flags accordingly
   */
 uint32_t CPU::ADD_A_R8(Register8 reg) {
-    AF.lo &= 0xBF; // Reset N
+    F &= 0xBF; // Reset N
 
-    uint8_t set_Z = AF.hi + reg == 0;
+    uint8_t set_Z = A + reg == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
 
-    uint8_t set_H = (AF.hi & 0xF) + (reg & 0xF) > 0xF;
+    uint8_t set_H = (A & 0xF) + (reg & 0xF) > 0xF;
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
 
-    uint8_t set_C = AF.hi + reg > 0xFF;
+    uint8_t set_C = A + reg > 0xFF;
     if (set_C) 
-        AF.lo |= 0x10; // Set C
+        F |= 0x10; // Set C
     
-    AF.hi += reg;
+    A += reg;
     return 1;
 }
 
@@ -449,23 +457,23 @@ uint32_t CPU::ADD_A_R8(Register8 reg) {
   * Reset N flag. Set Z, H, and C flags accordingly
   */
 uint32_t CPU::ADD_A_HL(Memory &mem) {
-    AF.lo &= 0xBF; // Reset N
+    F &= 0xBF; // Reset N
 
     uint8_t HLmem = mem.read(HL.get_data16());
 
-    uint8_t set_Z = AF.hi + HLmem == 0; 
+    uint8_t set_Z = A + HLmem == 0; 
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
 
-    uint8_t set_H = (AF.hi & 0xF) + (HLmem & 0xF) > 0xF;
+    uint8_t set_H = (A & 0xF) + (HLmem & 0xF) > 0xF;
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
 
-    uint8_t set_C = AF.hi + HLmem > 0xFF;
+    uint8_t set_C = A + HLmem > 0xFF;
     if (set_C) 
-        AF.lo |= 0x10; // Set C
+        F |= 0x10; // Set C
 
-    AF.hi += HLmem;
+    A += HLmem;
     return 2;
 }
 
@@ -476,23 +484,23 @@ uint32_t CPU::ADD_A_HL(Memory &mem) {
   */
 uint32_t CPU::ADC_A_R8(Register8 reg) {
     // Get C flag value
-    uint8_t carry = (AF.lo & 0x10) ? 1 : 0;
+    uint8_t carry = (F & 0x10) ? 1 : 0;
     
-    AF.lo &= 0xBF; // Reset N
+    F &= 0xBF; // Reset N
 
-    uint8_t set_Z = AF.hi + reg + carry == 0; 
+    uint8_t set_Z = A + reg + carry == 0; 
     if (set_Z)
-        AF.lo |= 0x80; // Set Z    
+        F |= 0x80; // Set Z    
     
-    uint8_t set_H = (AF.hi & 0xF) + (reg & 0xF) + carry > 0xF;
+    uint8_t set_H = (A & 0xF) + (reg & 0xF) + carry > 0xF;
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
     
-    uint8_t set_C = AF.hi + reg + carry > 0xFF;
+    uint8_t set_C = A + reg + carry > 0xFF;
     if (set_C) 
-        AF.lo |= 0x10; // Set C
+        F |= 0x10; // Set C
         
-    AF.hi += (reg + carry);
+    A += (reg + carry);
     return 1;
 }
 
@@ -505,23 +513,23 @@ uint32_t CPU::ADC_A_HL(Memory &mem) {
     uint8_t HLmem = mem.read(HL.get_data16());
 
     // Get C flag value
-    uint8_t carry = (AF.lo & 0x10) ? 1 : 0;
+    uint8_t carry = (F & 0x10) ? 1 : 0;
 
-    AF.lo &= 0xBF; // Reset N
+    F &= 0xBF; // Reset N
 
-    uint8_t set_Z = AF.hi + HLmem + carry == 0;
+    uint8_t set_Z = A + HLmem + carry == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z   
+        F |= 0x80; // Set Z   
 
-    uint8_t set_H = (AF.hi & 0xF) + (HLmem & 0xF) + carry > 0xF;
+    uint8_t set_H = (A & 0xF) + (HLmem & 0xF) + carry > 0xF;
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
 
-    uint8_t set_C = AF.hi + HLmem + carry > 0xFF;
+    uint8_t set_C = A + HLmem + carry > 0xFF;
     if (set_C)
-        AF.lo |= 0x10; // Set C
+        F |= 0x10; // Set C
 
-    AF.hi += (HLmem + carry);
+    A += (HLmem + carry);
     return 2;
 }
 
@@ -531,21 +539,21 @@ uint32_t CPU::ADC_A_HL(Memory &mem) {
   * Set N flag. Set Z, H, and C flags accordingly
   */
 uint32_t CPU::SUB_A_R8(Register8 reg) {
-    AF.lo != 0x40; // Set N
+    F != 0x40; // Set N
 
-    uint8_t set_Z = AF.hi - reg == 0;
+    uint8_t set_Z = A - reg == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
 
-    uint8_t set_H = (AF.hi & 0xF) < (reg & 0xF);
+    uint8_t set_H = (A & 0xF) < (reg & 0xF);
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
 
-    uint8_t set_C = AF.hi < reg;
+    uint8_t set_C = A < reg;
     if (set_C) 
-        AF.lo |= 0x10; // Set C
+        F |= 0x10; // Set C
     
-    AF.hi -= reg;
+    A -= reg;
     return 1;
 }
 
@@ -557,21 +565,21 @@ uint32_t CPU::SUB_A_R8(Register8 reg) {
 uint32_t CPU::SUB_A_HL(Memory &mem) {
     uint8_t HLmem = mem.read(HL.get_data16());
 
-    AF.lo != 0x40; // Set N
+    F != 0x40; // Set N
 
-    uint8_t set_Z = AF.hi - HLmem == 0;
+    uint8_t set_Z = A - HLmem == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
 
-    uint8_t set_H = (AF.hi & 0xF) < (HLmem & 0xF);
+    uint8_t set_H = (A & 0xF) < (HLmem & 0xF);
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
 
-    uint8_t set_C = AF.hi < HLmem;
+    uint8_t set_C = A < HLmem;
     if (set_C) 
-        AF.lo |= 0x10; // Set C
+        F |= 0x10; // Set C
     
-    AF.hi -= HLmem;
+    A -= HLmem;
     return 2;
 }
 
@@ -582,23 +590,23 @@ uint32_t CPU::SUB_A_HL(Memory &mem) {
   */
 uint32_t CPU::SBC_A_R8(Register8 reg) {
     // Get C flag value
-    uint8_t carry = (AF.lo & 0x10) ? 1 : 0;
+    uint8_t carry = (F & 0x10) ? 1 : 0;
 
-    AF.lo != 0x40; // Set N
+    F != 0x40; // Set N
 
-    uint8_t set_Z = AF.hi - reg - carry == 0;
+    uint8_t set_Z = A - reg - carry == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
 
-    uint8_t set_H = (AF.hi & 0xF) < (reg & 0xF + carry);
+    uint8_t set_H = (A & 0xF) < (reg & 0xF + carry);
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
 
-    uint8_t set_C = AF.hi < (reg + carry);
+    uint8_t set_C = A < (reg + carry);
     if (set_C) 
-        AF.lo |= 0x10; // Set C
+        F |= 0x10; // Set C
     
-    AF.hi -= (reg + carry);
+    A -= (reg + carry);
     return 1;
 }
 
@@ -611,23 +619,23 @@ uint32_t CPU::SBC_A_HL(Memory &mem) {
     uint8_t HLmem = mem.read(HL.get_data16());
 
     // Get C flag value
-    uint8_t carry = (AF.lo & 0x10) ? 1 : 0;
+    uint8_t carry = (F & 0x10) ? 1 : 0;
 
-    AF.lo != 0x40; // Set N
+    F != 0x40; // Set N
 
-    uint8_t set_Z = AF.hi - HLmem - carry == 0;
+    uint8_t set_Z = A - HLmem - carry == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
 
-    uint8_t set_H = (AF.hi & 0xF) < (HLmem & 0xF + carry);
+    uint8_t set_H = (A & 0xF) < (HLmem & 0xF + carry);
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
 
-    uint8_t set_C = AF.hi < (HLmem + carry);
+    uint8_t set_C = A < (HLmem + carry);
     if (set_C) 
-        AF.lo |= 0x10; // Set C
+        F |= 0x10; // Set C
     
-    AF.hi -= (HLmem + carry);
+    A -= (HLmem + carry);
     return 2;
 }
 
@@ -637,15 +645,15 @@ uint32_t CPU::SBC_A_HL(Memory &mem) {
   * Reset N and C flags. Set H flag. Set Z flag accordingly.
   */
 uint32_t CPU::AND_A_R8(Register8 reg) {
-    AF.lo &= 0xBF; // Reset N
-    AF.lo |= 0x20; // Set H
-    AF.lo &= 0xEF; // Reset C
+    F &= 0xBF; // Reset N
+    F |= 0x20; // Set H
+    F &= 0xEF; // Reset C
     
-    uint8_t set_Z = AF.hi & reg == 0;
+    uint8_t set_Z = A & reg == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
     
-    AF.hi &= reg;
+    A &= reg;
     return 1;
 }
 
@@ -657,15 +665,15 @@ uint32_t CPU::AND_A_R8(Register8 reg) {
 uint32_t CPU::AND_A_HL(Memory &mem) {
     uint8_t HLmem = mem.read(HL.get_data16());
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo |= 0x20; // Set H
-    AF.lo &= 0xEF; // Reset C
+    F &= 0xBF; // Reset N
+    F |= 0x20; // Set H
+    F &= 0xEF; // Reset C
     
-    uint8_t set_Z = AF.hi & HLmem == 0;
+    uint8_t set_Z = A & HLmem == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
     
-    AF.hi &= HLmem;
+    A &= HLmem;
     return 2;
 }
 
@@ -675,15 +683,15 @@ uint32_t CPU::AND_A_HL(Memory &mem) {
   * Reset N, H, and C flags. Set Z flag accordingly.
   */
 uint32_t CPU::XOR_A_R8(Register8 reg) {
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
-    AF.lo &= 0xEF; // Reset C
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
+    F &= 0xEF; // Reset C
     
-    uint8_t set_Z = AF.hi ^ reg == 0;
+    uint8_t set_Z = A ^ reg == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
     
-    AF.hi ^= reg;
+    A ^= reg;
     return 1;
 }
 
@@ -695,15 +703,15 @@ uint32_t CPU::XOR_A_R8(Register8 reg) {
 uint32_t CPU::XOR_A_HL(Memory &mem) {
     uint8_t HLmem = mem.read(HL.get_data16());
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
-    AF.lo &= 0xEF; // Reset C
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
+    F &= 0xEF; // Reset C
     
-    uint8_t set_Z = AF.hi ^ HLmem == 0;
+    uint8_t set_Z = A ^ HLmem == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
     
-    AF.hi ^= HLmem;
+    A ^= HLmem;
     return 2;
 }
 
@@ -713,15 +721,15 @@ uint32_t CPU::XOR_A_HL(Memory &mem) {
   * Reset N, H, and C flags. Set Z flag accordingly.
   */
 uint32_t CPU::OR_A_R8(Register8 reg) {
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
-    AF.lo &= 0xEF; // Reset C
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
+    F &= 0xEF; // Reset C
     
-    uint8_t set_Z = AF.hi | reg == 0;
+    uint8_t set_Z = A | reg == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
     
-    AF.hi |= reg;
+    A |= reg;
     return 1;
 }
 
@@ -733,15 +741,15 @@ uint32_t CPU::OR_A_R8(Register8 reg) {
 uint32_t CPU::OR_A_HL(Memory &mem) {
     uint8_t HLmem = mem.read(HL.get_data16());
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
-    AF.lo &= 0xEF; // Reset C
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
+    F &= 0xEF; // Reset C
     
-    uint8_t set_Z = AF.hi | HLmem == 0;
+    uint8_t set_Z = A | HLmem == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
     
-    AF.hi |= HLmem;
+    A |= HLmem;
     return 2;
 }
 
@@ -751,19 +759,19 @@ uint32_t CPU::OR_A_HL(Memory &mem) {
   * Set N flag. Set Z, H, and C flags accordingly
   */
 uint32_t CPU::CP_A_R8(Register8 reg) {
-    AF.lo != 0x40; // Set N
+    F != 0x40; // Set N
 
-    uint8_t set_Z = AF.hi - reg == 0;
+    uint8_t set_Z = A - reg == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
 
-    uint8_t set_H = (AF.hi & 0xF) < (reg & 0xF);
+    uint8_t set_H = (A & 0xF) < (reg & 0xF);
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
 
-    uint8_t set_C = AF.hi < reg ;
+    uint8_t set_C = A < reg ;
     if (set_C) 
-        AF.lo |= 0x10; // Set C
+        F |= 0x10; // Set C
     
     return 1;
 }
@@ -776,19 +784,19 @@ uint32_t CPU::CP_A_R8(Register8 reg) {
 uint32_t CPU::CP_A_HL(Memory &mem) {
     uint8_t HLmem = mem.read(HL.get_data16());
 
-    AF.lo != 0x40; // Set N
+    F != 0x40; // Set N
 
-    uint8_t set_Z = AF.hi - HLmem == 0;
+    uint8_t set_Z = A - HLmem == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
 
-    uint8_t set_H = (AF.hi & 0xF) < (HLmem & 0xF) ;
+    uint8_t set_H = (A & 0xF) < (HLmem & 0xF) ;
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
 
-    uint8_t set_C = AF.hi < HLmem ;
+    uint8_t set_C = A < HLmem ;
     if (set_C) 
-        AF.lo |= 0x10; // Set C
+        F |= 0x10; // Set C
     
     return 2;
 }
@@ -804,21 +812,21 @@ uint32_t CPU::ADD_A_n8(Memory &mem) {
     // Get n8 and move PC to next instruction
     uint8_t n8 = mem.read(PC++);
 
-    AF.lo &= 0xBF; // Reset N
+    F &= 0xBF; // Reset N
 
-    uint8_t set_Z = AF.hi + n8 == 0;
+    uint8_t set_Z = A + n8 == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
 
-    uint8_t set_H = (AF.hi & 0xF) + (n8 & 0xF) > 0xF;
+    uint8_t set_H = (A & 0xF) + (n8 & 0xF) > 0xF;
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
 
-    uint8_t set_C = AF.hi + n8 > 0xFF;
+    uint8_t set_C = A + n8 > 0xFF;
     if (set_C) 
-        AF.lo |= 0x10; // Set C
+        F |= 0x10; // Set C
     
-    AF.hi += n8;
+    A += n8;
     return 2;
 }
 
@@ -834,23 +842,23 @@ uint32_t CPU::ADC_A_n8(Memory &mem) {
     uint8_t n8 = mem.read(PC++);
 
     // Get C flag value
-    uint8_t carry = (AF.lo & 0x10) ? 1 : 0;
+    uint8_t carry = (F & 0x10) ? 1 : 0;
     
-    AF.lo &= 0xBF; // Reset N
+    F &= 0xBF; // Reset N
 
-    uint8_t set_Z = AF.hi + n8 + carry == 0; 
+    uint8_t set_Z = A + n8 + carry == 0; 
     if (set_Z)
-        AF.lo |= 0x80; // Set Z    
+        F |= 0x80; // Set Z    
     
-    uint8_t set_H = (AF.hi & 0xF) + (n8 & 0xF) + carry > 0xF;
+    uint8_t set_H = (A & 0xF) + (n8 & 0xF) + carry > 0xF;
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
     
-    uint8_t set_C = AF.hi + n8 + carry > 0xFF;
+    uint8_t set_C = A + n8 + carry > 0xFF;
     if (set_C) 
-        AF.lo |= 0x10; // Set C
+        F |= 0x10; // Set C
         
-    AF.hi += (n8 + carry);
+    A += (n8 + carry);
     return 2;
 }
 
@@ -865,21 +873,21 @@ uint32_t CPU::SUB_A_n8(Memory &mem) {
     // Get n8 and move PC to next instruction
     uint8_t n8 = mem.read(PC++);
 
-    AF.lo != 0x40; // Set N
+    F != 0x40; // Set N
 
-    uint8_t set_Z = AF.hi - n8 == 0;
+    uint8_t set_Z = A - n8 == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
 
-    uint8_t set_H = (AF.hi & 0xF) < (n8 & 0xF) ;
+    uint8_t set_H = (A & 0xF) < (n8 & 0xF) ;
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
 
-    uint8_t set_C = AF.hi < n8 ;
+    uint8_t set_C = A < n8 ;
     if (set_C) 
-        AF.lo |= 0x10; // Set C
+        F |= 0x10; // Set C
     
-    AF.hi -= n8;
+    A -= n8;
     return 2;
 }
 
@@ -895,23 +903,23 @@ uint32_t CPU::SBC_A_n8(Memory &mem) {
     uint8_t n8 = mem.read(PC++);
 
     // Get C flag value
-    uint8_t carry = (AF.lo & 0x10) ? 1 : 0;
+    uint8_t carry = (F & 0x10) ? 1 : 0;
 
-    AF.lo != 0x40; // Set N
+    F != 0x40; // Set N
 
-    uint8_t set_Z = AF.hi - n8 - carry == 0;
+    uint8_t set_Z = A - n8 - carry == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
 
-    uint8_t set_H = (AF.hi & 0xF) < (n8 & 0xF + carry) ;
+    uint8_t set_H = (A & 0xF) < (n8 & 0xF + carry) ;
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
 
-    uint8_t set_C = AF.hi < (n8 + carry) ;
+    uint8_t set_C = A < (n8 + carry) ;
     if (set_C) 
-        AF.lo |= 0x10; // Set C
+        F |= 0x10; // Set C
     
-    AF.hi -= (n8 + carry);
+    A -= (n8 + carry);
     return 2;
 }
 
@@ -926,15 +934,15 @@ uint32_t CPU::AND_A_n8(Memory &mem) {
     // Get n8 and move PC to next instruction
     uint8_t n8 = mem.read(PC++);
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo |= 0x20; // Set H
-    AF.lo &= 0xEF; // Reset C
+    F &= 0xBF; // Reset N
+    F |= 0x20; // Set H
+    F &= 0xEF; // Reset C
     
-    uint8_t set_Z = AF.hi & n8 == 0;
+    uint8_t set_Z = A & n8 == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
     
-    AF.hi &= n8;
+    A &= n8;
     return 2;
 }
 
@@ -949,15 +957,15 @@ uint32_t CPU::XOR_A_n8(Memory &mem) {
     // Get n8 and move PC to next instruction
     uint8_t n8 = mem.read(PC++);
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
-    AF.lo &= 0xEF; // Reset C
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
+    F &= 0xEF; // Reset C
     
-    uint8_t set_Z = AF.hi ^ n8 == 0;
+    uint8_t set_Z = A ^ n8 == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
     
-    AF.hi ^= n8;
+    A ^= n8;
     return 2;
 }
 
@@ -972,15 +980,15 @@ uint32_t CPU::OR_A_n8(Memory &mem) {
     // Get n8 and move PC to next instruction
     uint8_t n8 = mem.read(PC++);
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
-    AF.lo &= 0xEF; // Reset C
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
+    F &= 0xEF; // Reset C
     
-    uint8_t set_Z = AF.hi | n8 == 0;
+    uint8_t set_Z = A | n8 == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
     
-    AF.hi |= n8;
+    A |= n8;
     return 2;
 }
 
@@ -996,19 +1004,19 @@ uint32_t CPU::CP_A_n8(Memory &mem) {
     // Get n8 and move PC to next instruction
     uint8_t n8 = mem.read(PC++);
 
-    AF.lo != 0x40; // Set N
+    F != 0x40; // Set N
 
-    uint8_t set_Z = AF.hi - n8 == 0;
+    uint8_t set_Z = A - n8 == 0;
     if (set_Z)
-        AF.lo |= 0x80; // Set Z
+        F |= 0x80; // Set Z
 
-    uint8_t set_H = (AF.hi & 0xF) < (n8 & 0xF);
+    uint8_t set_H = (A & 0xF) < (n8 & 0xF);
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
 
-    uint8_t set_C = AF.hi < n8;
+    uint8_t set_C = A < n8;
     if (set_C) 
-        AF.lo |= 0x10; // Set C
+        F |= 0x10; // Set C
     
     return 2;
 }
@@ -1190,16 +1198,16 @@ uint32_t CPU::RST_vec(uint16_t vec, Memory &mem) {
 uint32_t CPU::ADD_SP_e8(Memory &mem) {
     int8_t e8 = (int8_t)mem.read(PC++);
 
-    AF.lo &= 0x7F; // Reset Z
-    AF.lo &= 0xBF; // Reset N
+    F &= 0x7F; // Reset Z
+    F &= 0xBF; // Reset N
     
     uint8_t set_H = SP.lo & 0xF + (uint8_t)e8 & 0xF > 0xF;
     if (set_H) 
-        AF.lo |= 0x20; // Set H
+        F |= 0x20; // Set H
 
     uint8_t set_C = SP.get_data16() + (uint8_t)e8 > 0xFF;
     if (set_C) 
-        AF.lo |= 0x10; // Set C
+        F |= 0x10; // Set C
 
     SP.set_data16(SP.get_data16() + e8);
     return 4;
@@ -1234,11 +1242,11 @@ uint32_t CPU::PUSH_R16(Register16 &reg, Memory &mem) {
   * Flip the carry flag and reset N and H flags
   */
 uint32_t CPU::CCF() {
-    uint8_t carry_flag = (AF.lo & 0x10) >> 4;
+    uint8_t carry_flag = (F & 0x10) >> 4;
     carry_flag = ~carry_flag;
-    AF.lo = (AF.lo & 0xEF) | (carry_flag << 4);
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
+    F = (F & 0xEF) | (carry_flag << 4);
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
     return 1; 
 }
 
@@ -1246,9 +1254,9 @@ uint32_t CPU::CCF() {
   * Flip the A register and sets N and H flags
   */
 uint32_t CPU::CPL() {
-    AF.hi = ~AF.hi;
-    AF.lo != 0x40; // Set N
-    AF.lo |= 0x20; // Set H
+    A = ~A;
+    F != 0x40; // Set N
+    F |= 0x20; // Set H
     return 1;
 }
 
@@ -1272,9 +1280,9 @@ uint32_t CPU::EI() {
   * Set the carry flag and reset the N and H flags
   */
 uint32_t CPU::SCF() {
-    AF.lo |= 0x10; // Set C
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
+    F |= 0x10; // Set C
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
     return 1;
 }
 
@@ -1290,13 +1298,13 @@ uint32_t CPU::RLC_R8(Register8 &r8) {
     r8 <<= 1;
     
     // Load C flag
-    AF.lo = (AF.lo & 0xEF) | (b7 >> 3); 
+    F = (F & 0xEF) | (b7 >> 3); 
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
     
     if (r8 == 0)
-        AF.lo |= 0x80; // Set Z   
+        F |= 0x80; // Set Z   
 
     return 2;
 }
@@ -1316,13 +1324,13 @@ uint32_t CPU::RLC_HL(Memory &mem) {
     mem.write(addr, mem_data);
 
     // Load C flag
-    AF.lo = (AF.lo & 0xEF) | (b7 >> 3); 
+    F = (F & 0xEF) | (b7 >> 3); 
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
     
     if (mem_data == 0)
-        AF.lo |= 0x80; // Set Z   
+        F |= 0x80; // Set Z   
 
     return 4;
 }
@@ -1337,17 +1345,17 @@ uint32_t CPU::RLC_HL(Memory &mem) {
 uint32_t CPU::RL_R8(Register8 &r8) {
     uint8_t b7 = r8 & 0x80;
     r8 <<= 1;
-    uint8_t carry_flag = AF.lo & 0x10;
+    uint8_t carry_flag = F & 0x10;
     r8 = (r8 & 0xFE) | (carry_flag >> 4); // C goes in least sig bit
 
     // Load C flag
-    AF.lo = (AF.lo & 0xEF) | (b7 >> 3); 
+    F = (F & 0xEF) | (b7 >> 3); 
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
     
     if (r8 == 0)
-        AF.lo |= 0x80; // Set Z   
+        F |= 0x80; // Set Z   
 
     return 2;
 }
@@ -1364,18 +1372,18 @@ uint32_t CPU::RL_HL(Memory &mem) {
     uint8_t mem_data = mem.read(addr); 
     uint8_t b7 = mem_data & 0x80;
     mem_data <<= 1;
-    uint8_t carry_flag = AF.lo & 0x10;
+    uint8_t carry_flag = F & 0x10;
     mem_data = (mem_data & 0xFE) | (carry_flag >> 4); // C goes in least sig bit
     mem.write(addr, mem_data);
 
     // Load C flag
-    AF.lo = (AF.lo & 0xEF) | (b7 >> 4); 
+    F = (F & 0xEF) | (b7 >> 4); 
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
     
     if (mem_data == 0)
-        AF.lo |= 0x80; // Set Z   
+        F |= 0x80; // Set Z   
 
     return 4;
 }
@@ -1392,13 +1400,13 @@ uint32_t CPU::RRC_R8(Register8 &r8) {
     r8 >>= 1;
 
     // Load C flag
-    AF.lo = (AF.lo & 0xEF) | (b0 << 4); 
+    F = (F & 0xEF) | (b0 << 4); 
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
     
     if (r8 == 0)
-        AF.lo |= 0x80; // Set Z   
+        F |= 0x80; // Set Z   
 
     return 2;
 }
@@ -1418,13 +1426,13 @@ uint32_t CPU::RRC_HL(Memory &mem) {
     mem.write(addr, mem_data);
 
     // Load C flag
-    AF.lo = (AF.lo & 0xEF) | (b0 << 4); 
+    F = (F & 0xEF) | (b0 << 4); 
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
     
     if (mem_data == 0)
-        AF.lo |= 0x80; // Set Z   
+        F |= 0x80; // Set Z   
 
     return 4;
 }
@@ -1438,18 +1446,18 @@ uint32_t CPU::RRC_HL(Memory &mem) {
   */
 uint32_t CPU::RR_R8(Register8 &r8) {
     int8_t b0 = r8 & 0x01;
-    uint8_t carry_flag = AF.lo & 0x10;
+    uint8_t carry_flag = F & 0x10;
     r8 >>= 1;
     r8 = (r8 & 0x7F) | (carry_flag << 3); // C goes in most sig bit
 
     // Load C flag 
-    AF.lo = (AF.lo & 0xEF) | (b0 << 4); 
+    F = (F & 0xEF) | (b0 << 4); 
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
     
     if (r8 == 0)
-        AF.lo |= 0x80; // Set Z   
+        F |= 0x80; // Set Z   
 
     return 2;
 }
@@ -1465,19 +1473,19 @@ uint32_t CPU::RR_HL(Memory &mem) {
     uint16_t addr = HL.get_data16();
     uint8_t mem_data = mem.read(addr); 
     uint8_t b0 = mem_data & 0x01; 
-    uint8_t carry_flag = AF.lo & 0x10;
+    uint8_t carry_flag = F & 0x10;
     mem_data >>= 1;
     mem_data = (mem_data & 0x7F) | (carry_flag << 3); // C goes in most sig bit
     mem.write(addr, mem_data);
 
     // Load C flag
-    AF.lo = (AF.lo & 0xEF) | (b0 << 4); 
+    F = (F & 0xEF) | (b0 << 4); 
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
     
     if (mem_data == 0)
-        AF.lo |= 0x80; // Set Z   
+        F |= 0x80; // Set Z   
 
     return 4;
 }
@@ -1494,13 +1502,13 @@ uint32_t CPU::SLA_R8(Register8 &r8) {
     r8 <<= 1;
     
     // Load C flag
-    AF.lo = (AF.lo & 0xEF) | (b7 >> 3); 
+    F = (F & 0xEF) | (b7 >> 3); 
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
     
     if (r8 == 0)
-        AF.lo |= 0x80; // Set Z   
+        F |= 0x80; // Set Z   
 
     return 2;
 }
@@ -1519,13 +1527,13 @@ uint32_t CPU::SLA_HL(Memory &mem) {
     mem_data <<= 1;
 
     // Load C flag
-    AF.lo = (AF.lo & 0xEF) | (b7 >> 3); 
+    F = (F & 0xEF) | (b7 >> 3); 
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
     
     if (mem_data == 0)
-        AF.lo |= 0x80; // Set Z   
+        F |= 0x80; // Set Z   
 
     return 4;
 }
@@ -1544,13 +1552,13 @@ uint32_t CPU::SRA_R8(Register8 &r8) {
     r8 = (r8 & 0x7F) | b7;
 
     // Load C flag
-    AF.lo = (AF.lo & 0xEF) | (b0 << 4); 
+    F = (F & 0xEF) | (b0 << 4); 
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
     
     if (r8 == 0)
-        AF.lo |= 0x80; // Set Z   
+        F |= 0x80; // Set Z   
 
     return 2;
 }
@@ -1572,13 +1580,13 @@ uint32_t CPU::SRA_HL(Memory &mem) {
     mem.write(addr, mem_data);
 
     // Load C flag
-    AF.lo = (AF.lo & 0xEF) | (b0 << 4); 
+    F = (F & 0xEF) | (b0 << 4); 
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
     
     if (mem_data == 0)
-        AF.lo |= 0x80; // Set Z   
+        F |= 0x80; // Set Z   
 
     return 4;
 }
@@ -1595,13 +1603,13 @@ uint32_t CPU::SRL_R8(Register8 &r8) {
     r8 >>= 1;
 
     // Load C flag
-    AF.lo = (AF.lo & 0xEF) | (b0 << 4); 
+    F = (F & 0xEF) | (b0 << 4); 
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
     
     if (r8 == 0)
-        AF.lo |= 0x80; // Set Z   
+        F |= 0x80; // Set Z   
 
     return 2;
 }
@@ -1621,13 +1629,13 @@ uint32_t CPU::SRL_HL(Memory &mem) {
     mem.write(addr, mem_data);
 
     // Load C flag
-    AF.lo = (AF.lo & 0xEF) | (b0 << 4); 
+    F = (F & 0xEF) | (b0 << 4); 
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
     
     if (mem_data == 0)
-        AF.lo |= 0x80; // Set Z   
+        F |= 0x80; // Set Z   
 
     return 4;
 }
@@ -1642,12 +1650,12 @@ uint32_t CPU::SWAP_R8(Register8 &r8) {
     uint8_t upper_nib = r8 & 0xF0;
     r8 = (lower_nib << 4) | (upper_nib >> 4); 
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
-    AF.lo &= 0xEF; // Reset C
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
+    F &= 0xEF; // Reset C
 
     if (r8 == 0)
-        AF.lo |= 0x80; // Set Z  
+        F |= 0x80; // Set Z  
     
     return 2;
 }
@@ -1665,12 +1673,12 @@ uint32_t CPU::SWAP_HL(Memory &mem) {
     mem_data = (lower_nib << 4) | (upper_nib >> 4); 
     mem.write(addr, mem_data);
 
-    AF.lo &= 0xBF; // Reset N
-    AF.lo &= 0xDF; // Reset H
-    AF.lo &= 0xEF; // Reset C
+    F &= 0xBF; // Reset N
+    F &= 0xDF; // Reset H
+    F &= 0xEF; // Reset C
 
     if (mem_data == 0)
-        AF.lo |= 0x80; // Set Z  
+        F |= 0x80; // Set Z  
     
     return 4;
 }
@@ -1681,9 +1689,9 @@ uint32_t CPU::SWAP_HL(Memory &mem) {
 uint32_t CPU::BIT_b3_R8(uint8_t b3, const Register8 r8) {
     uint8_t bit = (r8 >> b3) & 0x01;
     if (!bit)
-        AF.lo |= 0x80; // Set Z  
-    AF.lo &= 0xBF; // Reset N
-    AF.lo |= 0x20; // Set H
+        F |= 0x80; // Set Z  
+    F &= 0xBF; // Reset N
+    F |= 0x20; // Set H
     return 2;
 }
 
@@ -1695,9 +1703,9 @@ uint32_t CPU::BIT_b3_HL(uint8_t b3, Memory &mem) {
     uint8_t mem_data = mem.read(addr);
     uint8_t bit = (mem_data >> b3) & 0x01;
     if (!bit)
-        AF.lo |= 0x80; // Set Z  
-    AF.lo &= 0xBF; // Reset N
-    AF.lo |= 0x20; // Set H
+        F |= 0x80; // Set Z  
+    F &= 0xBF; // Reset N
+    F |= 0x20; // Set H
     return 3;
 }
 
@@ -1886,197 +1894,197 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
         // LD R8, R8
         case 0x40:
-            m_cycles += LD_R8_R8(BC.hi, BC.hi);
+            m_cycles += LD_R8_R8(B, B);
             break;
         case 0x41:
-            m_cycles += LD_R8_R8(BC.hi, BC.lo);
+            m_cycles += LD_R8_R8(B, C);
             break;
         case 0x42: 
-            m_cycles += LD_R8_R8(BC.hi, DE.hi);
+            m_cycles += LD_R8_R8(B, D);
             break;
         case 0x43:
-            m_cycles += LD_R8_R8(BC.hi, DE.lo);
+            m_cycles += LD_R8_R8(B, E);
             break;
         case 0x44:
-            m_cycles += LD_R8_R8(BC.hi, HL.hi);
+            m_cycles += LD_R8_R8(B, H);
             break;
         case 0x45:
-            m_cycles += LD_R8_R8(BC.hi, HL.lo);
+            m_cycles += LD_R8_R8(B, L);
             break;
         case 0x47:
-            m_cycles += LD_R8_R8(BC.hi, AF.hi);
+            m_cycles += LD_R8_R8(B, A);
             break;
         case 0x48:
-            m_cycles += LD_R8_R8(BC.lo, BC.hi);
+            m_cycles += LD_R8_R8(C, B);
             break;
         case 0x49:
-            m_cycles += LD_R8_R8(BC.lo, BC.lo);
+            m_cycles += LD_R8_R8(C, C);
             break;
         case 0x4A:
-            m_cycles += LD_R8_R8(BC.lo, DE.hi);
+            m_cycles += LD_R8_R8(C, D);
             break;
         case 0x4B:
-            m_cycles += LD_R8_R8(BC.lo, DE.lo);
+            m_cycles += LD_R8_R8(C, E);
             break;
         case 0x4C:
-            m_cycles += LD_R8_R8(BC.lo, HL.hi);
+            m_cycles += LD_R8_R8(C, H);
             break;
         case 0x4D:
-            m_cycles += LD_R8_R8(BC.lo, HL.lo);
+            m_cycles += LD_R8_R8(C, L);
             break;
         case 0x4F:
-            m_cycles += LD_R8_R8(BC.lo, AF.hi);
+            m_cycles += LD_R8_R8(C, A);
             break;
         case 0x50:
-            m_cycles += LD_R8_R8(DE.hi, BC.hi);
+            m_cycles += LD_R8_R8(D, B);
             break;
         case 0x51:
-            m_cycles += LD_R8_R8(DE.hi, BC.lo);
+            m_cycles += LD_R8_R8(D, C);
             break;
         case 0x52:
-            m_cycles += LD_R8_R8(DE.hi, DE.hi);
+            m_cycles += LD_R8_R8(D, D);
             break;
         case 0x53:
-            m_cycles += LD_R8_R8(DE.hi, DE.lo);
+            m_cycles += LD_R8_R8(D, E);
             break;
         case 0x54:
-            m_cycles += LD_R8_R8(DE.hi, HL.hi);
+            m_cycles += LD_R8_R8(D, H);
             break;
         case 0x55:
-            m_cycles += LD_R8_R8(DE.hi, HL.lo);
+            m_cycles += LD_R8_R8(D, L);
             break;
         case 0x57:
-            m_cycles += LD_R8_R8(DE.hi, AF.hi);
+            m_cycles += LD_R8_R8(D, A);
             break;
         case 0x58:
-            m_cycles += LD_R8_R8(DE.lo, BC.hi);
+            m_cycles += LD_R8_R8(E, B);
             break;
         case 0x59:
-            m_cycles += LD_R8_R8(DE.lo, BC.lo);
+            m_cycles += LD_R8_R8(E, C);
             break;
         case 0x5A:
-            m_cycles += LD_R8_R8(DE.lo, DE.hi);
+            m_cycles += LD_R8_R8(E, D);
             break;
         case 0x5B:
-            m_cycles += LD_R8_R8(DE.lo, DE.lo);
+            m_cycles += LD_R8_R8(E, E);
             break;
         case 0x5C:
-            m_cycles += LD_R8_R8(DE.lo, HL.hi);
+            m_cycles += LD_R8_R8(E, H);
             break;
         case 0x5D:
-            m_cycles += LD_R8_R8(DE.lo, HL.lo);
+            m_cycles += LD_R8_R8(E, L);
             break;
         case 0x5F:
-            m_cycles += LD_R8_R8(DE.lo, AF.hi);
+            m_cycles += LD_R8_R8(E, A);
             break;
         case 0x60:
-            m_cycles += LD_R8_R8(HL.hi, BC.hi);
+            m_cycles += LD_R8_R8(H, B);
             break;
         case 0x61:
-            m_cycles += LD_R8_R8(HL.hi, BC.lo);
+            m_cycles += LD_R8_R8(H, C);
             break;
         case 0x62:
-            m_cycles += LD_R8_R8(HL.hi, DE.hi);
+            m_cycles += LD_R8_R8(H, D);
             break;
         case 0x63:
-            m_cycles += LD_R8_R8(HL.hi, DE.lo);
+            m_cycles += LD_R8_R8(H, E);
             break;
         case 0x64:
-            m_cycles += LD_R8_R8(HL.hi, HL.hi);
+            m_cycles += LD_R8_R8(H, H);
             break;
         case 0x65:
-            m_cycles += LD_R8_R8(HL.hi, HL.lo);
+            m_cycles += LD_R8_R8(H, L);
             break;
         case 0x67:
-            m_cycles += LD_R8_R8(HL.hi, AF.hi);
+            m_cycles += LD_R8_R8(H, A);
             break;
         case 0x68:
-            m_cycles += LD_R8_R8(HL.lo, BC.hi);
+            m_cycles += LD_R8_R8(L, B);
             break;
         case 0x69:
-            m_cycles += LD_R8_R8(HL.lo, BC.lo);
+            m_cycles += LD_R8_R8(L, C);
             break;
         case 0x6A:
-            m_cycles += LD_R8_R8(HL.lo, DE.hi);
+            m_cycles += LD_R8_R8(L, D);
             break;
         case 0x6B:
-            m_cycles += LD_R8_R8(HL.lo, DE.lo);
+            m_cycles += LD_R8_R8(L, E);
             break;
         case 0x6C:
-            m_cycles += LD_R8_R8(HL.lo, HL.hi);
+            m_cycles += LD_R8_R8(L, H);
             break;
         case 0x6D:
-            m_cycles += LD_R8_R8(HL.lo, HL.lo);
+            m_cycles += LD_R8_R8(L, L);
             break;
         case 0x6F:
-            m_cycles += LD_R8_R8(HL.lo, AF.hi);
+            m_cycles += LD_R8_R8(L, A);
             break;
         case 0x78:
-            m_cycles += LD_R8_R8(AF.hi, BC.hi);
+            m_cycles += LD_R8_R8(A, B);
             break;
         case 0x79:
-            m_cycles += LD_R8_R8(AF.hi, BC.lo);
+            m_cycles += LD_R8_R8(A, C);
             break;
         case 0x7A:
-            m_cycles += LD_R8_R8(AF.hi, DE.hi);
+            m_cycles += LD_R8_R8(A, D);
             break;
         case 0x7B:
-            m_cycles += LD_R8_R8(AF.hi, DE.lo);
+            m_cycles += LD_R8_R8(A, E);
             break;
         case 0x7C:
-            m_cycles += LD_R8_R8(AF.hi, HL.hi);
+            m_cycles += LD_R8_R8(A, H);
             break;
         case 0x7D:
-            m_cycles += LD_R8_R8(AF.hi, HL.lo);
+            m_cycles += LD_R8_R8(A, L);
             break;
         case 0x7F:
-            m_cycles += LD_R8_R8(AF.hi, AF.hi);
+            m_cycles += LD_R8_R8(A, A);
             break;
 
         // LD [HL], R8
         case 0x70:
-            m_cycles += LD_HL_R8(BC.hi, mem);
+            m_cycles += LD_HL_R8(B, mem);
             break;
         case 0x71:
-            m_cycles += LD_HL_R8(BC.lo, mem);
+            m_cycles += LD_HL_R8(C, mem);
             break;
         case 0x72:
-            m_cycles += LD_HL_R8(DE.hi, mem);
+            m_cycles += LD_HL_R8(D, mem);
             break;
         case 0x73:
-            m_cycles += LD_HL_R8(DE.lo, mem);
+            m_cycles += LD_HL_R8(E, mem);
             break;
         case 0x74:
-            m_cycles += LD_HL_R8(HL.hi, mem);
+            m_cycles += LD_HL_R8(H, mem);
             break;
         case 0x75:
-            m_cycles += LD_HL_R8(HL.lo, mem);
+            m_cycles += LD_HL_R8(L, mem);
             break;
         case 0x77:
-            m_cycles += LD_HL_R8(AF.hi, mem);
+            m_cycles += LD_HL_R8(A, mem);
             break;
 
         // LD R8, [HL]
         case 0x46:
-            m_cycles += LD_R8_HL(BC.hi, mem);
+            m_cycles += LD_R8_HL(B, mem);
             break;
         case 0x4E:
-            m_cycles += LD_R8_HL(BC.lo, mem);
+            m_cycles += LD_R8_HL(C, mem);
             break;
         case 0x56:
-            m_cycles += LD_R8_HL(DE.hi, mem);
+            m_cycles += LD_R8_HL(D, mem);
             break;
         case 0x5E:
-            m_cycles += LD_R8_HL(DE.lo, mem);
+            m_cycles += LD_R8_HL(E, mem);
             break;
         case 0x66:
-            m_cycles += LD_R8_HL(HL.hi, mem);
+            m_cycles += LD_R8_HL(H, mem);
             break;
         case 0x6E:
-            m_cycles += LD_R8_HL(HL.lo, mem);
+            m_cycles += LD_R8_HL(L, mem);
             break;
         case 0x7E:
-            m_cycles += LD_R8_HL(AF.hi, mem);
+            m_cycles += LD_R8_HL(A, mem);
             break;
 
         case 0x76: // TODO: HALT
@@ -2084,25 +2092,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
         // LD R8, n8
         case 0x06:
-            m_cycles += LD_R8_n8(BC.hi, mem);
+            m_cycles += LD_R8_n8(B, mem);
             break;
         case 0x0E:
-            m_cycles += LD_R8_n8(BC.lo, mem);
+            m_cycles += LD_R8_n8(C, mem);
             break;
         case 0x16:
-            m_cycles += LD_R8_n8(DE.hi, mem);
+            m_cycles += LD_R8_n8(D, mem);
             break;
         case 0x1E:
-            m_cycles += LD_R8_n8(DE.lo, mem);
+            m_cycles += LD_R8_n8(E, mem);
             break;
         case 0x26:
-            m_cycles += LD_R8_n8(HL.hi, mem);
+            m_cycles += LD_R8_n8(H, mem);
             break;
         case 0x2E:
-            m_cycles += LD_R8_n8(HL.lo, mem);
+            m_cycles += LD_R8_n8(L, mem);
             break;
         case 0x3E:
-            m_cycles += LD_R8_n8(BC.hi, mem);
+            m_cycles += LD_R8_n8(B, mem);
             break;
 
         case 0x36: // LD [HL], n8
@@ -2231,25 +2239,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
         // INC R8
         case 0x04:
-            m_cycles += INC_R8(BC.hi);
+            m_cycles += INC_R8(B);
             break;
         case 0x0C:
-            m_cycles += INC_R8(BC.lo);
+            m_cycles += INC_R8(C);
             break;
         case 0x14:
-            m_cycles += INC_R8(DE.hi);
+            m_cycles += INC_R8(D);
             break;
         case 0x1C:
-            m_cycles += INC_R8(DE.lo);
+            m_cycles += INC_R8(E);
             break;
         case 0x24:
-            m_cycles += INC_R8(HL.hi);
+            m_cycles += INC_R8(H);
             break;
         case 0x2C:
-            m_cycles += INC_R8(HL.lo);
+            m_cycles += INC_R8(L);
             break;
         case 0x3C:
-            m_cycles += INC_R8(AF.hi);
+            m_cycles += INC_R8(A);
             break;
         
         // INC [HL]
@@ -2259,25 +2267,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
         // DEC R8
         case 0x05:
-            m_cycles += DEC_R8(BC.hi);
+            m_cycles += DEC_R8(B);
             break;
         case 0x0D:
-            m_cycles += DEC_R8(BC.lo);
+            m_cycles += DEC_R8(C);
             break;
         case 0x15:
-            m_cycles += DEC_R8(DE.hi);
+            m_cycles += DEC_R8(D);
             break;
         case 0x1D:
-            m_cycles += DEC_R8(DE.lo);
+            m_cycles += DEC_R8(E);
             break;
         case 0x25:
-            m_cycles += DEC_R8(HL.hi);
+            m_cycles += DEC_R8(H);
             break;
         case 0x2D:
-            m_cycles += DEC_R8(HL.lo);
+            m_cycles += DEC_R8(L);
             break;
         case 0x3D:
-            m_cycles += DEC_R8(AF.hi);
+            m_cycles += DEC_R8(A);
             break;
                 
         // DEC [HL]
@@ -2287,25 +2295,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
         // ADD A,R8
         case 0x80:
-            m_cycles += ADD_A_R8(BC.hi);
+            m_cycles += ADD_A_R8(B);
             break;
         case 0x81:
-            m_cycles += ADD_A_R8(BC.lo);
+            m_cycles += ADD_A_R8(C);
             break;
         case 0x82:
-            m_cycles += ADD_A_R8(DE.hi);
+            m_cycles += ADD_A_R8(D);
             break;
         case 0x83:
-            m_cycles += ADD_A_R8(DE.lo);
+            m_cycles += ADD_A_R8(E);
             break;
         case 0x84:
-            m_cycles += ADD_A_R8(HL.hi);
+            m_cycles += ADD_A_R8(H);
             break;
         case 0x85:
-            m_cycles += ADD_A_R8(HL.lo);
+            m_cycles += ADD_A_R8(L);
             break;
         case 0x87:
-            m_cycles += ADD_A_R8(AF.hi);
+            m_cycles += ADD_A_R8(A);
             break;
 
         // ADD A,[HL]
@@ -2315,25 +2323,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
         // ADC A,R8
         case 0x88:
-            m_cycles += ADC_A_R8(BC.hi);
+            m_cycles += ADC_A_R8(B);
             break;
         case 0x89:
-            m_cycles += ADC_A_R8(BC.lo);
+            m_cycles += ADC_A_R8(C);
             break;
         case 0x8A:
-            m_cycles += ADC_A_R8(DE.hi);
+            m_cycles += ADC_A_R8(D);
             break;
         case 0x8B:
-            m_cycles += ADC_A_R8(DE.lo);
+            m_cycles += ADC_A_R8(E);
             break;
         case 0x8C:
-            m_cycles += ADC_A_R8(HL.hi);
+            m_cycles += ADC_A_R8(H);
             break;
         case 0x8D:
-            m_cycles += ADC_A_R8(HL.lo);
+            m_cycles += ADC_A_R8(L);
             break;
         case 0x8F:
-            m_cycles += ADC_A_R8(AF.hi);
+            m_cycles += ADC_A_R8(A);
             break;
         
         // ADC A,[HL]
@@ -2343,25 +2351,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
         // SUB A,R8
         case 0x90:
-            m_cycles += SUB_A_R8(BC.hi);
+            m_cycles += SUB_A_R8(B);
             break;
         case 0x91:
-            m_cycles += SUB_A_R8(BC.lo);
+            m_cycles += SUB_A_R8(C);
             break;
         case 0x92:
-            m_cycles += SUB_A_R8(DE.hi);
+            m_cycles += SUB_A_R8(D);
             break;
         case 0x93:
-            m_cycles += SUB_A_R8(DE.lo);
+            m_cycles += SUB_A_R8(E);
             break;
         case 0x94:
-            m_cycles += SUB_A_R8(HL.hi);
+            m_cycles += SUB_A_R8(H);
             break;
         case 0x95:
-            m_cycles += SUB_A_R8(HL.lo);
+            m_cycles += SUB_A_R8(L);
             break;
         case 0x97:
-            m_cycles += SUB_A_R8(AF.hi);
+            m_cycles += SUB_A_R8(A);
             break;
 
         // SUB A,[HL]
@@ -2371,25 +2379,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
         // SBC A,R8
         case 0x98:
-            m_cycles += SBC_A_R8(BC.hi);
+            m_cycles += SBC_A_R8(B);
             break;
         case 0x99:
-            m_cycles += SBC_A_R8(BC.lo);
+            m_cycles += SBC_A_R8(C);
             break;
         case 0x9A:
-            m_cycles += SBC_A_R8(DE.hi);
+            m_cycles += SBC_A_R8(D);
             break;
         case 0x9B:
-            m_cycles += SBC_A_R8(DE.lo);
+            m_cycles += SBC_A_R8(E);
             break;
         case 0x9C:
-            m_cycles += SBC_A_R8(HL.hi);
+            m_cycles += SBC_A_R8(H);
             break;
         case 0x9D:
-            m_cycles += SBC_A_R8(HL.lo);
+            m_cycles += SBC_A_R8(L);
             break;
         case 0x9F:
-            m_cycles += SBC_A_R8(AF.hi);
+            m_cycles += SBC_A_R8(A);
             break;
         
         // SBC A,[HL]
@@ -2399,25 +2407,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
         // AND A,R8
         case 0xA0:
-            m_cycles += AND_A_R8(BC.hi);
+            m_cycles += AND_A_R8(B);
             break;
         case 0xA1:
-            m_cycles += AND_A_R8(BC.lo);
+            m_cycles += AND_A_R8(C);
             break;
         case 0xA2:
-            m_cycles += AND_A_R8(DE.hi);
+            m_cycles += AND_A_R8(D);
             break;
         case 0xA3:
-            m_cycles += AND_A_R8(DE.lo);
+            m_cycles += AND_A_R8(E);
             break;
         case 0xA4:
-            m_cycles += AND_A_R8(HL.hi);
+            m_cycles += AND_A_R8(H);
             break;
         case 0xA5:
-            m_cycles += AND_A_R8(HL.lo);
+            m_cycles += AND_A_R8(L);
             break;
         case 0xA7:
-            m_cycles += AND_A_R8(AF.hi);
+            m_cycles += AND_A_R8(A);
             break;
 
         // AND A,[HL]
@@ -2427,25 +2435,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
         // XOR A,R8
         case 0xA8:
-            m_cycles += XOR_A_R8(BC.hi);
+            m_cycles += XOR_A_R8(B);
             break;
         case 0xA9:
-            m_cycles += XOR_A_R8(BC.lo);
+            m_cycles += XOR_A_R8(C);
             break;
         case 0xAA:
-            m_cycles += XOR_A_R8(DE.hi);
+            m_cycles += XOR_A_R8(D);
             break;
         case 0xAB:
-            m_cycles += XOR_A_R8(DE.lo);
+            m_cycles += XOR_A_R8(E);
             break;
         case 0xAC:
-            m_cycles += XOR_A_R8(HL.hi);
+            m_cycles += XOR_A_R8(H);
             break;
         case 0xAD:
-            m_cycles += XOR_A_R8(HL.lo);
+            m_cycles += XOR_A_R8(L);
             break;
         case 0xAF:
-            m_cycles += XOR_A_R8(AF.hi);
+            m_cycles += XOR_A_R8(A);
             break;
         
         // XOR A,[HL]
@@ -2455,25 +2463,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
         // OR A,R8
         case 0xB0:
-            m_cycles += OR_A_R8(BC.hi);
+            m_cycles += OR_A_R8(B);
             break;
         case 0xB1:
-            m_cycles += OR_A_R8(BC.lo);
+            m_cycles += OR_A_R8(C);
             break;
         case 0xB2:
-            m_cycles += OR_A_R8(DE.hi);
+            m_cycles += OR_A_R8(D);
             break;
         case 0xB3:
-            m_cycles += OR_A_R8(DE.lo);
+            m_cycles += OR_A_R8(E);
             break;
         case 0xB4:
-            m_cycles += OR_A_R8(HL.hi);
+            m_cycles += OR_A_R8(H);
             break;
         case 0xB5:
-            m_cycles += OR_A_R8(HL.lo);
+            m_cycles += OR_A_R8(L);
             break;
         case 0xB7:
-            m_cycles += OR_A_R8(AF.hi);
+            m_cycles += OR_A_R8(A);
             break;
 
         // OR A,[HL]
@@ -2483,25 +2491,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
         // CP A,R8
         case 0xB8:
-            m_cycles += CP_A_R8(BC.hi);
+            m_cycles += CP_A_R8(B);
             break;
         case 0xB9:
-            m_cycles += CP_A_R8(BC.lo);
+            m_cycles += CP_A_R8(C);
             break;
         case 0xBA:
-            m_cycles += CP_A_R8(DE.hi);
+            m_cycles += CP_A_R8(D);
             break;
         case 0xBB:
-            m_cycles += CP_A_R8(DE.lo);
+            m_cycles += CP_A_R8(E);
             break;
         case 0xBC:
-            m_cycles += CP_A_R8(HL.hi);
+            m_cycles += CP_A_R8(H);
             break;
         case 0xBD:
-            m_cycles += CP_A_R8(HL.lo);
+            m_cycles += CP_A_R8(L);
             break;
         case 0xBF:
-            m_cycles += CP_A_R8(AF.hi);
+            m_cycles += CP_A_R8(A);
             break;
         
         // CP A,[HL]
@@ -2556,16 +2564,16 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
         // CALL cc, n16
         case 0xC4:
-            m_cycles += CALL_cc_n16(!(AF.lo & 0x80), mem); // NZ
+            m_cycles += CALL_cc_n16(!(F & 0x80), mem); // NZ
             break;
         case 0xCC:
-            m_cycles += CALL_cc_n16(AF.lo & 0x80, mem); // Z
+            m_cycles += CALL_cc_n16(F & 0x80, mem); // Z
             break;
         case 0xD4:
-            m_cycles += CALL_cc_n16(!(AF.lo & 0x10), mem); // NC
+            m_cycles += CALL_cc_n16(!(F & 0x10), mem); // NC
             break;
         case 0xDC:
-            m_cycles += CALL_cc_n16(AF.lo & 0x10, mem); // C
+            m_cycles += CALL_cc_n16(F & 0x10, mem); // C
             break;
 
         // JP HL
@@ -2585,16 +2593,16 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
         // JR cc, e8
         case 0x20:
-            m_cycles += JR_cc_e8(!(AF.lo & 0x80), mem); // NZ
+            m_cycles += JR_cc_e8(!(F & 0x80), mem); // NZ
             break;
         case 0x28:
-            m_cycles += JR_cc_e8(AF.lo & 0x80, mem); // Z
+            m_cycles += JR_cc_e8(F & 0x80, mem); // Z
             break;
         case 0x30:
-            m_cycles += JR_cc_e8(!(AF.lo & 0x10), mem); // NC
+            m_cycles += JR_cc_e8(!(F & 0x10), mem); // NC
             break;
         case 0x38:
-            m_cycles += JR_cc_e8(AF.lo & 0x10, mem); // C
+            m_cycles += JR_cc_e8(F & 0x10, mem); // C
             break;
 
         // RET
@@ -2609,16 +2617,16 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
         // RET cc
         case 0xC0:
-            m_cycles += RET_cc(!(AF.lo & 0x80), mem); // NZ
+            m_cycles += RET_cc(!(F & 0x80), mem); // NZ
             break;
         case 0xC8:
-            m_cycles += RET_cc(AF.lo & 0x80, mem); // Z
+            m_cycles += RET_cc(F & 0x80, mem); // Z
             break;
         case 0xD0:
-            m_cycles += RET_cc(!(AF.lo & 0x10), mem); // NC
+            m_cycles += RET_cc(!(F & 0x10), mem); // NC
             break;
         case 0xD8:
-            m_cycles += RET_cc(AF.lo & 0x10, mem); // C
+            m_cycles += RET_cc(F & 0x10, mem); // C
             break;
 
         // RST vec
@@ -2717,25 +2725,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
                 
                 // RLC r8
                 case 0x00:
-                    m_cycles += RLC_R8(BC.hi);
+                    m_cycles += RLC_R8(B);
                     break;
                 case 0x01:
-                    m_cycles += RLC_R8(BC.lo);
+                    m_cycles += RLC_R8(C);
                     break;
                 case 0x02:
-                    m_cycles += RLC_R8(DE.hi);
+                    m_cycles += RLC_R8(D);
                     break;
                 case 0x03:
-                    m_cycles += RLC_R8(DE.lo);
+                    m_cycles += RLC_R8(E);
                     break;
                 case 0x04:
-                    m_cycles += RLC_R8(HL.hi);
+                    m_cycles += RLC_R8(H);
                     break;
                 case 0x05:
-                    m_cycles += RLC_R8(HL.lo);
+                    m_cycles += RLC_R8(L);
                     break;
                 case 0x07:
-                    m_cycles += RLC_R8(AF.hi);
+                    m_cycles += RLC_R8(A);
                     break;
 
                 // RLC [HL]
@@ -2745,25 +2753,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
                 // RL R8
                 case 0x10:
-                    m_cycles += RL_R8(BC.hi);
+                    m_cycles += RL_R8(B);
                     break;
                 case 0x11:
-                    m_cycles += RL_R8(BC.lo);
+                    m_cycles += RL_R8(C);
                     break;
                 case 0x12:
-                    m_cycles += RL_R8(DE.hi);
+                    m_cycles += RL_R8(D);
                     break;
                 case 0x13:
-                    m_cycles += RL_R8(DE.lo);
+                    m_cycles += RL_R8(E);
                     break;
                 case 0x14:
-                    m_cycles += RL_R8(HL.hi);
+                    m_cycles += RL_R8(H);
                     break;
                 case 0x15:
-                    m_cycles += RL_R8(HL.lo);
+                    m_cycles += RL_R8(L);
                     break;
                 case 0x17:
-                    m_cycles += RL_R8(AF.hi);
+                    m_cycles += RL_R8(A);
                     break;
 
                 // RL [HL]
@@ -2773,25 +2781,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
                 // RRC R8
                 case 0x08:
-                    m_cycles += RRC_R8(BC.hi);
+                    m_cycles += RRC_R8(B);
                     break;
                 case 0x09:
-                    m_cycles += RRC_R8(BC.lo);
+                    m_cycles += RRC_R8(C);
                     break;
                 case 0x0A:
-                    m_cycles += RRC_R8(DE.hi);
+                    m_cycles += RRC_R8(D);
                     break;
                 case 0x0B:
-                    m_cycles += RRC_R8(DE.lo);
+                    m_cycles += RRC_R8(E);
                     break;
                 case 0x0C:
-                    m_cycles += RRC_R8(HL.hi);
+                    m_cycles += RRC_R8(H);
                     break;
                 case 0x0D:
-                    m_cycles += RRC_R8(HL.lo);
+                    m_cycles += RRC_R8(L);
                     break;
                 case 0x0F:
-                    m_cycles += RRC_R8(AF.hi);
+                    m_cycles += RRC_R8(A);
                     break;
 
                 // RRC [HL]
@@ -2801,25 +2809,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
                 
                 // RR R8
                 case 0x18:
-                    m_cycles += RR_R8(BC.hi);
+                    m_cycles += RR_R8(B);
                     break;
                 case 0x19:
-                    m_cycles += RR_R8(BC.lo);
+                    m_cycles += RR_R8(C);
                     break;
                 case 0x1A:
-                    m_cycles += RR_R8(DE.hi);
+                    m_cycles += RR_R8(D);
                     break;
                 case 0x1B:
-                    m_cycles += RR_R8(DE.lo);
+                    m_cycles += RR_R8(E);
                     break;
                 case 0x1C:
-                    m_cycles += RR_R8(HL.hi);
+                    m_cycles += RR_R8(H);
                     break;
                 case 0x1D:
-                    m_cycles += RR_R8(HL.lo);
+                    m_cycles += RR_R8(L);
                     break;
                 case 0x1F:
-                    m_cycles += RR_R8(AF.hi);
+                    m_cycles += RR_R8(A);
                     break;
 
                 // RR [HL]
@@ -2829,25 +2837,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
                 // SLA R8
                 case 0x20:
-                    m_cycles += SLA_R8(BC.hi);
+                    m_cycles += SLA_R8(B);
                     break;
                 case 0x21:
-                    m_cycles += SLA_R8(BC.lo);
+                    m_cycles += SLA_R8(C);
                     break;
                 case 0x22:
-                    m_cycles += SLA_R8(DE.hi);
+                    m_cycles += SLA_R8(D);
                     break;
                 case 0x23:
-                    m_cycles += SLA_R8(DE.lo);
+                    m_cycles += SLA_R8(E);
                     break;
                 case 0x24:
-                    m_cycles += SLA_R8(HL.hi);
+                    m_cycles += SLA_R8(H);
                     break;
                 case 0x25:
-                    m_cycles += SLA_R8(HL.lo);
+                    m_cycles += SLA_R8(L);
                     break;
                 case 0x27:
-                    m_cycles += SLA_R8(AF.hi);
+                    m_cycles += SLA_R8(A);
                     break;
 
                 // SLA [HL]
@@ -2857,25 +2865,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
                 // SRA R8
                 case 0x28:
-                    m_cycles += SRA_R8(BC.hi);
+                    m_cycles += SRA_R8(B);
                     break;
                 case 0x29:
-                    m_cycles += SRA_R8(BC.lo);
+                    m_cycles += SRA_R8(C);
                     break;
                 case 0x2A:
-                    m_cycles += SRA_R8(DE.hi);
+                    m_cycles += SRA_R8(D);
                     break;
                 case 0x2B:
-                    m_cycles += SRA_R8(DE.lo);
+                    m_cycles += SRA_R8(E);
                     break;
                 case 0x2C:
-                    m_cycles += SRA_R8(HL.hi);
+                    m_cycles += SRA_R8(H);
                     break;
                 case 0x2D:
-                    m_cycles += SRA_R8(HL.lo);
+                    m_cycles += SRA_R8(L);
                     break;
                 case 0x2F:
-                    m_cycles += SRA_R8(AF.hi);
+                    m_cycles += SRA_R8(A);
                     break;
 
                 // SRA [HL]
@@ -2885,25 +2893,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
                 // SRL R8
                 case 0x38:
-                    m_cycles += SRL_R8(BC.hi);
+                    m_cycles += SRL_R8(B);
                     break;
                 case 0x39:
-                    m_cycles += SRL_R8(BC.lo);
+                    m_cycles += SRL_R8(C);
                     break;
                 case 0x3A:
-                    m_cycles += SRL_R8(DE.hi);
+                    m_cycles += SRL_R8(D);
                     break;
                 case 0x3B:
-                    m_cycles += SRL_R8(DE.lo);
+                    m_cycles += SRL_R8(E);
                     break;
                 case 0x3C:
-                    m_cycles += SRL_R8(HL.hi);
+                    m_cycles += SRL_R8(H);
                     break;
                 case 0x3D:
-                    m_cycles += SRL_R8(HL.lo);
+                    m_cycles += SRL_R8(L);
                     break;
                 case 0x3F:
-                    m_cycles += SRL_R8(AF.hi);
+                    m_cycles += SRL_R8(A);
                     break;
 
                 // SRL [HL]
@@ -2913,25 +2921,25 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
                 // SWAP R8
                 case 0x30:
-                    m_cycles += SWAP_R8(BC.hi);
+                    m_cycles += SWAP_R8(B);
                     break;
                 case 0x31:
-                    m_cycles += SWAP_R8(BC.lo);
+                    m_cycles += SWAP_R8(C);
                     break;
                 case 0x32:
-                    m_cycles += SWAP_R8(DE.hi);
+                    m_cycles += SWAP_R8(D);
                     break;
                 case 0x33:
-                    m_cycles += SWAP_R8(DE.lo);
+                    m_cycles += SWAP_R8(E);
                     break;
                 case 0x34:
-                    m_cycles += SWAP_R8(HL.hi);
+                    m_cycles += SWAP_R8(H);
                     break;
                 case 0x35:
-                    m_cycles += SWAP_R8(HL.lo);
+                    m_cycles += SWAP_R8(L);
                     break;
                 case 0x37:
-                    m_cycles += SWAP_R8(AF.hi);
+                    m_cycles += SWAP_R8(A);
                     break;
 
                 // SWAP [HL]
@@ -2941,172 +2949,172 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
                 // BIT b3,R8
                 case 0x40:
-                    m_cycles += BIT_b3_R8(0, BC.hi);
+                    m_cycles += BIT_b3_R8(0, B);
                     break;
                 case 0x41:
-                    m_cycles += BIT_b3_R8(0, BC.lo);
+                    m_cycles += BIT_b3_R8(0, C);
                     break;
                 case 0x42:
-                    m_cycles += BIT_b3_R8(0, DE.hi);
+                    m_cycles += BIT_b3_R8(0, D);
                     break;
                 case 0x43:
-                    m_cycles += BIT_b3_R8(0, DE.lo);
+                    m_cycles += BIT_b3_R8(0, E);
                     break;
                 case 0x44:
-                    m_cycles += BIT_b3_R8(0, HL.hi);
+                    m_cycles += BIT_b3_R8(0, H);
                     break;
                 case 0x45:
-                    m_cycles += BIT_b3_R8(0, HL.lo);
+                    m_cycles += BIT_b3_R8(0, L);
                     break;
                 case 0x47:
-                    m_cycles += BIT_b3_R8(0, AF.hi);
+                    m_cycles += BIT_b3_R8(0, A);
                     break;
                 case 0x48:
-                    m_cycles += BIT_b3_R8(1, BC.hi);
+                    m_cycles += BIT_b3_R8(1, B);
                     break;
                 case 0x49:
-                    m_cycles += BIT_b3_R8(1, BC.lo);
+                    m_cycles += BIT_b3_R8(1, C);
                     break;
                 case 0x4A:
-                    m_cycles += BIT_b3_R8(1, DE.hi);
+                    m_cycles += BIT_b3_R8(1, D);
                     break;
                 case 0x4B:
-                    m_cycles += BIT_b3_R8(1, DE.lo);
+                    m_cycles += BIT_b3_R8(1, E);
                     break;
                 case 0x4C:
-                    m_cycles += BIT_b3_R8(1, HL.hi);
+                    m_cycles += BIT_b3_R8(1, H);
                     break;
                 case 0x4D:
-                    m_cycles += BIT_b3_R8(1, HL.lo);
+                    m_cycles += BIT_b3_R8(1, L);
                     break;
                 case 0x4F:
-                    m_cycles += BIT_b3_R8(1, AF.hi);
+                    m_cycles += BIT_b3_R8(1, A);
                     break;
                 case 0x50:
-                    m_cycles += BIT_b3_R8(2, BC.hi);
+                    m_cycles += BIT_b3_R8(2, B);
                     break;
                 case 0x51:
-                    m_cycles += BIT_b3_R8(2, BC.lo);
+                    m_cycles += BIT_b3_R8(2, C);
                     break;
                 case 0x52:
-                    m_cycles += BIT_b3_R8(2, DE.hi);
+                    m_cycles += BIT_b3_R8(2, D);
                     break;
                 case 0x53:
-                    m_cycles += BIT_b3_R8(2, DE.lo);
+                    m_cycles += BIT_b3_R8(2, E);
                     break;
                 case 0x54:
-                    m_cycles += BIT_b3_R8(2, HL.hi);
+                    m_cycles += BIT_b3_R8(2, H);
                     break;
                 case 0x55:
-                    m_cycles += BIT_b3_R8(2, HL.lo);
+                    m_cycles += BIT_b3_R8(2, L);
                     break;
                 case 0x57:
-                    m_cycles += BIT_b3_R8(2, AF.hi);
+                    m_cycles += BIT_b3_R8(2, A);
                     break;
                 case 0x58:
-                    m_cycles += BIT_b3_R8(3, BC.hi);
+                    m_cycles += BIT_b3_R8(3, B);
                     break;
                 case 0x59:
-                    m_cycles += BIT_b3_R8(3, BC.lo);
+                    m_cycles += BIT_b3_R8(3, C);
                     break;
                 case 0x5A:
-                    m_cycles += BIT_b3_R8(3, DE.hi);
+                    m_cycles += BIT_b3_R8(3, D);
                     break;
                 case 0x5B:
-                    m_cycles += BIT_b3_R8(3, DE.lo);
+                    m_cycles += BIT_b3_R8(3, E);
                     break;
                 case 0x5C:
-                    m_cycles += BIT_b3_R8(3, HL.hi);
+                    m_cycles += BIT_b3_R8(3, H);
                     break;
                 case 0x5D:
-                    m_cycles += BIT_b3_R8(3, HL.lo);
+                    m_cycles += BIT_b3_R8(3, L);
                     break;
                 case 0x5F:
-                    m_cycles += BIT_b3_R8(3, AF.hi);
+                    m_cycles += BIT_b3_R8(3, A);
                     break;
                 case 0x60:
-                    m_cycles += BIT_b3_R8(4, BC.hi);
+                    m_cycles += BIT_b3_R8(4, B);
                     break;
                 case 0x61:
-                    m_cycles += BIT_b3_R8(4, BC.lo);
+                    m_cycles += BIT_b3_R8(4, C);
                     break;
                 case 0x62:
-                    m_cycles += BIT_b3_R8(4, DE.hi);
+                    m_cycles += BIT_b3_R8(4, D);
                     break;
                 case 0x63:
-                    m_cycles += BIT_b3_R8(4, DE.lo);
+                    m_cycles += BIT_b3_R8(4, E);
                     break;
                 case 0x64:
-                    m_cycles += BIT_b3_R8(4, HL.hi);
+                    m_cycles += BIT_b3_R8(4, H);
                     break;
                 case 0x65:
-                    m_cycles += BIT_b3_R8(4, HL.lo);
+                    m_cycles += BIT_b3_R8(4, L);
                     break;
                 case 0x67:
-                    m_cycles += BIT_b3_R8(4, AF.hi);
+                    m_cycles += BIT_b3_R8(4, A);
                     break;   
                 case 0x68:
-                    m_cycles += BIT_b3_R8(5, BC.hi);
+                    m_cycles += BIT_b3_R8(5, B);
                     break;
                 case 0x69:
-                    m_cycles += BIT_b3_R8(5, BC.lo);
+                    m_cycles += BIT_b3_R8(5, C);
                     break;
                 case 0x6A:
-                    m_cycles += BIT_b3_R8(5, DE.hi);
+                    m_cycles += BIT_b3_R8(5, D);
                     break;
                 case 0x6B:
-                    m_cycles += BIT_b3_R8(5, DE.lo);
+                    m_cycles += BIT_b3_R8(5, E);
                     break;
                 case 0x6C:
-                    m_cycles += BIT_b3_R8(5, HL.hi);
+                    m_cycles += BIT_b3_R8(5, H);
                     break;
                 case 0x6D:
-                    m_cycles += BIT_b3_R8(5, HL.lo);
+                    m_cycles += BIT_b3_R8(5, L);
                     break;
                 case 0x6F:
-                    m_cycles += BIT_b3_R8(5, AF.hi);
+                    m_cycles += BIT_b3_R8(5, A);
                     break;
                 case 0x70:
-                    m_cycles += BIT_b3_R8(6, BC.hi);
+                    m_cycles += BIT_b3_R8(6, B);
                     break;
                 case 0x71:
-                    m_cycles += BIT_b3_R8(6, BC.lo);
+                    m_cycles += BIT_b3_R8(6, C);
                     break;
                 case 0x72:
-                    m_cycles += BIT_b3_R8(6, DE.hi);
+                    m_cycles += BIT_b3_R8(6, D);
                     break;
                 case 0x73:
-                    m_cycles += BIT_b3_R8(6, DE.lo);
+                    m_cycles += BIT_b3_R8(6, E);
                     break;
                 case 0x74:
-                    m_cycles += BIT_b3_R8(6, HL.hi);
+                    m_cycles += BIT_b3_R8(6, H);
                     break;
                 case 0x75:
-                    m_cycles += BIT_b3_R8(6, HL.lo);
+                    m_cycles += BIT_b3_R8(6, L);
                     break;
                 case 0x77:
-                    m_cycles += BIT_b3_R8(6, AF.hi);
+                    m_cycles += BIT_b3_R8(6, A);
                     break;
                 case 0x78:
-                    m_cycles += BIT_b3_R8(7, BC.hi);
+                    m_cycles += BIT_b3_R8(7, B);
                     break;
                 case 0x79:
-                    m_cycles += BIT_b3_R8(7, BC.lo);
+                    m_cycles += BIT_b3_R8(7, C);
                     break;
                 case 0x7A:
-                    m_cycles += BIT_b3_R8(7, DE.hi);
+                    m_cycles += BIT_b3_R8(7, D);
                     break;
                 case 0x7B:
-                    m_cycles += BIT_b3_R8(7, DE.lo);
+                    m_cycles += BIT_b3_R8(7, E);
                     break;
                 case 0x7C:
-                    m_cycles += BIT_b3_R8(7, HL.hi);
+                    m_cycles += BIT_b3_R8(7, H);
                     break;
                 case 0x7D:
-                    m_cycles += BIT_b3_R8(7, HL.lo);
+                    m_cycles += BIT_b3_R8(7, L);
                     break;
                 case 0x7F:
-                    m_cycles += BIT_b3_R8(7, AF.hi);
+                    m_cycles += BIT_b3_R8(7, A);
                     break;
 
                 // BIT b3,[HL]
@@ -3137,172 +3145,172 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
                 // RES b3,R8
                 case 0x80:
-                    m_cycles += RES_b3_R8(0, BC.hi);
+                    m_cycles += RES_b3_R8(0, B);
                     break;
                 case 0x81:
-                    m_cycles += RES_b3_R8(0, BC.lo);
+                    m_cycles += RES_b3_R8(0, C);
                     break;
                 case 0x82:
-                    m_cycles += RES_b3_R8(0, DE.hi);
+                    m_cycles += RES_b3_R8(0, D);
                     break;
                 case 0x83:
-                    m_cycles += RES_b3_R8(0, DE.lo);
+                    m_cycles += RES_b3_R8(0, E);
                     break;
                 case 0x84:
-                    m_cycles += RES_b3_R8(0, HL.hi);
+                    m_cycles += RES_b3_R8(0, H);
                     break;
                 case 0x85:
-                    m_cycles += RES_b3_R8(0, HL.lo);
+                    m_cycles += RES_b3_R8(0, L);
                     break;
                 case 0x87:
-                    m_cycles += RES_b3_R8(0, AF.hi);
+                    m_cycles += RES_b3_R8(0, A);
                     break;
                 case 0x88:
-                    m_cycles += RES_b3_R8(1, BC.hi);
+                    m_cycles += RES_b3_R8(1, B);
                     break;
                 case 0x89:
-                    m_cycles += RES_b3_R8(1, BC.lo);
+                    m_cycles += RES_b3_R8(1, C);
                     break;
                 case 0x8A:
-                    m_cycles += RES_b3_R8(1, DE.hi);
+                    m_cycles += RES_b3_R8(1, D);
                     break;
                 case 0x8B:
-                    m_cycles += RES_b3_R8(1, DE.lo);
+                    m_cycles += RES_b3_R8(1, E);
                     break;
                 case 0x8C:
-                    m_cycles += RES_b3_R8(1, HL.hi);
+                    m_cycles += RES_b3_R8(1, H);
                     break;
                 case 0x8D:
-                    m_cycles += RES_b3_R8(1, HL.lo);
+                    m_cycles += RES_b3_R8(1, L);
                     break;
                 case 0x8F:
-                    m_cycles += RES_b3_R8(1, AF.hi);
+                    m_cycles += RES_b3_R8(1, A);
                     break;
                 case 0x90:
-                    m_cycles += RES_b3_R8(2, BC.hi);
+                    m_cycles += RES_b3_R8(2, B);
                     break;
                 case 0x91:
-                    m_cycles += RES_b3_R8(2, BC.lo);
+                    m_cycles += RES_b3_R8(2, C);
                     break;
                 case 0x92:
-                    m_cycles += RES_b3_R8(2, DE.hi);
+                    m_cycles += RES_b3_R8(2, D);
                     break;
                 case 0x93:
-                    m_cycles += RES_b3_R8(2, DE.lo);
+                    m_cycles += RES_b3_R8(2, E);
                     break;
                 case 0x94:
-                    m_cycles += RES_b3_R8(2, HL.hi);
+                    m_cycles += RES_b3_R8(2, H);
                     break;
                 case 0x95:
-                    m_cycles += RES_b3_R8(2, HL.lo);
+                    m_cycles += RES_b3_R8(2, L);
                     break;
                 case 0x97:
-                    m_cycles += RES_b3_R8(2, AF.hi);
+                    m_cycles += RES_b3_R8(2, A);
                     break;
                 case 0x98:
-                    m_cycles += RES_b3_R8(3, BC.hi);
+                    m_cycles += RES_b3_R8(3, B);
                     break;
                 case 0x99:
-                    m_cycles += RES_b3_R8(3, BC.lo);
+                    m_cycles += RES_b3_R8(3, C);
                     break;
                 case 0x9A:
-                    m_cycles += RES_b3_R8(3, DE.hi);
+                    m_cycles += RES_b3_R8(3, D);
                     break;
                 case 0x9B:
-                    m_cycles += RES_b3_R8(3, DE.lo);
+                    m_cycles += RES_b3_R8(3, E);
                     break;
                 case 0x9C:
-                    m_cycles += RES_b3_R8(3, HL.hi);
+                    m_cycles += RES_b3_R8(3, H);
                     break;
                 case 0x9D:
-                    m_cycles += RES_b3_R8(3, HL.lo);
+                    m_cycles += RES_b3_R8(3, L);
                     break;
                 case 0x9F:
-                    m_cycles += RES_b3_R8(3, AF.hi);
+                    m_cycles += RES_b3_R8(3, A);
                     break;
                 case 0xA0:
-                    m_cycles += RES_b3_R8(4, BC.hi);
+                    m_cycles += RES_b3_R8(4, B);
                     break;
                 case 0xA1:
-                    m_cycles += RES_b3_R8(4, BC.lo);
+                    m_cycles += RES_b3_R8(4, C);
                     break;
                 case 0xA2:
-                    m_cycles += RES_b3_R8(4, DE.hi);
+                    m_cycles += RES_b3_R8(4, D);
                     break;
                 case 0xA3:
-                    m_cycles += RES_b3_R8(4, DE.lo);
+                    m_cycles += RES_b3_R8(4, E);
                     break;
                 case 0xA4:
-                    m_cycles += RES_b3_R8(4, HL.hi);
+                    m_cycles += RES_b3_R8(4, H);
                     break;
                 case 0xA5:
-                    m_cycles += RES_b3_R8(4, HL.lo);
+                    m_cycles += RES_b3_R8(4, L);
                     break;
                 case 0xA7:
-                    m_cycles += RES_b3_R8(4, AF.hi);
+                    m_cycles += RES_b3_R8(4, A);
                     break;   
                 case 0xA8:
-                    m_cycles += RES_b3_R8(5, BC.hi);
+                    m_cycles += RES_b3_R8(5, B);
                     break;
                 case 0xA9:
-                    m_cycles += RES_b3_R8(5, BC.lo);
+                    m_cycles += RES_b3_R8(5, C);
                     break;
                 case 0xAA:
-                    m_cycles += RES_b3_R8(5, DE.hi);
+                    m_cycles += RES_b3_R8(5, D);
                     break;
                 case 0xAB:
-                    m_cycles += RES_b3_R8(5, DE.lo);
+                    m_cycles += RES_b3_R8(5, E);
                     break;
                 case 0xAC:
-                    m_cycles += RES_b3_R8(5, HL.hi);
+                    m_cycles += RES_b3_R8(5, H);
                     break;
                 case 0xAD:
-                    m_cycles += RES_b3_R8(5, HL.lo);
+                    m_cycles += RES_b3_R8(5, L);
                     break;
                 case 0xAF:
-                    m_cycles += RES_b3_R8(5, AF.hi);
+                    m_cycles += RES_b3_R8(5, A);
                     break;
                 case 0xB0:
-                    m_cycles += RES_b3_R8(6, BC.hi);
+                    m_cycles += RES_b3_R8(6, B);
                     break;
                 case 0xB1:
-                    m_cycles += RES_b3_R8(6, BC.lo);
+                    m_cycles += RES_b3_R8(6, C);
                     break;
                 case 0xB2:
-                    m_cycles += RES_b3_R8(6, DE.hi);
+                    m_cycles += RES_b3_R8(6, D);
                     break;
                 case 0xB3:
-                    m_cycles += RES_b3_R8(6, DE.lo);
+                    m_cycles += RES_b3_R8(6, E);
                     break;
                 case 0xB4:
-                    m_cycles += RES_b3_R8(6, HL.hi);
+                    m_cycles += RES_b3_R8(6, H);
                     break;
                 case 0xB5:
-                    m_cycles += RES_b3_R8(6, HL.lo);
+                    m_cycles += RES_b3_R8(6, L);
                     break;
                 case 0xB7:
-                    m_cycles += RES_b3_R8(6, AF.hi);
+                    m_cycles += RES_b3_R8(6, A);
                     break;
                 case 0xB8:
-                    m_cycles += RES_b3_R8(7, BC.hi);
+                    m_cycles += RES_b3_R8(7, B);
                     break;
                 case 0xB9:
-                    m_cycles += RES_b3_R8(7, BC.lo);
+                    m_cycles += RES_b3_R8(7, C);
                     break;
                 case 0xBA:
-                    m_cycles += RES_b3_R8(7, DE.hi);
+                    m_cycles += RES_b3_R8(7, D);
                     break;
                 case 0xBB:
-                    m_cycles += RES_b3_R8(7, DE.lo);
+                    m_cycles += RES_b3_R8(7, E);
                     break;
                 case 0xBC:
-                    m_cycles += RES_b3_R8(7, HL.hi);
+                    m_cycles += RES_b3_R8(7, H);
                     break;
                 case 0xBD:
-                    m_cycles += RES_b3_R8(7, HL.lo);
+                    m_cycles += RES_b3_R8(7, L);
                     break;
                 case 0xBF:
-                    m_cycles += RES_b3_R8(7, AF.hi);
+                    m_cycles += RES_b3_R8(7, A);
                     break;
 
                 // RES b3,[HL]
@@ -3333,172 +3341,172 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
                 // SET b3,R8
                 case 0xC0:
-                    m_cycles += SET_b3_R8(0, BC.hi);
+                    m_cycles += SET_b3_R8(0, B);
                     break;
                 case 0xC1:
-                    m_cycles += SET_b3_R8(0, BC.lo);
+                    m_cycles += SET_b3_R8(0, C);
                     break;
                 case 0xC2:
-                    m_cycles += SET_b3_R8(0, DE.hi);
+                    m_cycles += SET_b3_R8(0, D);
                     break;
                 case 0xC3:
-                    m_cycles += SET_b3_R8(0, DE.lo);
+                    m_cycles += SET_b3_R8(0, E);
                     break;
                 case 0xC4:
-                    m_cycles += SET_b3_R8(0, HL.hi);
+                    m_cycles += SET_b3_R8(0, H);
                     break;
                 case 0xC5:
-                    m_cycles += SET_b3_R8(0, HL.lo);
+                    m_cycles += SET_b3_R8(0, L);
                     break;
                 case 0xC7:
-                    m_cycles += SET_b3_R8(0, AF.hi);
+                    m_cycles += SET_b3_R8(0, A);
                     break;
                 case 0xC8:
-                    m_cycles += SET_b3_R8(1, BC.hi);
+                    m_cycles += SET_b3_R8(1, B);
                     break;
                 case 0xC9:
-                    m_cycles += SET_b3_R8(1, BC.lo);
+                    m_cycles += SET_b3_R8(1, C);
                     break;
                 case 0xCA:
-                    m_cycles += SET_b3_R8(1, DE.hi);
+                    m_cycles += SET_b3_R8(1, D);
                     break;
                 case 0xCB:
-                    m_cycles += SET_b3_R8(1, DE.lo);
+                    m_cycles += SET_b3_R8(1, E);
                     break;
                 case 0xCC:
-                    m_cycles += SET_b3_R8(1, HL.hi);
+                    m_cycles += SET_b3_R8(1, H);
                     break;
                 case 0xCD:
-                    m_cycles += SET_b3_R8(1, HL.lo);
+                    m_cycles += SET_b3_R8(1, L);
                     break;
                 case 0xCF:
-                    m_cycles += SET_b3_R8(1, AF.hi);
+                    m_cycles += SET_b3_R8(1, A);
                     break;
                 case 0xD0:
-                    m_cycles += SET_b3_R8(2, BC.hi);
+                    m_cycles += SET_b3_R8(2, B);
                     break;
                 case 0xD1:
-                    m_cycles += SET_b3_R8(2, BC.lo);
+                    m_cycles += SET_b3_R8(2, C);
                     break;
                 case 0xD2:
-                    m_cycles += SET_b3_R8(2, DE.hi);
+                    m_cycles += SET_b3_R8(2, D);
                     break;
                 case 0xD3:
-                    m_cycles += SET_b3_R8(2, DE.lo);
+                    m_cycles += SET_b3_R8(2, E);
                     break;
                 case 0xD4:
-                    m_cycles += SET_b3_R8(2, HL.hi);
+                    m_cycles += SET_b3_R8(2, H);
                     break;
                 case 0xD5:
-                    m_cycles += SET_b3_R8(2, HL.lo);
+                    m_cycles += SET_b3_R8(2, L);
                     break;
                 case 0xD7:
-                    m_cycles += SET_b3_R8(2, AF.hi);
+                    m_cycles += SET_b3_R8(2, A);
                     break;
                 case 0xD8:
-                    m_cycles += SET_b3_R8(3, BC.hi);
+                    m_cycles += SET_b3_R8(3, B);
                     break;
                 case 0xD9:
-                    m_cycles += SET_b3_R8(3, BC.lo);
+                    m_cycles += SET_b3_R8(3, C);
                     break;
                 case 0xDA:
-                    m_cycles += SET_b3_R8(3, DE.hi);
+                    m_cycles += SET_b3_R8(3, D);
                     break;
                 case 0xDB:
-                    m_cycles += SET_b3_R8(3, DE.lo);
+                    m_cycles += SET_b3_R8(3, E);
                     break;
                 case 0xDC:
-                    m_cycles += SET_b3_R8(3, HL.hi);
+                    m_cycles += SET_b3_R8(3, H);
                     break;
                 case 0xDD:
-                    m_cycles += SET_b3_R8(3, HL.lo);
+                    m_cycles += SET_b3_R8(3, L);
                     break;
                 case 0xDF:
-                    m_cycles += SET_b3_R8(3, AF.hi);
+                    m_cycles += SET_b3_R8(3, A);
                     break;
                 case 0xE0:
-                    m_cycles += SET_b3_R8(4, BC.hi);
+                    m_cycles += SET_b3_R8(4, B);
                     break;
                 case 0xE1:
-                    m_cycles += SET_b3_R8(4, BC.lo);
+                    m_cycles += SET_b3_R8(4, C);
                     break;
                 case 0xE2:
-                    m_cycles += SET_b3_R8(4, DE.hi);
+                    m_cycles += SET_b3_R8(4, D);
                     break;
                 case 0xE3:
-                    m_cycles += SET_b3_R8(4, DE.lo);
+                    m_cycles += SET_b3_R8(4, E);
                     break;
                 case 0xE4:
-                    m_cycles += SET_b3_R8(4, HL.hi);
+                    m_cycles += SET_b3_R8(4, H);
                     break;
                 case 0xE5:
-                    m_cycles += SET_b3_R8(4, HL.lo);
+                    m_cycles += SET_b3_R8(4, L);
                     break;
                 case 0xE7:
-                    m_cycles += SET_b3_R8(4, AF.hi);
+                    m_cycles += SET_b3_R8(4, A);
                     break;   
                 case 0xE8:
-                    m_cycles += SET_b3_R8(5, BC.hi);
+                    m_cycles += SET_b3_R8(5, B);
                     break;
                 case 0xE9:
-                    m_cycles += SET_b3_R8(5, BC.lo);
+                    m_cycles += SET_b3_R8(5, C);
                     break;
                 case 0xEA:
-                    m_cycles += SET_b3_R8(5, DE.hi);
+                    m_cycles += SET_b3_R8(5, D);
                     break;
                 case 0xEB:
-                    m_cycles += SET_b3_R8(5, DE.lo);
+                    m_cycles += SET_b3_R8(5, E);
                     break;
                 case 0xEC:
-                    m_cycles += SET_b3_R8(5, HL.hi);
+                    m_cycles += SET_b3_R8(5, H);
                     break;
                 case 0xED:
-                    m_cycles += SET_b3_R8(5, HL.lo);
+                    m_cycles += SET_b3_R8(5, L);
                     break;
                 case 0xEF:
-                    m_cycles += SET_b3_R8(5, AF.hi);
+                    m_cycles += SET_b3_R8(5, A);
                     break;
                 case 0xF0:
-                    m_cycles += SET_b3_R8(6, BC.hi);
+                    m_cycles += SET_b3_R8(6, B);
                     break;
                 case 0xF1:
-                    m_cycles += SET_b3_R8(6, BC.lo);
+                    m_cycles += SET_b3_R8(6, C);
                     break;
                 case 0xF2:
-                    m_cycles += SET_b3_R8(6, DE.hi);
+                    m_cycles += SET_b3_R8(6, D);
                     break;
                 case 0xF3:
-                    m_cycles += SET_b3_R8(6, DE.lo);
+                    m_cycles += SET_b3_R8(6, E);
                     break;
                 case 0xF4:
-                    m_cycles += SET_b3_R8(6, HL.hi);
+                    m_cycles += SET_b3_R8(6, H);
                     break;
                 case 0xF5:
-                    m_cycles += SET_b3_R8(6, HL.lo);
+                    m_cycles += SET_b3_R8(6, L);
                     break;
                 case 0xF7:
-                    m_cycles += SET_b3_R8(6, AF.hi);
+                    m_cycles += SET_b3_R8(6, A);
                     break;
                 case 0xF8:
-                    m_cycles += SET_b3_R8(7, BC.hi);
+                    m_cycles += SET_b3_R8(7, B);
                     break;
                 case 0xF9:
-                    m_cycles += SET_b3_R8(7, BC.lo);
+                    m_cycles += SET_b3_R8(7, C);
                     break;
                 case 0xFA:
-                    m_cycles += SET_b3_R8(7, DE.hi);
+                    m_cycles += SET_b3_R8(7, D);
                     break;
                 case 0xFB:
-                    m_cycles += SET_b3_R8(7, DE.lo);
+                    m_cycles += SET_b3_R8(7, E);
                     break;
                 case 0xFC:
-                    m_cycles += SET_b3_R8(7, HL.hi);
+                    m_cycles += SET_b3_R8(7, H);
                     break;
                 case 0xFD:
-                    m_cycles += SET_b3_R8(7, HL.lo);
+                    m_cycles += SET_b3_R8(7, L);
                     break;
                 case 0xFF:
-                    m_cycles += SET_b3_R8(7, AF.hi);
+                    m_cycles += SET_b3_R8(7, A);
                     break;
 
                 // SET b3,[HL]
