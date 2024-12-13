@@ -1854,16 +1854,16 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
         uint8_t IF_reg = mem.read(0xFF0F);
         uint8_t joypad_requested = IF_reg & 0x10;
         uint8_t serial_requested = IF_reg & 0x08;
-        uint8_t timer_requested = IF_reg & 0x04;
-        uint8_t LCD_requested = IF_reg & 0x02;
+        uint8_t timer_requested  = IF_reg & 0x04;
+        uint8_t LCD_requested    = IF_reg & 0x02;
         uint8_t VBlank_requested = IF_reg & 0x01;
 
         // Get IE bits
         uint8_t IE_reg = mem.read(0xFFFF);
         uint8_t joypad_enabled = IE_reg & 0x10;
         uint8_t serial_enabled = IE_reg & 0x08;
-        uint8_t timer_enabled = IE_reg & 0x04;
-        uint8_t LCD_enabled = IE_reg & 0x02;
+        uint8_t timer_enabled  = IE_reg & 0x04;
+        uint8_t LCD_enabled    = IE_reg & 0x02;
         uint8_t VBlank_enabled = IE_reg & 0x01;
 
         // Highest priority is VBlank while lowest is Joypad
@@ -1883,7 +1883,6 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
             m_cycles += service_interrupt(mem, Joypad);
         }
     }
-
 
     // Decode and execute
     switch (opcode) {
@@ -3535,9 +3534,7 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
                     m_cycles += SET_b3_HL(7, mem);
                     break;
             }
-            
             break;
-    
     }
 
     if (IME_next) { 
@@ -3549,5 +3546,4 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
     }
 
     return m_cycles;
-
 }
