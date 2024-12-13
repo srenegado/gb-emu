@@ -1,21 +1,5 @@
 #include "cpu.h"
 
-/** 
- * Sets bit in Interrupt flag (IF) based on requested interrupt
- */
-void InterruptHandler::request_interrupt(Memory &mem, InterruptType type) {
-    uint8_t enable = 0;
-    switch (type) {
-        case Joypad: enable = 0x10; break;
-        case Serial: enable = 0x08; break;
-        case Timer:  enable = 0x04; break;
-        case LCD:    enable = 0x02; break;
-        case VBlank: enable = 0x01; break;
-    }
-    mem.write(0xFF0F, mem.read(0xFF0F) | enable);
-}
-    
-
 // Constructor
 Register16::Register16() {
     hi = 0x0000;
@@ -80,6 +64,7 @@ Register16 Register16::operator--(int) {
 
     return temp;
 }
+
 
 /** 
   * Opcodes
@@ -1774,7 +1759,7 @@ void CPU::inc_TIMA(Memory &mem) {
     if (res > 0xFF) {
         // Timer counter overflowed
         mem.write(0xFF05, mem.read(0xFF06)); // TIMA <- TMA
-        interrupt_handler.request_interrupt(mem, Timer);
+        request_interrupt(mem, Timer);
     } else {
         mem.write(0xFF05, res);
     }
@@ -1796,6 +1781,53 @@ uint8_t CPU::is_timer_started(Memory &mem) {
     return timer_stop;
 }
 
+/** 
+ * Sets bit in Interrupt flag (IF) based on requested interrupt
+ */
+void CPU::request_interrupt(Memory &mem, InterruptType type) {
+    uint8_t enable = 0;
+    switch (type) {
+        case Joypad: enable = 0x10; break;
+        case Serial: enable = 0x08; break;
+        case Timer:  enable = 0x04; break;
+        case LCD:    enable = 0x02; break;
+        case VBlank: enable = 0x01; break;
+    }
+    mem.write(0xFF0F, mem.read(0xFF0F) | enable);
+}
+
+uint32_t CPU::service_interrupt(Memory &mem, InterruptType type) {
+    // Choose the right interrupt
+    uint16_t handler_addr = 0x0000;
+    uint8_t disable = 0x00; 
+    switch (type) {
+        case (Joypad): handler_addr = 0x0060; disable = ~0x10; break;
+        case (Serial): handler_addr = 0x0058; disable = ~0x08; break;
+        case (Timer):  handler_addr = 0x0050; disable = ~0x04; break;
+        case (LCD):    handler_addr = 0x0048; disable = ~0x02; break;
+        case (VBlank): handler_addr = 0x0040; disable = ~0x01; break;
+    }
+
+    // Reset corresponding IF bit to acknowledge interrupt
+    mem.write(0xFF0F, mem.read(0xFF0F) & disable);
+    
+    // Prevent any further interrupts from happening
+    IME = 0;
+
+    // Servicing happens after fetching the next opcode
+    PC--;
+
+    // Call interrupt handler
+    SP--;
+    mem.write(SP.get_data16(), PC >> 8);
+    SP--;
+    mem.write(SP.get_data16(), PC & 0xFF);
+    PC = handler_addr; 
+
+    return 5;
+}
+
+
 /**
   * Fetch, decode, and execute and opcode then 
   * return the number of m-cycles that opcode took
@@ -1805,6 +1837,45 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
 
     // Fetch
     uint8_t opcode = mem.read(PC++); // Point to next byte
+
+    // Service any interrupts    
+    if (IME) {
+        // Interrupts are enabled by the master flag
+
+        // Get IF bits
+        uint8_t IF_reg = mem.read(0xFF0F);
+        uint8_t joypad_requested = IF_reg & 0x10;
+        uint8_t serial_requested = IF_reg & 0x08;
+        uint8_t timer_requested = IF_reg & 0x04;
+        uint8_t LCD_requested = IF_reg & 0x02;
+        uint8_t VBlank_requested = IF_reg & 0x01;
+
+        // Get IE bits
+        uint8_t IE_reg = mem.read(0xFFFF);
+        uint8_t joypad_enabled = IE_reg & 0x10;
+        uint8_t serial_enabled = IE_reg & 0x08;
+        uint8_t timer_enabled = IE_reg & 0x04;
+        uint8_t LCD_enabled = IE_reg & 0x02;
+        uint8_t VBlank_enabled = IE_reg & 0x01;
+
+        // Highest priority is VBlank while lowest is Joypad
+        if (VBlank_enabled && VBlank_requested) {
+            m_cycles += service_interrupt(mem, VBlank);
+        } 
+        else if (LCD_enabled && LCD_requested) {
+            m_cycles += service_interrupt(mem, LCD);
+        }
+        else if (timer_enabled && timer_requested) {
+            m_cycles += service_interrupt(mem, Timer);
+        }
+        else if (serial_enabled && serial_requested) {
+            m_cycles += service_interrupt(mem, Serial);
+        }
+        else if (joypad_enabled && joypad_requested) {
+            m_cycles += service_interrupt(mem, Joypad);
+        }
+    }
+
 
     // Decode and execute
     switch (opcode) {
@@ -3462,8 +3533,10 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
     }
 
     if (IME_next) { 
-        // EI was called before the current opcode
-        IME = 1; // Enable interrupts
+        // EI was called before opcode that just executed
+
+        // Enable interrupts
+        IME = 1; 
         IME_next = 0;
     }
 

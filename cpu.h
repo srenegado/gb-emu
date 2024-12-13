@@ -14,14 +14,6 @@ enum InterruptType {
     VBlank  // 0
 };
 
-struct InterruptHandler {
-
-    /** 
-     * Sets bit in Interrupt flag (IF) based on requested interrupt
-     */
-    void request_interrupt(Memory &mem, InterruptType type);
-    
-};
 
 typedef uint8_t Register8;
 
@@ -69,12 +61,8 @@ class CPU {
 
         uint16_t PC;      // Program counter  
 
-        InterruptHandler interrupt_handler;
-
         uint8_t IME;      // Interrupt master enable flag
         uint8_t IME_next;
-
-
 
         /** 
          * Opcodes
@@ -698,7 +686,15 @@ class CPU {
          */
         uint32_t SET_b3_HL(uint8_t b3, Memory &mem) ;
 
+        /** 
+         * Sets bit in Interrupt flag (IF) based on requested interrupt
+         */
+        void request_interrupt(Memory &mem, InterruptType type);
 
+        /** 
+         * Give control to interrupt handler
+         */
+        uint32_t service_interrupt(Memory &mem, InterruptType type); 
 
     public:
     
@@ -725,7 +721,7 @@ class CPU {
         uint32_t get_timer_clock_speed(Memory &mem) ;
 
         uint8_t is_timer_started(Memory &mem) ;
-        
+
 
         /**
          * Fetch, decode, and execute and opcode then 
