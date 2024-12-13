@@ -25,6 +25,6 @@ void Memory::load_ROM(char *ROM) {
     if (ROM_file == nullptr)
         throw std::invalid_argument("Opening ROM file failed");
 
-    std::fread(start_addr, 0x8000, 1, ROM_file);
+    std::fread(start_addr, 0x8100, 1, ROM_file);
     std::fclose(ROM_file);
 }
