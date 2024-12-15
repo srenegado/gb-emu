@@ -59,7 +59,7 @@ class CPU {
         Register16 HL;
         Register16 SP;    // Stack pointer
 
-        uint16_t DIV;     // Divider: exposed system counter
+        uint16_t DIV;     // Divider: system counter
 
         uint16_t PC;      // Program counter  
 

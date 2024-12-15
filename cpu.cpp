@@ -1942,829 +1942,374 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
     switch (opcode) {
         
         case 0x00: // NOP
-            m_cycles += 1;
-            break;
+            m_cycles += 1; break;
 
         // LD R8, R8
-        case 0x40:
-            m_cycles += LD_R8_R8(B, B);
-            break;
-        case 0x41:
-            m_cycles += LD_R8_R8(B, C);
-            break;
-        case 0x42: 
-            m_cycles += LD_R8_R8(B, D);
-            break;
-        case 0x43:
-            m_cycles += LD_R8_R8(B, E);
-            break;
-        case 0x44:
-            m_cycles += LD_R8_R8(B, H);
-            break;
-        case 0x45:
-            m_cycles += LD_R8_R8(B, L);
-            break;
-        case 0x47:
-            m_cycles += LD_R8_R8(B, A);
-            break;
-        case 0x48:
-            m_cycles += LD_R8_R8(C, B);
-            break;
-        case 0x49:
-            m_cycles += LD_R8_R8(C, C);
-            break;
-        case 0x4A:
-            m_cycles += LD_R8_R8(C, D);
-            break;
-        case 0x4B:
-            m_cycles += LD_R8_R8(C, E);
-            break;
-        case 0x4C:
-            m_cycles += LD_R8_R8(C, H);
-            break;
-        case 0x4D:
-            m_cycles += LD_R8_R8(C, L);
-            break;
-        case 0x4F:
-            m_cycles += LD_R8_R8(C, A);
-            break;
-        case 0x50:
-            m_cycles += LD_R8_R8(D, B);
-            break;
-        case 0x51:
-            m_cycles += LD_R8_R8(D, C);
-            break;
-        case 0x52:
-            m_cycles += LD_R8_R8(D, D);
-            break;
-        case 0x53:
-            m_cycles += LD_R8_R8(D, E);
-            break;
-        case 0x54:
-            m_cycles += LD_R8_R8(D, H);
-            break;
-        case 0x55:
-            m_cycles += LD_R8_R8(D, L);
-            break;
-        case 0x57:
-            m_cycles += LD_R8_R8(D, A);
-            break;
-        case 0x58:
-            m_cycles += LD_R8_R8(E, B);
-            break;
-        case 0x59:
-            m_cycles += LD_R8_R8(E, C);
-            break;
-        case 0x5A:
-            m_cycles += LD_R8_R8(E, D);
-            break;
-        case 0x5B:
-            m_cycles += LD_R8_R8(E, E);
-            break;
-        case 0x5C:
-            m_cycles += LD_R8_R8(E, H);
-            break;
-        case 0x5D:
-            m_cycles += LD_R8_R8(E, L);
-            break;
-        case 0x5F:
-            m_cycles += LD_R8_R8(E, A);
-            break;
-        case 0x60:
-            m_cycles += LD_R8_R8(H, B);
-            break;
-        case 0x61:
-            m_cycles += LD_R8_R8(H, C);
-            break;
-        case 0x62:
-            m_cycles += LD_R8_R8(H, D);
-            break;
-        case 0x63:
-            m_cycles += LD_R8_R8(H, E);
-            break;
-        case 0x64:
-            m_cycles += LD_R8_R8(H, H);
-            break;
-        case 0x65:
-            m_cycles += LD_R8_R8(H, L);
-            break;
-        case 0x67:
-            m_cycles += LD_R8_R8(H, A);
-            break;
-        case 0x68:
-            m_cycles += LD_R8_R8(L, B);
-            break;
-        case 0x69:
-            m_cycles += LD_R8_R8(L, C);
-            break;
-        case 0x6A:
-            m_cycles += LD_R8_R8(L, D);
-            break;
-        case 0x6B:
-            m_cycles += LD_R8_R8(L, E);
-            break;
-        case 0x6C:
-            m_cycles += LD_R8_R8(L, H);
-            break;
-        case 0x6D:
-            m_cycles += LD_R8_R8(L, L);
-            break;
-        case 0x6F:
-            m_cycles += LD_R8_R8(L, A);
-            break;
-        case 0x78:
-            m_cycles += LD_R8_R8(A, B);
-            break;
-        case 0x79:
-            m_cycles += LD_R8_R8(A, C);
-            break;
-        case 0x7A:
-            m_cycles += LD_R8_R8(A, D);
-            break;
-        case 0x7B:
-            m_cycles += LD_R8_R8(A, E);
-            break;
-        case 0x7C:
-            m_cycles += LD_R8_R8(A, H);
-            break;
-        case 0x7D:
-            m_cycles += LD_R8_R8(A, L);
-            break;
-        case 0x7F:
-            m_cycles += LD_R8_R8(A, A);
-            break;
+        case 0x40: m_cycles += LD_R8_R8(B, B); break;
+        case 0x41: m_cycles += LD_R8_R8(B, C); break;
+        case 0x42: m_cycles += LD_R8_R8(B, D); break;
+        case 0x43: m_cycles += LD_R8_R8(B, E); break;
+        case 0x44: m_cycles += LD_R8_R8(B, H); break;
+        case 0x45: m_cycles += LD_R8_R8(B, L); break;
+        case 0x47: m_cycles += LD_R8_R8(B, A); break;
+        case 0x48: m_cycles += LD_R8_R8(C, B); break;
+        case 0x49: m_cycles += LD_R8_R8(C, C); break;
+        case 0x4A: m_cycles += LD_R8_R8(C, D); break;
+        case 0x4B: m_cycles += LD_R8_R8(C, E); break;
+        case 0x4C: m_cycles += LD_R8_R8(C, H); break;
+        case 0x4D: m_cycles += LD_R8_R8(C, L); break;
+        case 0x4F: m_cycles += LD_R8_R8(C, A); break;
+        case 0x50: m_cycles += LD_R8_R8(D, B); break;
+        case 0x51: m_cycles += LD_R8_R8(D, C); break;
+        case 0x52: m_cycles += LD_R8_R8(D, D); break;
+        case 0x53: m_cycles += LD_R8_R8(D, E); break;
+        case 0x54: m_cycles += LD_R8_R8(D, H); break;
+        case 0x55: m_cycles += LD_R8_R8(D, L); break;
+        case 0x57: m_cycles += LD_R8_R8(D, A); break;
+        case 0x58: m_cycles += LD_R8_R8(E, B); break;
+        case 0x59: m_cycles += LD_R8_R8(E, C); break;
+        case 0x5A: m_cycles += LD_R8_R8(E, D); break;
+        case 0x5B: m_cycles += LD_R8_R8(E, E); break;
+        case 0x5C: m_cycles += LD_R8_R8(E, H); break;
+        case 0x5D: m_cycles += LD_R8_R8(E, L); break;
+        case 0x5F: m_cycles += LD_R8_R8(E, A); break;
+        case 0x60: m_cycles += LD_R8_R8(H, B); break;
+        case 0x61: m_cycles += LD_R8_R8(H, C); break;
+        case 0x62: m_cycles += LD_R8_R8(H, D); break;
+        case 0x63: m_cycles += LD_R8_R8(H, E); break;
+        case 0x64: m_cycles += LD_R8_R8(H, H); break;
+        case 0x65: m_cycles += LD_R8_R8(H, L); break;
+        case 0x67: m_cycles += LD_R8_R8(H, A); break;
+        case 0x68: m_cycles += LD_R8_R8(L, B); break;
+        case 0x69: m_cycles += LD_R8_R8(L, C); break;
+        case 0x6A: m_cycles += LD_R8_R8(L, D); break;
+        case 0x6B: m_cycles += LD_R8_R8(L, E); break;
+        case 0x6C: m_cycles += LD_R8_R8(L, H); break;
+        case 0x6D: m_cycles += LD_R8_R8(L, L); break;
+        case 0x6F: m_cycles += LD_R8_R8(L, A); break;
+        case 0x78: m_cycles += LD_R8_R8(A, B); break;
+        case 0x79: m_cycles += LD_R8_R8(A, C); break;
+        case 0x7A: m_cycles += LD_R8_R8(A, D); break;
+        case 0x7B: m_cycles += LD_R8_R8(A, E); break;
+        case 0x7C: m_cycles += LD_R8_R8(A, H); break;
+        case 0x7D: m_cycles += LD_R8_R8(A, L); break;
+        case 0x7F: m_cycles += LD_R8_R8(A, A); break;
 
         // LD [HL], R8
-        case 0x70:
-            m_cycles += LD_HL_R8(B, mem);
-            break;
-        case 0x71:
-            m_cycles += LD_HL_R8(C, mem);
-            break;
-        case 0x72:
-            m_cycles += LD_HL_R8(D, mem);
-            break;
-        case 0x73:
-            m_cycles += LD_HL_R8(E, mem);
-            break;
-        case 0x74:
-            m_cycles += LD_HL_R8(H, mem);
-            break;
-        case 0x75:
-            m_cycles += LD_HL_R8(L, mem);
-            break;
-        case 0x77:
-            m_cycles += LD_HL_R8(A, mem);
-            break;
+        case 0x70: m_cycles += LD_HL_R8(B, mem); break;
+        case 0x71: m_cycles += LD_HL_R8(C, mem); break;
+        case 0x72: m_cycles += LD_HL_R8(D, mem); break;
+        case 0x73: m_cycles += LD_HL_R8(E, mem); break;
+        case 0x74: m_cycles += LD_HL_R8(H, mem); break;
+        case 0x75: m_cycles += LD_HL_R8(L, mem); break;
+        case 0x77: m_cycles += LD_HL_R8(A, mem); break;
 
         // LD R8, [HL]
-        case 0x46:
-            m_cycles += LD_R8_HL(B, mem);
-            break;
-        case 0x4E:
-            m_cycles += LD_R8_HL(C, mem);
-            break;
-        case 0x56:
-            m_cycles += LD_R8_HL(D, mem);
-            break;
-        case 0x5E:
-            m_cycles += LD_R8_HL(E, mem);
-            break;
-        case 0x66:
-            m_cycles += LD_R8_HL(H, mem);
-            break;
-        case 0x6E:
-            m_cycles += LD_R8_HL(L, mem);
-            break;
-        case 0x7E:
-            m_cycles += LD_R8_HL(A, mem);
-            break;
+        case 0x46: m_cycles += LD_R8_HL(B, mem); break;
+        case 0x4E: m_cycles += LD_R8_HL(C, mem); break;
+        case 0x56: m_cycles += LD_R8_HL(D, mem); break;
+        case 0x5E: m_cycles += LD_R8_HL(E, mem); break;
+        case 0x66: m_cycles += LD_R8_HL(H, mem); break;
+        case 0x6E: m_cycles += LD_R8_HL(L, mem); break;
+        case 0x7E: m_cycles += LD_R8_HL(A, mem); break;
 
         case 0x76: // TODO: HALT
             break;
 
         // LD R8, n8
-        case 0x06:
-            m_cycles += LD_R8_n8(B, mem);
-            break;
-        case 0x0E:
-            m_cycles += LD_R8_n8(C, mem);
-            break;
-        case 0x16:
-            m_cycles += LD_R8_n8(D, mem);
-            break;
-        case 0x1E:
-            m_cycles += LD_R8_n8(E, mem);
-            break;
-        case 0x26:
-            m_cycles += LD_R8_n8(H, mem);
-            break;
-        case 0x2E:
-            m_cycles += LD_R8_n8(L, mem);
-            break;
-        case 0x3E:
-            m_cycles += LD_R8_n8(B, mem);
-            break;
+        case 0x06: m_cycles += LD_R8_n8(B, mem); break;
+        case 0x0E: m_cycles += LD_R8_n8(C, mem); break;
+        case 0x16: m_cycles += LD_R8_n8(D, mem); break;
+        case 0x1E: m_cycles += LD_R8_n8(E, mem); break;
+        case 0x26: m_cycles += LD_R8_n8(H, mem); break;
+        case 0x2E: m_cycles += LD_R8_n8(L, mem); break;
+        case 0x3E: m_cycles += LD_R8_n8(B, mem); break;
 
-        case 0x36: // LD [HL], n8
-            m_cycles += LD_HL_n8(mem);
-            break;
+        // LD [HL], n8
+        case 0x36: m_cycles += LD_HL_n8(mem); break;
 
         // LD [R16], A
-        case 0x02:
-            m_cycles += LD_R16_A(BC, mem);
-            break;
-        case 0x12:
-            m_cycles += LD_R16_A(DE, mem);
-            break;
-        case 0x22:
-            m_cycles += LD_R16_A(HL++, mem);
-            break;
-        case 0x32:
-            m_cycles += LD_R16_A(HL--, mem);
-            break;
+        case 0x02: m_cycles += LD_R16_A(BC, mem);   break;
+        case 0x12: m_cycles += LD_R16_A(DE, mem);   break;
+        case 0x22: m_cycles += LD_R16_A(HL++, mem); break;
+        case 0x32: m_cycles += LD_R16_A(HL--, mem); break;
 
         // LD A, [R16]
-        case 0x0A:
-            m_cycles += LD_A_R16(BC, mem);
-            break;
-        case 0x1A:
-            m_cycles += LD_A_R16(DE, mem);
-            break;
-        case 0x2A:
-            m_cycles += LD_A_R16(HL++, mem);
-            break;
-        case 0x3A:
-            m_cycles += LD_A_R16(HL--, mem);
-            break;
+        case 0x0A: m_cycles += LD_A_R16(BC, mem); break;
+        case 0x1A: m_cycles += LD_A_R16(DE, mem); break;
+        case 0x2A: m_cycles += LD_A_R16(HL++, mem); break;
+        case 0x3A: m_cycles += LD_A_R16(HL--, mem); break;
 
         // LD R16, n16
-        case 0x01:
-            m_cycles += LD_R16_n16(BC, mem);
-            break;
-        case 0x11:
-            m_cycles += LD_R16_n16(DE, mem);
-            break;
-        case 0x21:
-            m_cycles += LD_R16_n16(HL, mem);
-            break;
-        case 0x31:
-            m_cycles += LD_R16_n16(SP, mem);
-            break;
+        case 0x01: m_cycles += LD_R16_n16(BC, mem); break;
+        case 0x11: m_cycles += LD_R16_n16(DE, mem); break;
+        case 0x21: m_cycles += LD_R16_n16(HL, mem); break;
+        case 0x31: m_cycles += LD_R16_n16(SP, mem); break;
 
-        case 0x08: // LD [n16], SP
-            m_cycles += LD_n16_SP(mem);
-            break;
+        // LD [n16], SP
+        case 0x08: m_cycles += LD_n16_SP(mem); break;
 
-        case 0xEA: // LD [n16], A
-            m_cycles += LD_n16_A(mem);
-            break;
+        // LD [n16], A
+        case 0xEA: m_cycles += LD_n16_A(mem); break;
 
-        case 0xFA: // LD A, [n16]
-            m_cycles += LD_A_n16(mem);
-            break;
+        // LD A, [n16]
+        case 0xFA: m_cycles += LD_A_n16(mem); break;
 
-        case 0xF9: // LD SP, HL
-            m_cycles += LD_SP_HL();
-            break;
+        // LD SP, HL
+        case 0xF9: m_cycles += LD_SP_HL(); break;
 
-        case 0xE2: // LDH [C], A
-            m_cycles += LDH_C_A(mem);
-            break;
+        // LDH [C], A
+        case 0xE2: m_cycles += LDH_C_A(mem); break;
 
-        case 0xF2: // LDH A, [C]
-            m_cycles += LDH_A_C(mem);
-            break;
+        // LDH A, [C]
+        case 0xF2: m_cycles += LDH_A_C(mem); break;
 
-        case 0xE0: // LDH [n8], A
-            m_cycles += LDH_n8_A(mem);
-            break;
+        // LDH [n8], A
+        case 0xE0: m_cycles += LDH_n8_A(mem); break;
 
-        case 0xF0: // LDH A, [n8]
-            m_cycles += LDH_A_n8(mem);
-            break;
+        // LDH A, [n8]
+        case 0xF0: m_cycles += LDH_A_n8(mem); break;
 
-        case 0xF8: // LD HL, SP + n8
-            m_cycles += LD_HL_SP_e8(mem);
-            break;
+         // LD HL, SP + n8
+        case 0xF8: m_cycles += LD_HL_SP_e8(mem); break;
 
         // INC R16
-        case 0x03:
-            m_cycles += INC_R16(BC);
-            break;
-        case 0x13:
-            m_cycles += INC_R16(DE);
-            break;
-        case 0x23:
-            m_cycles += INC_R16(HL);
-            break;
-        case 0x33:
-            m_cycles += INC_R16(SP);
-            break;
+        case 0x03: m_cycles += INC_R16(BC); break;
+        case 0x13: m_cycles += INC_R16(DE); break;
+        case 0x23: m_cycles += INC_R16(HL); break;
+        case 0x33: m_cycles += INC_R16(SP); break;
 
         // DEC R16
-        case 0x0B:
-            m_cycles += DEC_R16(BC);
-            break;
-        case 0x1B:
-            m_cycles += DEC_R16(DE);
-            break;
-        case 0x2B:
-            m_cycles += DEC_R16(HL);
-            break;
-        case 0x3B:
-            m_cycles += DEC_R16(SP);
-            break;
+        case 0x0B: m_cycles += DEC_R16(BC); break;
+        case 0x1B: m_cycles += DEC_R16(DE); break;
+        case 0x2B: m_cycles += DEC_R16(HL); break;
+        case 0x3B: m_cycles += DEC_R16(SP); break;
 
         // ADD HL, R16
-        case 0x09:
-            m_cycles += ADD_HL_R16(BC);
-            break;
-        case 0x19:
-            m_cycles += ADD_HL_R16(DE);
-            break;
-        case 0x29:
-            m_cycles += ADD_HL_R16(HL);
-            break;
-        case 0x39:
-            m_cycles += ADD_HL_R16(SP);
-            break;
+        case 0x09: m_cycles += ADD_HL_R16(BC); break;
+        case 0x19: m_cycles += ADD_HL_R16(DE); break;
+        case 0x29: m_cycles += ADD_HL_R16(HL); break;
+        case 0x39: m_cycles += ADD_HL_R16(SP); break;
 
         // INC R8
-        case 0x04:
-            m_cycles += INC_R8(B);
-            break;
-        case 0x0C:
-            m_cycles += INC_R8(C);
-            break;
-        case 0x14:
-            m_cycles += INC_R8(D);
-            break;
-        case 0x1C:
-            m_cycles += INC_R8(E);
-            break;
-        case 0x24:
-            m_cycles += INC_R8(H);
-            break;
-        case 0x2C:
-            m_cycles += INC_R8(L);
-            break;
-        case 0x3C:
-            m_cycles += INC_R8(A);
-            break;
+        case 0x04: m_cycles += INC_R8(B); break;
+        case 0x0C: m_cycles += INC_R8(C); break;
+        case 0x14: m_cycles += INC_R8(D); break;
+        case 0x1C: m_cycles += INC_R8(E); break;
+        case 0x24: m_cycles += INC_R8(H); break;
+        case 0x2C: m_cycles += INC_R8(L); break;
+        case 0x3C: m_cycles += INC_R8(A); break;
         
         // INC [HL]
-        case 0x34:
-            m_cycles += INC_HL(mem);
-            break;
+        case 0x34: m_cycles += INC_HL(mem); break;
 
         // DEC R8
-        case 0x05:
-            m_cycles += DEC_R8(B);
-            break;
-        case 0x0D:
-            m_cycles += DEC_R8(C);
-            break;
-        case 0x15:
-            m_cycles += DEC_R8(D);
-            break;
-        case 0x1D:
-            m_cycles += DEC_R8(E);
-            break;
-        case 0x25:
-            m_cycles += DEC_R8(H);
-            break;
-        case 0x2D:
-            m_cycles += DEC_R8(L);
-            break;
-        case 0x3D:
-            m_cycles += DEC_R8(A);
-            break;
+        case 0x05: m_cycles += DEC_R8(B); break;
+        case 0x0D: m_cycles += DEC_R8(C); break;
+        case 0x15: m_cycles += DEC_R8(D); break;
+        case 0x1D: m_cycles += DEC_R8(E); break;
+        case 0x25: m_cycles += DEC_R8(H); break;
+        case 0x2D: m_cycles += DEC_R8(L); break;
+        case 0x3D: m_cycles += DEC_R8(A); break;
                 
         // DEC [HL]
-        case 0x35:
-            m_cycles += DEC_HL(mem);
-            break;
+        case 0x35: m_cycles += DEC_HL(mem); break;
 
         // ADD A,R8
-        case 0x80:
-            m_cycles += ADD_A_R8(B);
-            break;
-        case 0x81:
-            m_cycles += ADD_A_R8(C);
-            break;
-        case 0x82:
-            m_cycles += ADD_A_R8(D);
-            break;
-        case 0x83:
-            m_cycles += ADD_A_R8(E);
-            break;
-        case 0x84:
-            m_cycles += ADD_A_R8(H);
-            break;
-        case 0x85:
-            m_cycles += ADD_A_R8(L);
-            break;
-        case 0x87:
-            m_cycles += ADD_A_R8(A);
-            break;
+        case 0x80: m_cycles += ADD_A_R8(B); break;
+        case 0x81: m_cycles += ADD_A_R8(C); break;
+        case 0x82: m_cycles += ADD_A_R8(D); break;
+        case 0x83: m_cycles += ADD_A_R8(E); break;
+        case 0x84: m_cycles += ADD_A_R8(H); break;
+        case 0x85: m_cycles += ADD_A_R8(L); break;
+        case 0x87: m_cycles += ADD_A_R8(A); break;
 
         // ADD A,[HL]
-        case 0x86:
-            m_cycles += ADD_A_HL(mem);
-            break;
+        case 0x86: m_cycles += ADD_A_HL(mem); break;
 
         // ADC A,R8
-        case 0x88:
-            m_cycles += ADC_A_R8(B);
-            break;
-        case 0x89:
-            m_cycles += ADC_A_R8(C);
-            break;
-        case 0x8A:
-            m_cycles += ADC_A_R8(D);
-            break;
-        case 0x8B:
-            m_cycles += ADC_A_R8(E);
-            break;
-        case 0x8C:
-            m_cycles += ADC_A_R8(H);
-            break;
-        case 0x8D:
-            m_cycles += ADC_A_R8(L);
-            break;
-        case 0x8F:
-            m_cycles += ADC_A_R8(A);
-            break;
+        case 0x88: m_cycles += ADC_A_R8(B); break;
+        case 0x89: m_cycles += ADC_A_R8(C); break;
+        case 0x8A: m_cycles += ADC_A_R8(D); break;
+        case 0x8B: m_cycles += ADC_A_R8(E); break;
+        case 0x8C: m_cycles += ADC_A_R8(H); break;
+        case 0x8D: m_cycles += ADC_A_R8(L); break;
+        case 0x8F: m_cycles += ADC_A_R8(A); break;
         
         // ADC A,[HL]
-        case 0x8E:
-            m_cycles += ADC_A_HL(mem);
-            break;
+        case 0x8E: m_cycles += ADC_A_HL(mem); break;
 
         // SUB A,R8
-        case 0x90:
-            m_cycles += SUB_A_R8(B);
-            break;
-        case 0x91:
-            m_cycles += SUB_A_R8(C);
-            break;
-        case 0x92:
-            m_cycles += SUB_A_R8(D);
-            break;
-        case 0x93:
-            m_cycles += SUB_A_R8(E);
-            break;
-        case 0x94:
-            m_cycles += SUB_A_R8(H);
-            break;
-        case 0x95:
-            m_cycles += SUB_A_R8(L);
-            break;
-        case 0x97:
-            m_cycles += SUB_A_R8(A);
-            break;
+        case 0x90: m_cycles += SUB_A_R8(B); break;
+        case 0x91: m_cycles += SUB_A_R8(C); break;
+        case 0x92: m_cycles += SUB_A_R8(D); break;
+        case 0x93: m_cycles += SUB_A_R8(E); break;
+        case 0x94: m_cycles += SUB_A_R8(H); break;
+        case 0x95: m_cycles += SUB_A_R8(L); break;
+        case 0x97: m_cycles += SUB_A_R8(A); break;
 
         // SUB A,[HL]
-        case 0x96:
-            m_cycles += SUB_A_HL(mem);
-            break;
+        case 0x96: m_cycles += SUB_A_HL(mem); break;
 
         // SBC A,R8
-        case 0x98:
-            m_cycles += SBC_A_R8(B);
-            break;
-        case 0x99:
-            m_cycles += SBC_A_R8(C);
-            break;
-        case 0x9A:
-            m_cycles += SBC_A_R8(D);
-            break;
-        case 0x9B:
-            m_cycles += SBC_A_R8(E);
-            break;
-        case 0x9C:
-            m_cycles += SBC_A_R8(H);
-            break;
-        case 0x9D:
-            m_cycles += SBC_A_R8(L);
-            break;
-        case 0x9F:
-            m_cycles += SBC_A_R8(A);
-            break;
+        case 0x98: m_cycles += SBC_A_R8(B); break;
+        case 0x99: m_cycles += SBC_A_R8(C); break;
+        case 0x9A: m_cycles += SBC_A_R8(D); break;
+        case 0x9B: m_cycles += SBC_A_R8(E); break;
+        case 0x9C: m_cycles += SBC_A_R8(H); break;
+        case 0x9D: m_cycles += SBC_A_R8(L); break;
+        case 0x9F: m_cycles += SBC_A_R8(A); break;
         
         // SBC A,[HL]
-        case 0x9E:
-            m_cycles += SBC_A_HL(mem);
-            break;
+        case 0x9E: m_cycles += SBC_A_HL(mem); break;
 
         // AND A,R8
-        case 0xA0:
-            m_cycles += AND_A_R8(B);
-            break;
-        case 0xA1:
-            m_cycles += AND_A_R8(C);
-            break;
-        case 0xA2:
-            m_cycles += AND_A_R8(D);
-            break;
-        case 0xA3:
-            m_cycles += AND_A_R8(E);
-            break;
-        case 0xA4:
-            m_cycles += AND_A_R8(H);
-            break;
-        case 0xA5:
-            m_cycles += AND_A_R8(L);
-            break;
-        case 0xA7:
-            m_cycles += AND_A_R8(A);
-            break;
+        case 0xA0: m_cycles += AND_A_R8(B); break;
+        case 0xA1: m_cycles += AND_A_R8(C); break;
+        case 0xA2: m_cycles += AND_A_R8(D); break;
+        case 0xA3: m_cycles += AND_A_R8(E); break;
+        case 0xA4: m_cycles += AND_A_R8(H); break;
+        case 0xA5: m_cycles += AND_A_R8(L); break;
+        case 0xA7: m_cycles += AND_A_R8(A); break;
 
         // AND A,[HL]
-        case 0xA6:
-            m_cycles += AND_A_HL(mem);
-            break;
+        case 0xA6: m_cycles += AND_A_HL(mem); break;
 
         // XOR A,R8
-        case 0xA8:
-            m_cycles += XOR_A_R8(B);
-            break;
-        case 0xA9:
-            m_cycles += XOR_A_R8(C);
-            break;
-        case 0xAA:
-            m_cycles += XOR_A_R8(D);
-            break;
-        case 0xAB:
-            m_cycles += XOR_A_R8(E);
-            break;
-        case 0xAC:
-            m_cycles += XOR_A_R8(H);
-            break;
-        case 0xAD:
-            m_cycles += XOR_A_R8(L);
-            break;
-        case 0xAF:
-            m_cycles += XOR_A_R8(A);
-            break;
+        case 0xA8: m_cycles += XOR_A_R8(B); break;
+        case 0xA9: m_cycles += XOR_A_R8(C); break;
+        case 0xAA: m_cycles += XOR_A_R8(D); break;
+        case 0xAB: m_cycles += XOR_A_R8(E); break;
+        case 0xAC: m_cycles += XOR_A_R8(H); break;
+        case 0xAD: m_cycles += XOR_A_R8(L); break;
+        case 0xAF: m_cycles += XOR_A_R8(A); break;
         
         // XOR A,[HL]
-        case 0xAE:
-            m_cycles += XOR_A_HL(mem);
-            break;
+        case 0xAE: m_cycles += XOR_A_HL(mem); break;
 
         // OR A,R8
-        case 0xB0:
-            m_cycles += OR_A_R8(B);
-            break;
-        case 0xB1:
-            m_cycles += OR_A_R8(C);
-            break;
-        case 0xB2:
-            m_cycles += OR_A_R8(D);
-            break;
-        case 0xB3:
-            m_cycles += OR_A_R8(E);
-            break;
-        case 0xB4:
-            m_cycles += OR_A_R8(H);
-            break;
-        case 0xB5:
-            m_cycles += OR_A_R8(L);
-            break;
-        case 0xB7:
-            m_cycles += OR_A_R8(A);
-            break;
+        case 0xB0: m_cycles += OR_A_R8(B); break;
+        case 0xB1: m_cycles += OR_A_R8(C); break;
+        case 0xB2: m_cycles += OR_A_R8(D); break;
+        case 0xB3: m_cycles += OR_A_R8(E); break;
+        case 0xB4: m_cycles += OR_A_R8(H); break;
+        case 0xB5: m_cycles += OR_A_R8(L); break;
+        case 0xB7: m_cycles += OR_A_R8(A); break;
 
         // OR A,[HL]
-        case 0xB6:
-            m_cycles += OR_A_HL(mem);
-            break;
+        case 0xB6: m_cycles += OR_A_HL(mem); break;
 
         // CP A,R8
-        case 0xB8:
-            m_cycles += CP_A_R8(B);
-            break;
-        case 0xB9:
-            m_cycles += CP_A_R8(C);
-            break;
-        case 0xBA:
-            m_cycles += CP_A_R8(D);
-            break;
-        case 0xBB:
-            m_cycles += CP_A_R8(E);
-            break;
-        case 0xBC:
-            m_cycles += CP_A_R8(H);
-            break;
-        case 0xBD:
-            m_cycles += CP_A_R8(L);
-            break;
-        case 0xBF:
-            m_cycles += CP_A_R8(A);
-            break;
+        case 0xB8: m_cycles += CP_A_R8(B); break;
+        case 0xB9: m_cycles += CP_A_R8(C); break;
+        case 0xBA: m_cycles += CP_A_R8(D); break;
+        case 0xBB: m_cycles += CP_A_R8(E); break;
+        case 0xBC: m_cycles += CP_A_R8(H); break;
+        case 0xBD: m_cycles += CP_A_R8(L); break;
+        case 0xBF: m_cycles += CP_A_R8(A); break;
         
         // CP A,[HL]
-        case 0xBE:
-            m_cycles += CP_A_HL(mem);
-            break;
+        case 0xBE: m_cycles += CP_A_HL(mem); break;
 
         // ADD A, n8
-        case 0xC6:
-            m_cycles += ADD_A_n8(mem);
-            break;
+        case 0xC6: m_cycles += ADD_A_n8(mem); break;
 
         // ADC A, n8
-        case 0xCE:
-            m_cycles += ADC_A_n8(mem);
-            break;
+        case 0xCE: m_cycles += ADC_A_n8(mem); break;
 
         // SUB A, n8
-        case 0xD6:
-            m_cycles += SUB_A_n8(mem);
-            break;
+        case 0xD6: m_cycles += SUB_A_n8(mem); break;
 
         // SBC A, n8
-        case 0xDE:
-            m_cycles += SBC_A_n8(mem);
-            break;
+        case 0xDE: m_cycles += SBC_A_n8(mem); break;
 
         // AND A, n8
-        case 0xE6:
-            m_cycles += AND_A_n8(mem);
-            break;
+        case 0xE6: m_cycles += AND_A_n8(mem); break;
 
         // XOR A, n8
-        case 0xEE:
-            m_cycles += XOR_A_n8(mem);
-            break;
+        case 0xEE: m_cycles += XOR_A_n8(mem); break;
 
         // OR A, n8
-        case 0xF6:
-            m_cycles += OR_A_n8(mem);
-            break;
+        case 0xF6: m_cycles += OR_A_n8(mem); break;
 
         // CP A, n8
-        case 0xFE:
-            m_cycles += CP_A_n8(mem);
-            break;
+        case 0xFE: m_cycles += CP_A_n8(mem); break;
 
         // CALL n16
-        case 0xCD:
-            m_cycles += CALL_n16(mem);
-            break;
+        case 0xCD: m_cycles += CALL_n16(mem); break;
 
         // CALL cc, n16
-        case 0xC4:
-            m_cycles += CALL_cc_n16(!(F & 0x80), mem); // NZ
-            break;
-        case 0xCC:
-            m_cycles += CALL_cc_n16(F & 0x80, mem); // Z
-            break;
-        case 0xD4:
-            m_cycles += CALL_cc_n16(!(F & 0x10), mem); // NC
-            break;
-        case 0xDC:
-            m_cycles += CALL_cc_n16(F & 0x10, mem); // C
-            break;
+        case 0xC4: m_cycles += CALL_cc_n16(!(F & 0x80), mem); break; // NZ
+        case 0xCC: m_cycles += CALL_cc_n16(F & 0x80, mem);    break; // Z
+        case 0xD4: m_cycles += CALL_cc_n16(!(F & 0x10), mem); break; // NC
+        case 0xDC: m_cycles += CALL_cc_n16(F & 0x10, mem);    break; // C
 
         // JP HL
-        case 0xE9:
-            m_cycles += JP_HL();
-            break;
+        case 0xE9: m_cycles += JP_HL(); break;
 
         // JP n16
-        case 0xC3:
-            m_cycles += JP_n16(mem);
-            break;
+        case 0xC3: m_cycles += JP_n16(mem); break;
 
         // JR e8
-        case 0x18:
-            m_cycles += JR_e8(mem);
-            break;
+        case 0x18: m_cycles += JR_e8(mem); break;
 
         // JR cc, e8
-        case 0x20:
-            m_cycles += JR_cc_e8(!(F & 0x80), mem); // NZ
-            break;
-        case 0x28:
-            m_cycles += JR_cc_e8(F & 0x80, mem); // Z
-            break;
-        case 0x30:
-            m_cycles += JR_cc_e8(!(F & 0x10), mem); // NC
-            break;
-        case 0x38:
-            m_cycles += JR_cc_e8(F & 0x10, mem); // C
-            break;
+        case 0x20: m_cycles += JR_cc_e8(!(F & 0x80), mem); break; // NZ
+        case 0x28: m_cycles += JR_cc_e8(F & 0x80, mem);    break; // Z
+        case 0x30: m_cycles += JR_cc_e8(!(F & 0x10), mem); break; // NC
+        case 0x38: m_cycles += JR_cc_e8(F & 0x10, mem);    break; // C
 
         // RET
-        case 0xC9:
-            m_cycles += RET(mem);
-            break;
+        case 0xC9: m_cycles += RET(mem); break;
 
         // RETI
-        case 0xD9:
-            m_cycles += RETI(mem);
-            break;
+        case 0xD9: m_cycles += RETI(mem); break;
 
         // RET cc
-        case 0xC0:
-            m_cycles += RET_cc(!(F & 0x80), mem); // NZ
-            break;
-        case 0xC8:
-            m_cycles += RET_cc(F & 0x80, mem); // Z
-            break;
-        case 0xD0:
-            m_cycles += RET_cc(!(F & 0x10), mem); // NC
-            break;
-        case 0xD8:
-            m_cycles += RET_cc(F & 0x10, mem); // C
-            break;
+        case 0xC0: m_cycles += RET_cc(!(F & 0x80), mem); break; // NZ
+        case 0xC8: m_cycles += RET_cc(F & 0x80, mem);    break; // Z
+        case 0xD0: m_cycles += RET_cc(!(F & 0x10), mem); break; // NC
+        case 0xD8: m_cycles += RET_cc(F & 0x10, mem);    break; // C
 
         // RST vec
-        case 0xC7:
-            m_cycles += RST_vec(0x0000, mem);
-            break;
-        case 0xCF:
-            m_cycles += RST_vec(0x0008, mem);
-            break;
-        case 0xD7:
-            m_cycles += RST_vec(0x0010, mem);
-            break;
-        case 0xDF:
-            m_cycles += RST_vec(0x0018, mem);
-            break;
-        case 0xE7:
-            m_cycles += RST_vec(0x0020, mem);
-            break;
-        case 0xEF:
-            m_cycles += RST_vec(0x0028, mem);
-            break;
-        case 0xF7:
-            m_cycles += RST_vec(0x0030, mem);
-            break;
-        case 0xFF:
-            m_cycles += RST_vec(0x0038, mem);
-            break;
+        case 0xC7: m_cycles += RST_vec(0x0000, mem); break;
+        case 0xCF: m_cycles += RST_vec(0x0008, mem); break;
+        case 0xD7: m_cycles += RST_vec(0x0010, mem); break;
+        case 0xDF: m_cycles += RST_vec(0x0018, mem); break;
+        case 0xE7: m_cycles += RST_vec(0x0020, mem); break;
+        case 0xEF: m_cycles += RST_vec(0x0028, mem); break;
+        case 0xF7: m_cycles += RST_vec(0x0030, mem); break;
+        case 0xFF: m_cycles += RST_vec(0x0038, mem); break;
 
         // ADD SP,e8
-        case 0xE8:
-            m_cycles += ADD_SP_e8(mem);
-            break;
+        case 0xE8: m_cycles += ADD_SP_e8(mem); break;
 
         // POP R16
-        case 0xC1:
-            m_cycles += POP_R16(BC, mem);
-            break;
-        case 0xD1:
-            m_cycles += POP_R16(DE, mem);
-            break;
-        case 0xE1:
-            m_cycles += POP_R16(HL, mem);
-            break;
-        case 0xF1:
-            m_cycles += POP_R16(AF, mem);
-            break;
+        case 0xC1: m_cycles += POP_R16(BC, mem); break;
+        case 0xD1: m_cycles += POP_R16(DE, mem); break;
+        case 0xE1: m_cycles += POP_R16(HL, mem); break;
+        case 0xF1: m_cycles += POP_R16(AF, mem); break;
 
         // PUSH R16
-        case 0xC5:
-            m_cycles += PUSH_R16(BC, mem);
-            break;
-        case 0xD5:
-            m_cycles += PUSH_R16(DE, mem);
-            break;
-        case 0xE5:
-            m_cycles += PUSH_R16(HL, mem);
-            break;
-        case 0xF5:
-            m_cycles += PUSH_R16(AF, mem);
-            break;
+        case 0xC5: m_cycles += PUSH_R16(BC, mem); break;
+        case 0xD5: m_cycles += PUSH_R16(DE, mem); break;
+        case 0xE5: m_cycles += PUSH_R16(HL, mem); break;
+        case 0xF5: m_cycles += PUSH_R16(AF, mem); break;
 
         // CCF
-        case 0x3F:
-            m_cycles += CCF();
-            break;
+        case 0x3F: m_cycles += CCF(); break;
         
         // CPL
-        case 0x2F:
-            m_cycles += CPL();
-            break;
+        case 0x2F: m_cycles += CPL(); break;
         
         // DI
-        case 0xF3:
-            m_cycles += DI();
-            break;
+        case 0xF3: m_cycles += DI(); break;
 
         // EI
-        case 0xFB:
-            m_cycles += EI();
-            break;
+        case 0xFB: m_cycles += EI(); break;
 
         // SCF
-        case 0x37:
-            m_cycles += SCF();
-            break;
+        case 0x37: m_cycles += SCF(); break;
 
         // TODO: STOP n8
         case 0x10:
@@ -2777,816 +2322,304 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
             switch (opcode) {
                 
                 // RLC r8
-                case 0x00:
-                    m_cycles += RLC_R8(B);
-                    break;
-                case 0x01:
-                    m_cycles += RLC_R8(C);
-                    break;
-                case 0x02:
-                    m_cycles += RLC_R8(D);
-                    break;
-                case 0x03:
-                    m_cycles += RLC_R8(E);
-                    break;
-                case 0x04:
-                    m_cycles += RLC_R8(H);
-                    break;
-                case 0x05:
-                    m_cycles += RLC_R8(L);
-                    break;
-                case 0x07:
-                    m_cycles += RLC_R8(A);
-                    break;
+                case 0x00: m_cycles += RLC_R8(B); break;
+                case 0x01: m_cycles += RLC_R8(C); break;
+                case 0x02: m_cycles += RLC_R8(D); break;
+                case 0x03: m_cycles += RLC_R8(E); break;
+                case 0x04: m_cycles += RLC_R8(H); break;
+                case 0x05: m_cycles += RLC_R8(L); break;
+                case 0x07: m_cycles += RLC_R8(A); break;
 
                 // RLC [HL]
-                case 0x06:
-                    m_cycles += RLC_HL(mem);
-                    break;
+                case 0x06: m_cycles += RLC_HL(mem); break;
 
                 // RL R8
-                case 0x10:
-                    m_cycles += RL_R8(B);
-                    break;
-                case 0x11:
-                    m_cycles += RL_R8(C);
-                    break;
-                case 0x12:
-                    m_cycles += RL_R8(D);
-                    break;
-                case 0x13:
-                    m_cycles += RL_R8(E);
-                    break;
-                case 0x14:
-                    m_cycles += RL_R8(H);
-                    break;
-                case 0x15:
-                    m_cycles += RL_R8(L);
-                    break;
-                case 0x17:
-                    m_cycles += RL_R8(A);
-                    break;
+                case 0x10: m_cycles += RL_R8(B); break;
+                case 0x11: m_cycles += RL_R8(C); break;
+                case 0x12: m_cycles += RL_R8(D); break;
+                case 0x13: m_cycles += RL_R8(E); break;
+                case 0x14: m_cycles += RL_R8(H); break;
+                case 0x15: m_cycles += RL_R8(L); break;
+                case 0x17: m_cycles += RL_R8(A); break;
 
                 // RL [HL]
-                case 0x16:
-                    m_cycles += RL_HL(mem);
-                    break;
+                case 0x16: m_cycles += RL_HL(mem); break;
 
                 // RRC R8
-                case 0x08:
-                    m_cycles += RRC_R8(B);
-                    break;
-                case 0x09:
-                    m_cycles += RRC_R8(C);
-                    break;
-                case 0x0A:
-                    m_cycles += RRC_R8(D);
-                    break;
-                case 0x0B:
-                    m_cycles += RRC_R8(E);
-                    break;
-                case 0x0C:
-                    m_cycles += RRC_R8(H);
-                    break;
-                case 0x0D:
-                    m_cycles += RRC_R8(L);
-                    break;
-                case 0x0F:
-                    m_cycles += RRC_R8(A);
-                    break;
+                case 0x08: m_cycles += RRC_R8(B); break;
+                case 0x09: m_cycles += RRC_R8(C); break;
+                case 0x0A: m_cycles += RRC_R8(D); break;
+                case 0x0B: m_cycles += RRC_R8(E); break;
+                case 0x0C: m_cycles += RRC_R8(H); break;
+                case 0x0D: m_cycles += RRC_R8(L); break;
+                case 0x0F: m_cycles += RRC_R8(A); break;
 
                 // RRC [HL]
-                case 0x0E:
-                    m_cycles += RRC_HL(mem);
-                    break;
+                case 0x0E: m_cycles += RRC_HL(mem); break;
                 
                 // RR R8
-                case 0x18:
-                    m_cycles += RR_R8(B);
-                    break;
-                case 0x19:
-                    m_cycles += RR_R8(C);
-                    break;
-                case 0x1A:
-                    m_cycles += RR_R8(D);
-                    break;
-                case 0x1B:
-                    m_cycles += RR_R8(E);
-                    break;
-                case 0x1C:
-                    m_cycles += RR_R8(H);
-                    break;
-                case 0x1D:
-                    m_cycles += RR_R8(L);
-                    break;
-                case 0x1F:
-                    m_cycles += RR_R8(A);
-                    break;
+                case 0x18: m_cycles += RR_R8(B); break;
+                case 0x19: m_cycles += RR_R8(C); break;
+                case 0x1A: m_cycles += RR_R8(D); break;
+                case 0x1B: m_cycles += RR_R8(E); break;
+                case 0x1C: m_cycles += RR_R8(H); break;
+                case 0x1D: m_cycles += RR_R8(L); break;
+                case 0x1F: m_cycles += RR_R8(A); break;
 
                 // RR [HL]
-                case 0x1E:
-                    m_cycles += RR_HL(mem);
-                    break;
+                case 0x1E: m_cycles += RR_HL(mem); break;
 
                 // SLA R8
-                case 0x20:
-                    m_cycles += SLA_R8(B);
-                    break;
-                case 0x21:
-                    m_cycles += SLA_R8(C);
-                    break;
-                case 0x22:
-                    m_cycles += SLA_R8(D);
-                    break;
-                case 0x23:
-                    m_cycles += SLA_R8(E);
-                    break;
-                case 0x24:
-                    m_cycles += SLA_R8(H);
-                    break;
-                case 0x25:
-                    m_cycles += SLA_R8(L);
-                    break;
-                case 0x27:
-                    m_cycles += SLA_R8(A);
-                    break;
+                case 0x20: m_cycles += SLA_R8(B); break;
+                case 0x21: m_cycles += SLA_R8(C); break;
+                case 0x22: m_cycles += SLA_R8(D); break;
+                case 0x23: m_cycles += SLA_R8(E); break;
+                case 0x24: m_cycles += SLA_R8(H); break;
+                case 0x25: m_cycles += SLA_R8(L); break;
+                case 0x27: m_cycles += SLA_R8(A); break;
 
                 // SLA [HL]
-                case 0x26:
-                    m_cycles += SLA_HL(mem);
-                    break;
+                case 0x26: m_cycles += SLA_HL(mem); break;
 
                 // SRA R8
-                case 0x28:
-                    m_cycles += SRA_R8(B);
-                    break;
-                case 0x29:
-                    m_cycles += SRA_R8(C);
-                    break;
-                case 0x2A:
-                    m_cycles += SRA_R8(D);
-                    break;
-                case 0x2B:
-                    m_cycles += SRA_R8(E);
-                    break;
-                case 0x2C:
-                    m_cycles += SRA_R8(H);
-                    break;
-                case 0x2D:
-                    m_cycles += SRA_R8(L);
-                    break;
-                case 0x2F:
-                    m_cycles += SRA_R8(A);
-                    break;
+                case 0x28: m_cycles += SRA_R8(B); break;
+                case 0x29: m_cycles += SRA_R8(C); break;
+                case 0x2A: m_cycles += SRA_R8(D); break;
+                case 0x2B: m_cycles += SRA_R8(E); break;
+                case 0x2C: m_cycles += SRA_R8(H); break;
+                case 0x2D: m_cycles += SRA_R8(L); break;
+                case 0x2F: m_cycles += SRA_R8(A); break;
 
                 // SRA [HL]
-                case 0x2E:
-                    m_cycles += SRA_HL(mem);
-                    break;
+                case 0x2E: m_cycles += SRA_HL(mem); break;
 
                 // SRL R8
-                case 0x38:
-                    m_cycles += SRL_R8(B);
-                    break;
-                case 0x39:
-                    m_cycles += SRL_R8(C);
-                    break;
-                case 0x3A:
-                    m_cycles += SRL_R8(D);
-                    break;
-                case 0x3B:
-                    m_cycles += SRL_R8(E);
-                    break;
-                case 0x3C:
-                    m_cycles += SRL_R8(H);
-                    break;
-                case 0x3D:
-                    m_cycles += SRL_R8(L);
-                    break;
-                case 0x3F:
-                    m_cycles += SRL_R8(A);
-                    break;
+                case 0x38: m_cycles += SRL_R8(B); break;
+                case 0x39: m_cycles += SRL_R8(C); break;
+                case 0x3A: m_cycles += SRL_R8(D); break;
+                case 0x3B: m_cycles += SRL_R8(E); break;
+                case 0x3C: m_cycles += SRL_R8(H); break;
+                case 0x3D: m_cycles += SRL_R8(L); break;
+                case 0x3F: m_cycles += SRL_R8(A); break;
 
                 // SRL [HL]
-                case 0x3E:
-                    m_cycles += SRL_HL(mem);
-                    break;
+                case 0x3E: m_cycles += SRL_HL(mem); break;
 
                 // SWAP R8
-                case 0x30:
-                    m_cycles += SWAP_R8(B);
-                    break;
-                case 0x31:
-                    m_cycles += SWAP_R8(C);
-                    break;
-                case 0x32:
-                    m_cycles += SWAP_R8(D);
-                    break;
-                case 0x33:
-                    m_cycles += SWAP_R8(E);
-                    break;
-                case 0x34:
-                    m_cycles += SWAP_R8(H);
-                    break;
-                case 0x35:
-                    m_cycles += SWAP_R8(L);
-                    break;
-                case 0x37:
-                    m_cycles += SWAP_R8(A);
-                    break;
+                case 0x30: m_cycles += SWAP_R8(B); break;
+                case 0x31: m_cycles += SWAP_R8(C); break;
+                case 0x32: m_cycles += SWAP_R8(D); break;
+                case 0x33: m_cycles += SWAP_R8(E); break;
+                case 0x34: m_cycles += SWAP_R8(H); break;
+                case 0x35: m_cycles += SWAP_R8(L); break;
+                case 0x37: m_cycles += SWAP_R8(A); break;
 
                 // SWAP [HL]
-                case 0x36:
-                    m_cycles += SWAP_HL(mem);
-                    break;
+                case 0x36: m_cycles += SWAP_HL(mem); break;
 
                 // BIT b3,R8
-                case 0x40:
-                    m_cycles += BIT_b3_R8(0, B);
-                    break;
-                case 0x41:
-                    m_cycles += BIT_b3_R8(0, C);
-                    break;
-                case 0x42:
-                    m_cycles += BIT_b3_R8(0, D);
-                    break;
-                case 0x43:
-                    m_cycles += BIT_b3_R8(0, E);
-                    break;
-                case 0x44:
-                    m_cycles += BIT_b3_R8(0, H);
-                    break;
-                case 0x45:
-                    m_cycles += BIT_b3_R8(0, L);
-                    break;
-                case 0x47:
-                    m_cycles += BIT_b3_R8(0, A);
-                    break;
-                case 0x48:
-                    m_cycles += BIT_b3_R8(1, B);
-                    break;
-                case 0x49:
-                    m_cycles += BIT_b3_R8(1, C);
-                    break;
-                case 0x4A:
-                    m_cycles += BIT_b3_R8(1, D);
-                    break;
-                case 0x4B:
-                    m_cycles += BIT_b3_R8(1, E);
-                    break;
-                case 0x4C:
-                    m_cycles += BIT_b3_R8(1, H);
-                    break;
-                case 0x4D:
-                    m_cycles += BIT_b3_R8(1, L);
-                    break;
-                case 0x4F:
-                    m_cycles += BIT_b3_R8(1, A);
-                    break;
-                case 0x50:
-                    m_cycles += BIT_b3_R8(2, B);
-                    break;
-                case 0x51:
-                    m_cycles += BIT_b3_R8(2, C);
-                    break;
-                case 0x52:
-                    m_cycles += BIT_b3_R8(2, D);
-                    break;
-                case 0x53:
-                    m_cycles += BIT_b3_R8(2, E);
-                    break;
-                case 0x54:
-                    m_cycles += BIT_b3_R8(2, H);
-                    break;
-                case 0x55:
-                    m_cycles += BIT_b3_R8(2, L);
-                    break;
-                case 0x57:
-                    m_cycles += BIT_b3_R8(2, A);
-                    break;
-                case 0x58:
-                    m_cycles += BIT_b3_R8(3, B);
-                    break;
-                case 0x59:
-                    m_cycles += BIT_b3_R8(3, C);
-                    break;
-                case 0x5A:
-                    m_cycles += BIT_b3_R8(3, D);
-                    break;
-                case 0x5B:
-                    m_cycles += BIT_b3_R8(3, E);
-                    break;
-                case 0x5C:
-                    m_cycles += BIT_b3_R8(3, H);
-                    break;
-                case 0x5D:
-                    m_cycles += BIT_b3_R8(3, L);
-                    break;
-                case 0x5F:
-                    m_cycles += BIT_b3_R8(3, A);
-                    break;
-                case 0x60:
-                    m_cycles += BIT_b3_R8(4, B);
-                    break;
-                case 0x61:
-                    m_cycles += BIT_b3_R8(4, C);
-                    break;
-                case 0x62:
-                    m_cycles += BIT_b3_R8(4, D);
-                    break;
-                case 0x63:
-                    m_cycles += BIT_b3_R8(4, E);
-                    break;
-                case 0x64:
-                    m_cycles += BIT_b3_R8(4, H);
-                    break;
-                case 0x65:
-                    m_cycles += BIT_b3_R8(4, L);
-                    break;
-                case 0x67:
-                    m_cycles += BIT_b3_R8(4, A);
-                    break;   
-                case 0x68:
-                    m_cycles += BIT_b3_R8(5, B);
-                    break;
-                case 0x69:
-                    m_cycles += BIT_b3_R8(5, C);
-                    break;
-                case 0x6A:
-                    m_cycles += BIT_b3_R8(5, D);
-                    break;
-                case 0x6B:
-                    m_cycles += BIT_b3_R8(5, E);
-                    break;
-                case 0x6C:
-                    m_cycles += BIT_b3_R8(5, H);
-                    break;
-                case 0x6D:
-                    m_cycles += BIT_b3_R8(5, L);
-                    break;
-                case 0x6F:
-                    m_cycles += BIT_b3_R8(5, A);
-                    break;
-                case 0x70:
-                    m_cycles += BIT_b3_R8(6, B);
-                    break;
-                case 0x71:
-                    m_cycles += BIT_b3_R8(6, C);
-                    break;
-                case 0x72:
-                    m_cycles += BIT_b3_R8(6, D);
-                    break;
-                case 0x73:
-                    m_cycles += BIT_b3_R8(6, E);
-                    break;
-                case 0x74:
-                    m_cycles += BIT_b3_R8(6, H);
-                    break;
-                case 0x75:
-                    m_cycles += BIT_b3_R8(6, L);
-                    break;
-                case 0x77:
-                    m_cycles += BIT_b3_R8(6, A);
-                    break;
-                case 0x78:
-                    m_cycles += BIT_b3_R8(7, B);
-                    break;
-                case 0x79:
-                    m_cycles += BIT_b3_R8(7, C);
-                    break;
-                case 0x7A:
-                    m_cycles += BIT_b3_R8(7, D);
-                    break;
-                case 0x7B:
-                    m_cycles += BIT_b3_R8(7, E);
-                    break;
-                case 0x7C:
-                    m_cycles += BIT_b3_R8(7, H);
-                    break;
-                case 0x7D:
-                    m_cycles += BIT_b3_R8(7, L);
-                    break;
-                case 0x7F:
-                    m_cycles += BIT_b3_R8(7, A);
-                    break;
+                case 0x40: m_cycles += BIT_b3_R8(0, B); break;
+                case 0x41: m_cycles += BIT_b3_R8(0, C); break;
+                case 0x42: m_cycles += BIT_b3_R8(0, D); break;
+                case 0x43: m_cycles += BIT_b3_R8(0, E); break;
+                case 0x44: m_cycles += BIT_b3_R8(0, H); break;
+                case 0x45: m_cycles += BIT_b3_R8(0, L); break;
+                case 0x47: m_cycles += BIT_b3_R8(0, A); break;
+                case 0x48: m_cycles += BIT_b3_R8(1, B); break;
+                case 0x49: m_cycles += BIT_b3_R8(1, C); break;
+                case 0x4A: m_cycles += BIT_b3_R8(1, D); break;
+                case 0x4B: m_cycles += BIT_b3_R8(1, E); break;
+                case 0x4C: m_cycles += BIT_b3_R8(1, H); break;
+                case 0x4D: m_cycles += BIT_b3_R8(1, L); break;
+                case 0x4F: m_cycles += BIT_b3_R8(1, A); break;
+                case 0x50: m_cycles += BIT_b3_R8(2, B); break;
+                case 0x51: m_cycles += BIT_b3_R8(2, C); break;
+                case 0x52: m_cycles += BIT_b3_R8(2, D); break;
+                case 0x53: m_cycles += BIT_b3_R8(2, E); break;
+                case 0x54: m_cycles += BIT_b3_R8(2, H); break;
+                case 0x55: m_cycles += BIT_b3_R8(2, L); break;
+                case 0x57: m_cycles += BIT_b3_R8(2, A); break;
+                case 0x58: m_cycles += BIT_b3_R8(3, B); break;
+                case 0x59: m_cycles += BIT_b3_R8(3, C); break;
+                case 0x5A: m_cycles += BIT_b3_R8(3, D); break;
+                case 0x5B: m_cycles += BIT_b3_R8(3, E); break;
+                case 0x5C: m_cycles += BIT_b3_R8(3, H); break;
+                case 0x5D: m_cycles += BIT_b3_R8(3, L); break;
+                case 0x5F: m_cycles += BIT_b3_R8(3, A); break;
+                case 0x60: m_cycles += BIT_b3_R8(4, B); break;
+                case 0x61: m_cycles += BIT_b3_R8(4, C); break;
+                case 0x62: m_cycles += BIT_b3_R8(4, D); break;
+                case 0x63: m_cycles += BIT_b3_R8(4, E); break;
+                case 0x64: m_cycles += BIT_b3_R8(4, H); break;
+                case 0x65: m_cycles += BIT_b3_R8(4, L); break;
+                case 0x67: m_cycles += BIT_b3_R8(4, A); break;   
+                case 0x68: m_cycles += BIT_b3_R8(5, B); break;
+                case 0x69: m_cycles += BIT_b3_R8(5, C); break;
+                case 0x6A: m_cycles += BIT_b3_R8(5, D); break;
+                case 0x6B: m_cycles += BIT_b3_R8(5, E); break;
+                case 0x6C: m_cycles += BIT_b3_R8(5, H); break;
+                case 0x6D: m_cycles += BIT_b3_R8(5, L); break;
+                case 0x6F: m_cycles += BIT_b3_R8(5, A); break;
+                case 0x70: m_cycles += BIT_b3_R8(6, B); break;
+                case 0x71: m_cycles += BIT_b3_R8(6, C); break;
+                case 0x72: m_cycles += BIT_b3_R8(6, D); break;
+                case 0x73: m_cycles += BIT_b3_R8(6, E); break;
+                case 0x74: m_cycles += BIT_b3_R8(6, H); break;
+                case 0x75: m_cycles += BIT_b3_R8(6, L); break;
+                case 0x77: m_cycles += BIT_b3_R8(6, A); break;
+                case 0x78: m_cycles += BIT_b3_R8(7, B); break;
+                case 0x79: m_cycles += BIT_b3_R8(7, C); break;
+                case 0x7A: m_cycles += BIT_b3_R8(7, D); break;
+                case 0x7B: m_cycles += BIT_b3_R8(7, E); break;
+                case 0x7C: m_cycles += BIT_b3_R8(7, H); break;
+                case 0x7D: m_cycles += BIT_b3_R8(7, L); break;
+                case 0x7F: m_cycles += BIT_b3_R8(7, A); break;
 
                 // BIT b3,[HL]
-                case 0x46:
-                    m_cycles += BIT_b3_HL(0, mem);
-                    break;
-                case 0x4E:
-                    m_cycles += BIT_b3_HL(1, mem);
-                    break;
-                case 0x56:
-                    m_cycles += BIT_b3_HL(2, mem);
-                    break;
-                case 0x5E:
-                    m_cycles += BIT_b3_HL(3, mem);
-                    break;
-                case 0x66:
-                    m_cycles += BIT_b3_HL(4, mem);
-                    break;
-                case 0x6E:
-                    m_cycles += BIT_b3_HL(5, mem);
-                    break;
-                case 0x76:
-                    m_cycles += BIT_b3_HL(6, mem);
-                    break;
-                case 0x7E:
-                    m_cycles += BIT_b3_HL(7, mem);
-                    break;
+                case 0x46: m_cycles += BIT_b3_HL(0, mem); break;
+                case 0x4E: m_cycles += BIT_b3_HL(1, mem); break;
+                case 0x56: m_cycles += BIT_b3_HL(2, mem); break;
+                case 0x5E: m_cycles += BIT_b3_HL(3, mem); break;
+                case 0x66: m_cycles += BIT_b3_HL(4, mem); break;
+                case 0x6E: m_cycles += BIT_b3_HL(5, mem); break;
+                case 0x76: m_cycles += BIT_b3_HL(6, mem); break;
+                case 0x7E: m_cycles += BIT_b3_HL(7, mem); break;
 
                 // RES b3,R8
-                case 0x80:
-                    m_cycles += RES_b3_R8(0, B);
-                    break;
-                case 0x81:
-                    m_cycles += RES_b3_R8(0, C);
-                    break;
-                case 0x82:
-                    m_cycles += RES_b3_R8(0, D);
-                    break;
-                case 0x83:
-                    m_cycles += RES_b3_R8(0, E);
-                    break;
-                case 0x84:
-                    m_cycles += RES_b3_R8(0, H);
-                    break;
-                case 0x85:
-                    m_cycles += RES_b3_R8(0, L);
-                    break;
-                case 0x87:
-                    m_cycles += RES_b3_R8(0, A);
-                    break;
-                case 0x88:
-                    m_cycles += RES_b3_R8(1, B);
-                    break;
-                case 0x89:
-                    m_cycles += RES_b3_R8(1, C);
-                    break;
-                case 0x8A:
-                    m_cycles += RES_b3_R8(1, D);
-                    break;
-                case 0x8B:
-                    m_cycles += RES_b3_R8(1, E);
-                    break;
-                case 0x8C:
-                    m_cycles += RES_b3_R8(1, H);
-                    break;
-                case 0x8D:
-                    m_cycles += RES_b3_R8(1, L);
-                    break;
-                case 0x8F:
-                    m_cycles += RES_b3_R8(1, A);
-                    break;
-                case 0x90:
-                    m_cycles += RES_b3_R8(2, B);
-                    break;
-                case 0x91:
-                    m_cycles += RES_b3_R8(2, C);
-                    break;
-                case 0x92:
-                    m_cycles += RES_b3_R8(2, D);
-                    break;
-                case 0x93:
-                    m_cycles += RES_b3_R8(2, E);
-                    break;
-                case 0x94:
-                    m_cycles += RES_b3_R8(2, H);
-                    break;
-                case 0x95:
-                    m_cycles += RES_b3_R8(2, L);
-                    break;
-                case 0x97:
-                    m_cycles += RES_b3_R8(2, A);
-                    break;
-                case 0x98:
-                    m_cycles += RES_b3_R8(3, B);
-                    break;
-                case 0x99:
-                    m_cycles += RES_b3_R8(3, C);
-                    break;
-                case 0x9A:
-                    m_cycles += RES_b3_R8(3, D);
-                    break;
-                case 0x9B:
-                    m_cycles += RES_b3_R8(3, E);
-                    break;
-                case 0x9C:
-                    m_cycles += RES_b3_R8(3, H);
-                    break;
-                case 0x9D:
-                    m_cycles += RES_b3_R8(3, L);
-                    break;
-                case 0x9F:
-                    m_cycles += RES_b3_R8(3, A);
-                    break;
-                case 0xA0:
-                    m_cycles += RES_b3_R8(4, B);
-                    break;
-                case 0xA1:
-                    m_cycles += RES_b3_R8(4, C);
-                    break;
-                case 0xA2:
-                    m_cycles += RES_b3_R8(4, D);
-                    break;
-                case 0xA3:
-                    m_cycles += RES_b3_R8(4, E);
-                    break;
-                case 0xA4:
-                    m_cycles += RES_b3_R8(4, H);
-                    break;
-                case 0xA5:
-                    m_cycles += RES_b3_R8(4, L);
-                    break;
-                case 0xA7:
-                    m_cycles += RES_b3_R8(4, A);
-                    break;   
-                case 0xA8:
-                    m_cycles += RES_b3_R8(5, B);
-                    break;
-                case 0xA9:
-                    m_cycles += RES_b3_R8(5, C);
-                    break;
-                case 0xAA:
-                    m_cycles += RES_b3_R8(5, D);
-                    break;
-                case 0xAB:
-                    m_cycles += RES_b3_R8(5, E);
-                    break;
-                case 0xAC:
-                    m_cycles += RES_b3_R8(5, H);
-                    break;
-                case 0xAD:
-                    m_cycles += RES_b3_R8(5, L);
-                    break;
-                case 0xAF:
-                    m_cycles += RES_b3_R8(5, A);
-                    break;
-                case 0xB0:
-                    m_cycles += RES_b3_R8(6, B);
-                    break;
-                case 0xB1:
-                    m_cycles += RES_b3_R8(6, C);
-                    break;
-                case 0xB2:
-                    m_cycles += RES_b3_R8(6, D);
-                    break;
-                case 0xB3:
-                    m_cycles += RES_b3_R8(6, E);
-                    break;
-                case 0xB4:
-                    m_cycles += RES_b3_R8(6, H);
-                    break;
-                case 0xB5:
-                    m_cycles += RES_b3_R8(6, L);
-                    break;
-                case 0xB7:
-                    m_cycles += RES_b3_R8(6, A);
-                    break;
-                case 0xB8:
-                    m_cycles += RES_b3_R8(7, B);
-                    break;
-                case 0xB9:
-                    m_cycles += RES_b3_R8(7, C);
-                    break;
-                case 0xBA:
-                    m_cycles += RES_b3_R8(7, D);
-                    break;
-                case 0xBB:
-                    m_cycles += RES_b3_R8(7, E);
-                    break;
-                case 0xBC:
-                    m_cycles += RES_b3_R8(7, H);
-                    break;
-                case 0xBD:
-                    m_cycles += RES_b3_R8(7, L);
-                    break;
-                case 0xBF:
-                    m_cycles += RES_b3_R8(7, A);
-                    break;
+                case 0x80: m_cycles += RES_b3_R8(0, B); break;
+                case 0x81: m_cycles += RES_b3_R8(0, C); break;
+                case 0x82: m_cycles += RES_b3_R8(0, D); break;
+                case 0x83: m_cycles += RES_b3_R8(0, E); break;
+                case 0x84: m_cycles += RES_b3_R8(0, H); break;
+                case 0x85: m_cycles += RES_b3_R8(0, L); break;
+                case 0x87: m_cycles += RES_b3_R8(0, A); break;
+                case 0x88: m_cycles += RES_b3_R8(1, B); break;
+                case 0x89: m_cycles += RES_b3_R8(1, C); break;
+                case 0x8A: m_cycles += RES_b3_R8(1, D); break;
+                case 0x8B: m_cycles += RES_b3_R8(1, E); break;
+                case 0x8C: m_cycles += RES_b3_R8(1, H); break;
+                case 0x8D: m_cycles += RES_b3_R8(1, L); break;
+                case 0x8F: m_cycles += RES_b3_R8(1, A); break;
+                case 0x90: m_cycles += RES_b3_R8(2, B); break;
+                case 0x91: m_cycles += RES_b3_R8(2, C); break;
+                case 0x92: m_cycles += RES_b3_R8(2, D); break;
+                case 0x93: m_cycles += RES_b3_R8(2, E); break;
+                case 0x94: m_cycles += RES_b3_R8(2, H); break;
+                case 0x95: m_cycles += RES_b3_R8(2, L); break;
+                case 0x97: m_cycles += RES_b3_R8(2, A); break;
+                case 0x98: m_cycles += RES_b3_R8(3, B); break;
+                case 0x99: m_cycles += RES_b3_R8(3, C); break;
+                case 0x9A: m_cycles += RES_b3_R8(3, D); break;
+                case 0x9B: m_cycles += RES_b3_R8(3, E); break;
+                case 0x9C: m_cycles += RES_b3_R8(3, H); break;
+                case 0x9D: m_cycles += RES_b3_R8(3, L); break;
+                case 0x9F: m_cycles += RES_b3_R8(3, A); break;
+                case 0xA0: m_cycles += RES_b3_R8(4, B); break;
+                case 0xA1: m_cycles += RES_b3_R8(4, C); break;
+                case 0xA2: m_cycles += RES_b3_R8(4, D); break;
+                case 0xA3: m_cycles += RES_b3_R8(4, E); break;
+                case 0xA4: m_cycles += RES_b3_R8(4, H); break;
+                case 0xA5: m_cycles += RES_b3_R8(4, L); break;
+                case 0xA7: m_cycles += RES_b3_R8(4, A); break;   
+                case 0xA8: m_cycles += RES_b3_R8(5, B); break;
+                case 0xA9: m_cycles += RES_b3_R8(5, C); break;
+                case 0xAA: m_cycles += RES_b3_R8(5, D); break;
+                case 0xAB: m_cycles += RES_b3_R8(5, E); break;
+                case 0xAC: m_cycles += RES_b3_R8(5, H); break;
+                case 0xAD: m_cycles += RES_b3_R8(5, L); break;
+                case 0xAF: m_cycles += RES_b3_R8(5, A); break;
+                case 0xB0: m_cycles += RES_b3_R8(6, B); break;
+                case 0xB1: m_cycles += RES_b3_R8(6, C); break;
+                case 0xB2: m_cycles += RES_b3_R8(6, D); break;
+                case 0xB3: m_cycles += RES_b3_R8(6, E); break;
+                case 0xB4: m_cycles += RES_b3_R8(6, H); break;
+                case 0xB5: m_cycles += RES_b3_R8(6, L); break;
+                case 0xB7: m_cycles += RES_b3_R8(6, A); break;
+                case 0xB8: m_cycles += RES_b3_R8(7, B); break;
+                case 0xB9: m_cycles += RES_b3_R8(7, C); break;
+                case 0xBA: m_cycles += RES_b3_R8(7, D); break;
+                case 0xBB: m_cycles += RES_b3_R8(7, E); break;
+                case 0xBC: m_cycles += RES_b3_R8(7, H); break;
+                case 0xBD: m_cycles += RES_b3_R8(7, L); break;
+                case 0xBF: m_cycles += RES_b3_R8(7, A); break;
 
                 // RES b3,[HL]
-                case 0x86:
-                    m_cycles += RES_b3_HL(0, mem);
-                    break;
-                case 0x8E:
-                    m_cycles += RES_b3_HL(1, mem);
-                    break;
-                case 0x96:
-                    m_cycles += RES_b3_HL(2, mem);
-                    break;
-                case 0x9E:
-                    m_cycles += RES_b3_HL(3, mem);
-                    break;
-                case 0xA6:
-                    m_cycles += RES_b3_HL(4, mem);
-                    break;
-                case 0xAE:
-                    m_cycles += RES_b3_HL(5, mem);
-                    break;
-                case 0xB6:
-                    m_cycles += RES_b3_HL(6, mem);
-                    break;
-                case 0xBE:
-                    m_cycles += RES_b3_HL(7, mem);
-                    break;
+                case 0x86: m_cycles += RES_b3_HL(0, mem); break;
+                case 0x8E: m_cycles += RES_b3_HL(1, mem); break;
+                case 0x96: m_cycles += RES_b3_HL(2, mem); break;
+                case 0x9E: m_cycles += RES_b3_HL(3, mem); break;
+                case 0xA6: m_cycles += RES_b3_HL(4, mem); break;
+                case 0xAE: m_cycles += RES_b3_HL(5, mem); break;
+                case 0xB6: m_cycles += RES_b3_HL(6, mem); break;
+                case 0xBE: m_cycles += RES_b3_HL(7, mem); break;
 
                 // SET b3,R8
-                case 0xC0:
-                    m_cycles += SET_b3_R8(0, B);
-                    break;
-                case 0xC1:
-                    m_cycles += SET_b3_R8(0, C);
-                    break;
-                case 0xC2:
-                    m_cycles += SET_b3_R8(0, D);
-                    break;
-                case 0xC3:
-                    m_cycles += SET_b3_R8(0, E);
-                    break;
-                case 0xC4:
-                    m_cycles += SET_b3_R8(0, H);
-                    break;
-                case 0xC5:
-                    m_cycles += SET_b3_R8(0, L);
-                    break;
-                case 0xC7:
-                    m_cycles += SET_b3_R8(0, A);
-                    break;
-                case 0xC8:
-                    m_cycles += SET_b3_R8(1, B);
-                    break;
-                case 0xC9:
-                    m_cycles += SET_b3_R8(1, C);
-                    break;
-                case 0xCA:
-                    m_cycles += SET_b3_R8(1, D);
-                    break;
-                case 0xCB:
-                    m_cycles += SET_b3_R8(1, E);
-                    break;
-                case 0xCC:
-                    m_cycles += SET_b3_R8(1, H);
-                    break;
-                case 0xCD:
-                    m_cycles += SET_b3_R8(1, L);
-                    break;
-                case 0xCF:
-                    m_cycles += SET_b3_R8(1, A);
-                    break;
-                case 0xD0:
-                    m_cycles += SET_b3_R8(2, B);
-                    break;
-                case 0xD1:
-                    m_cycles += SET_b3_R8(2, C);
-                    break;
-                case 0xD2:
-                    m_cycles += SET_b3_R8(2, D);
-                    break;
-                case 0xD3:
-                    m_cycles += SET_b3_R8(2, E);
-                    break;
-                case 0xD4:
-                    m_cycles += SET_b3_R8(2, H);
-                    break;
-                case 0xD5:
-                    m_cycles += SET_b3_R8(2, L);
-                    break;
-                case 0xD7:
-                    m_cycles += SET_b3_R8(2, A);
-                    break;
-                case 0xD8:
-                    m_cycles += SET_b3_R8(3, B);
-                    break;
-                case 0xD9:
-                    m_cycles += SET_b3_R8(3, C);
-                    break;
-                case 0xDA:
-                    m_cycles += SET_b3_R8(3, D);
-                    break;
-                case 0xDB:
-                    m_cycles += SET_b3_R8(3, E);
-                    break;
-                case 0xDC:
-                    m_cycles += SET_b3_R8(3, H);
-                    break;
-                case 0xDD:
-                    m_cycles += SET_b3_R8(3, L);
-                    break;
-                case 0xDF:
-                    m_cycles += SET_b3_R8(3, A);
-                    break;
-                case 0xE0:
-                    m_cycles += SET_b3_R8(4, B);
-                    break;
-                case 0xE1:
-                    m_cycles += SET_b3_R8(4, C);
-                    break;
-                case 0xE2:
-                    m_cycles += SET_b3_R8(4, D);
-                    break;
-                case 0xE3:
-                    m_cycles += SET_b3_R8(4, E);
-                    break;
-                case 0xE4:
-                    m_cycles += SET_b3_R8(4, H);
-                    break;
-                case 0xE5:
-                    m_cycles += SET_b3_R8(4, L);
-                    break;
-                case 0xE7:
-                    m_cycles += SET_b3_R8(4, A);
-                    break;   
-                case 0xE8:
-                    m_cycles += SET_b3_R8(5, B);
-                    break;
-                case 0xE9:
-                    m_cycles += SET_b3_R8(5, C);
-                    break;
-                case 0xEA:
-                    m_cycles += SET_b3_R8(5, D);
-                    break;
-                case 0xEB:
-                    m_cycles += SET_b3_R8(5, E);
-                    break;
-                case 0xEC:
-                    m_cycles += SET_b3_R8(5, H);
-                    break;
-                case 0xED:
-                    m_cycles += SET_b3_R8(5, L);
-                    break;
-                case 0xEF:
-                    m_cycles += SET_b3_R8(5, A);
-                    break;
-                case 0xF0:
-                    m_cycles += SET_b3_R8(6, B);
-                    break;
-                case 0xF1:
-                    m_cycles += SET_b3_R8(6, C);
-                    break;
-                case 0xF2:
-                    m_cycles += SET_b3_R8(6, D);
-                    break;
-                case 0xF3:
-                    m_cycles += SET_b3_R8(6, E);
-                    break;
-                case 0xF4:
-                    m_cycles += SET_b3_R8(6, H);
-                    break;
-                case 0xF5:
-                    m_cycles += SET_b3_R8(6, L);
-                    break;
-                case 0xF7:
-                    m_cycles += SET_b3_R8(6, A);
-                    break;
-                case 0xF8:
-                    m_cycles += SET_b3_R8(7, B);
-                    break;
-                case 0xF9:
-                    m_cycles += SET_b3_R8(7, C);
-                    break;
-                case 0xFA:
-                    m_cycles += SET_b3_R8(7, D);
-                    break;
-                case 0xFB:
-                    m_cycles += SET_b3_R8(7, E);
-                    break;
-                case 0xFC:
-                    m_cycles += SET_b3_R8(7, H);
-                    break;
-                case 0xFD:
-                    m_cycles += SET_b3_R8(7, L);
-                    break;
-                case 0xFF:
-                    m_cycles += SET_b3_R8(7, A);
-                    break;
+                case 0xC0: m_cycles += SET_b3_R8(0, B); break;
+                case 0xC1: m_cycles += SET_b3_R8(0, C); break;
+                case 0xC2: m_cycles += SET_b3_R8(0, D); break;
+                case 0xC3: m_cycles += SET_b3_R8(0, E); break;
+                case 0xC4: m_cycles += SET_b3_R8(0, H); break;
+                case 0xC5: m_cycles += SET_b3_R8(0, L); break;
+                case 0xC7: m_cycles += SET_b3_R8(0, A); break;
+                case 0xC8: m_cycles += SET_b3_R8(1, B); break;
+                case 0xC9: m_cycles += SET_b3_R8(1, C); break;
+                case 0xCA: m_cycles += SET_b3_R8(1, D); break;
+                case 0xCB: m_cycles += SET_b3_R8(1, E); break;
+                case 0xCC: m_cycles += SET_b3_R8(1, H); break;
+                case 0xCD: m_cycles += SET_b3_R8(1, L); break;
+                case 0xCF: m_cycles += SET_b3_R8(1, A); break;
+                case 0xD0: m_cycles += SET_b3_R8(2, B); break;
+                case 0xD1: m_cycles += SET_b3_R8(2, C); break;
+                case 0xD2: m_cycles += SET_b3_R8(2, D); break;
+                case 0xD3: m_cycles += SET_b3_R8(2, E); break;
+                case 0xD4: m_cycles += SET_b3_R8(2, H); break;
+                case 0xD5: m_cycles += SET_b3_R8(2, L); break;
+                case 0xD7: m_cycles += SET_b3_R8(2, A); break;
+                case 0xD8: m_cycles += SET_b3_R8(3, B); break;
+                case 0xD9: m_cycles += SET_b3_R8(3, C); break;
+                case 0xDA: m_cycles += SET_b3_R8(3, D); break;
+                case 0xDB: m_cycles += SET_b3_R8(3, E); break;
+                case 0xDC: m_cycles += SET_b3_R8(3, H); break;
+                case 0xDD: m_cycles += SET_b3_R8(3, L); break;
+                case 0xDF: m_cycles += SET_b3_R8(3, A); break;
+                case 0xE0: m_cycles += SET_b3_R8(4, B); break;
+                case 0xE1: m_cycles += SET_b3_R8(4, C); break;
+                case 0xE2: m_cycles += SET_b3_R8(4, D); break;
+                case 0xE3: m_cycles += SET_b3_R8(4, E); break;
+                case 0xE4: m_cycles += SET_b3_R8(4, H); break;
+                case 0xE5: m_cycles += SET_b3_R8(4, L); break;
+                case 0xE7: m_cycles += SET_b3_R8(4, A); break;   
+                case 0xE8: m_cycles += SET_b3_R8(5, B); break;
+                case 0xE9: m_cycles += SET_b3_R8(5, C); break;
+                case 0xEA: m_cycles += SET_b3_R8(5, D); break;
+                case 0xEB: m_cycles += SET_b3_R8(5, E); break;
+                case 0xEC: m_cycles += SET_b3_R8(5, H); break;
+                case 0xED: m_cycles += SET_b3_R8(5, L); break;
+                case 0xEF: m_cycles += SET_b3_R8(5, A); break;
+                case 0xF0: m_cycles += SET_b3_R8(6, B); break;
+                case 0xF1: m_cycles += SET_b3_R8(6, C); break;
+                case 0xF2: m_cycles += SET_b3_R8(6, D); break;
+                case 0xF3: m_cycles += SET_b3_R8(6, E); break;
+                case 0xF4: m_cycles += SET_b3_R8(6, H); break;
+                case 0xF5: m_cycles += SET_b3_R8(6, L); break;
+                case 0xF7: m_cycles += SET_b3_R8(6, A); break;
+                case 0xF8: m_cycles += SET_b3_R8(7, B); break;
+                case 0xF9: m_cycles += SET_b3_R8(7, C); break;
+                case 0xFA: m_cycles += SET_b3_R8(7, D); break;
+                case 0xFB: m_cycles += SET_b3_R8(7, E); break;
+                case 0xFC: m_cycles += SET_b3_R8(7, H); break;
+                case 0xFD: m_cycles += SET_b3_R8(7, L); break;
+                case 0xFF: m_cycles += SET_b3_R8(7, A); break;
 
                 // SET b3,[HL]
-                case 0xC6:
-                    m_cycles += SET_b3_HL(0, mem);
-                    break;
-                case 0xCE:
-                    m_cycles += SET_b3_HL(1, mem);
-                    break;
-                case 0xD6:
-                    m_cycles += SET_b3_HL(2, mem);
-                    break;
-                case 0xDE:
-                    m_cycles += SET_b3_HL(3, mem);
-                    break;
-                case 0xE6:
-                    m_cycles += SET_b3_HL(4, mem);
-                    break;
-                case 0xEE:
-                    m_cycles += SET_b3_HL(5, mem);
-                    break;
-                case 0xF6:
-                    m_cycles += SET_b3_HL(6, mem);
-                    break;
-                case 0xFE:
-                    m_cycles += SET_b3_HL(7, mem);
-                    break;
+                case 0xC6: m_cycles += SET_b3_HL(0, mem); break;
+                case 0xCE: m_cycles += SET_b3_HL(1, mem); break;
+                case 0xD6: m_cycles += SET_b3_HL(2, mem); break;
+                case 0xDE: m_cycles += SET_b3_HL(3, mem); break;
+                case 0xE6: m_cycles += SET_b3_HL(4, mem); break;
+                case 0xEE: m_cycles += SET_b3_HL(5, mem); break;
+                case 0xF6: m_cycles += SET_b3_HL(6, mem); break;
+                case 0xFE: m_cycles += SET_b3_HL(7, mem); break;
             }
             break;
     }
