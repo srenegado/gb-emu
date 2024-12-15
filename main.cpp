@@ -23,6 +23,7 @@ int main(int argc, char** argv) {
     
     // Main loop
     int running = 1;
+    unsigned int m_cycles = 0;
     while (running) {
         SDL_Event event;
 
@@ -34,6 +35,21 @@ int main(int argc, char** argv) {
                     break;
             }
         }
+
+        // m_cycles += cpu.emulate_cycles()
+
+        // System counter is incremented every M-cycle
+        for (int i = 0; i < m_cycles; i++ ) 
+            cpu.inc_DIV(mem); 
+
+        // CPU timer is incremented every timer_clock_speed M-cycles
+        if (cpu.is_timer_started(mem)) {
+            int timer_clock_speed = cpu.get_timer_clock_speed(mem);
+            int timer_ticks = m_cycles / timer_clock_speed;
+            for (int i = 0; i < timer_ticks; i++)
+                cpu.inc_TIMA(mem);
+        }
+    
     }
 
     return 0;

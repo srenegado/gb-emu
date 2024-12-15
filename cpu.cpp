@@ -92,7 +92,13 @@ uint32_t CPU::LD_R8_R8(Register8 &dest, Register8 src) {
   * Store value in src register into memory[HL]
   */
 uint32_t CPU::LD_HL_R8(Register8 src, Memory &mem) {
-    mem.write(HL.get_data16(), src); 
+    uint16_t addr = HL.get_data16();
+    if (addr == 0xFF04) { // Write to DIV resets it
+        mem.write(addr, 0x00);
+        DIV = 0;
+    } else {
+        mem.write(addr, src);
+    }
     return 2;
 }
 
@@ -128,7 +134,14 @@ uint32_t CPU::LD_HL_n8(Memory &mem) {
     // Get n8 and move PC to next instruction
     uint8_t n8 = mem.read(PC++);
 
-    mem.write(HL.get_data16(), n8);
+    uint16_t addr = HL.get_data16();
+    if (addr == 0xFF04) { // Write to DIV resets it
+        mem.write(addr, 0x00);
+        DIV = 0;
+    } else {
+        mem.write(addr, n8);
+    }
+
     return 3;
 }
 
@@ -136,7 +149,13 @@ uint32_t CPU::LD_HL_n8(Memory &mem) {
   * Store value in register A into memory[dest]
   */
 uint32_t CPU::LD_R16_A(const Register16 &dest, Memory &mem) {
-    mem.write(dest.get_data16(), A);
+    uint16_t addr = dest.get_data16();
+    if (addr == 0xFF04) { // Write to DIV resets it
+        mem.write(addr, 0x00);
+        DIV = 0;
+    } else {
+        mem.write(addr, A);
+    }
     return 2;
 }
 
@@ -177,9 +196,21 @@ uint32_t CPU::LD_n16_SP(Memory &mem) {
     uint8_t msb = mem.read(PC++);
     uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb;
 
-    // Store SP least-significant byte first
-    mem.write(n16, SP.lo);
-    mem.write(n16 + 1, SP.hi);
+    // Store least significant byte first
+
+    if (n16 == 0xFF04) { // Write to DIV resets it
+        mem.write(n16, 0x00);
+        DIV = 0;
+    } else {
+        mem.write(n16, SP.lo);
+    }
+
+    if (n16 + 1 == 0xFF04) { // Write to DIV resets it
+        mem.write(n16 + 1, 0x00);
+        DIV = 0;
+    } else {
+        mem.write(n16 + 1, SP.hi);
+    }
 
     return 5;
 }
@@ -197,7 +228,12 @@ uint32_t CPU::LD_n16_A(Memory &mem) {
     uint8_t msb = mem.read(PC++);
     uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb;
 
-    mem.write(n16, A);
+    if (n16 == 0xFF04) { // Write to DIV resets it
+        mem.write(n16, 0x00);
+        DIV = 0;
+    } else {
+        mem.write(n16, A);
+    }
 
     return 4;
 }
@@ -232,7 +268,13 @@ uint32_t CPU::LD_SP_HL() {
   * Store value in register A into memory[0xFF00 + C]
   */
 uint32_t CPU::LDH_C_A(Memory &mem) {
-    mem.write(0xFF00 + (uint16_t)C, A);
+    uint16_t addr = 0xFF00 + (uint16_t)C;
+    if (addr == 0xFF04) { // Write to DIV resets it
+        mem.write(addr, 0x00);
+        DIV = 0;
+    } else {
+        mem.write(addr, A);
+    }
     return 2;
 }
 
@@ -255,7 +297,14 @@ uint32_t CPU::LDH_n8_A(Memory &mem) {
     // Get n8 and move PC to next instruction
     uint8_t n8 = mem.read(PC++);
 
-    mem.write(0xFF00 + (uint16_t)n8, A);
+    uint16_t addr = 0xFF00 + (uint16_t)n8;
+    if (addr == 0xFF04) {
+        mem.write(addr, 0x00);
+        DIV = 0;
+    } else {
+        mem.write(addr, A);
+    }
+
     return 3;
 }
 
@@ -1753,13 +1802,18 @@ CPU::CPU(): AF(), BC(), DE(), HL(), SP()
     PC = 0x0100;
     SP.set_data16(0xFFFE);
     IME = 0; // Disable interrupts
+    DIV = 0;
 }
 
 // Destructor
 CPU::~CPU() {}
 
 void CPU::inc_DIV(Memory &mem) {
-    mem.write(0xFF04, mem.read(0xFF04) + 1);
+    DIV++;
+    if (DIV > 0x3F) { 
+        uint16_t DIV_exposed = (DIV & 0x3FC0) >> 6;
+        mem.write(0xFF04, DIV_exposed + 1);  
+    }
 }
 
 void CPU::inc_TIMA(Memory &mem) {
