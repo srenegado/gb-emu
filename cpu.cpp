@@ -69,7 +69,7 @@ Register16 Register16::operator--(int) {
 /** 
   * Opcodes
   * 
-  * Each opcode returns the number of m-cycles they use
+  * Each opcode returns the number of M-cycles they use
   */ 
 #define B BC.hi
 #define C BC.lo
@@ -1891,8 +1891,8 @@ uint32_t CPU::service_interrupt(Memory &mem, InterruptType type) {
 
 
 /**
-  * Fetch, decode, and execute and opcode then 
-  * return the number of m-cycles that opcode took
+  * Fetch, decode, and execute an instruction then 
+  * return the number of M-cycles that it took
   */
 uint32_t CPU::emulate_cycles(Memory &mem) {
     uint32_t m_cycles = 0;

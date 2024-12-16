@@ -69,7 +69,7 @@ class CPU {
         /** 
          * Opcodes
          * 
-         * Each opcode returns the number of m-cycles they use
+         * Each opcode returns the number of M-cycles they use
          */ 
     
         /**
@@ -710,7 +710,7 @@ class CPU {
          * Timer and divider methods
          *
          * I/O Registers:
-         * FF04 - DIV Divider 
+         * FF04 - DIV Divider (system counter)
          * FF05 - TIMA Timer counter
          * FF06 - TMA Timer modulo
          * FF07 - TAC Timer control
@@ -726,8 +726,8 @@ class CPU {
 
 
         /**
-         * Fetch, decode, and execute and opcode then 
-         * return the number of m-cycles that opcode took
+         * Fetch, decode, and execute an instruction then 
+         * return the number of M-cycles that it took
          */
         uint32_t emulate_cycles(Memory &mem);
 
