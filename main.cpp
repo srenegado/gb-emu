@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
         }
 
         // Emulate and track M-cycles for instruction timing
-        // m_cycles = cpu.emulate_cycles()
+        // m_cycles = cpu.emulate_cycles(mem);
 
         // System counter is incremented every M-cycle
         for (int i = 0; i < m_cycles; i++ ) 
@@ -48,12 +48,6 @@ int main(int argc, char** argv) {
 
         // Adjust M-cycles for accuracy
         m_cycles += m_cycles_carry; 
-
-        // get LCDC status
-        // enter mode 3
-        // render scanline to the buffer at HBlank (mode 0)
-        // render screen at VBlank
-        // do not render before OAM Scan (mode 2) is over
 
         // CPU timer is incremented every  m_cycles_per_tick  M-cycles
         if (cpu.is_timer_started(mem)) {
@@ -64,7 +58,7 @@ int main(int argc, char** argv) {
             
             m_cycles_carry = m_cycles % m_cycles_per_tick;
         }
-    
+
     }
 
     SDL_Quit();

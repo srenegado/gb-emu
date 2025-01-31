@@ -20,11 +20,11 @@ void Memory::load_ROM(char *ROM) {
     if (ROM == nullptr)
         return;
 
-    uint8_t *start_addr = &map[0x0000];
+    uint8_t *start_addr = &map[0x0100];
     FILE *ROM_file = std::fopen(ROM, "rb");
     if (ROM_file == nullptr)
         throw std::invalid_argument("Opening ROM file failed");
 
-    std::fread(start_addr, 0x8100, 1, ROM_file);
+    std::fread(start_addr, 0x8000, 1, ROM_file);
     std::fclose(ROM_file);
 }
