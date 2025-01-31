@@ -2622,6 +2622,12 @@ uint32_t CPU::emulate_cycles(Memory &mem) {
                 case 0xFE: m_cycles += SET_b3_HL(7, mem); break;
             }
             break;
+
+        default:
+            std::stringstream stream;
+            stream << "0x" << std::hex << opcode;
+            throw std::invalid_argument("Unknown instruction found for: " + stream.str());
+            break;
     }
 
     if (IME_next) { 

@@ -2,6 +2,8 @@
 #define CPU_H
 
 #include <cstdint>
+#include <stdexcept>
+#include <iomanip>
 #include "memory.h"
 
 enum InterruptType {

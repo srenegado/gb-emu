@@ -40,8 +40,13 @@ int main(int argc, char** argv) {
         }
 
         // Emulate and track M-cycles for instruction timing
-        // m_cycles = cpu.emulate_cycles(mem);
-
+        try {
+            m_cycles = cpu.emulate_cycles(mem);
+        } catch (std::invalid_argument &e) {
+            std::cerr << e.what() << std::endl;
+            return -1;
+        }
+       
         // System counter is incremented every M-cycle
         for (int i = 0; i < m_cycles; i++ ) 
             cpu.inc_DIV(mem);
