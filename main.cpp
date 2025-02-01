@@ -10,12 +10,12 @@ int main(int argc, char** argv) {
 
     CPU cpu;
     PPU ppu;
-    Memory mem;
+    Memory bus;
 
     // Load game into ROM
     try {
         char *ROM = argv[1];
-        mem.load_ROM(ROM);
+        bus.load_ROM(ROM);
     } catch (std::invalid_argument &e) {
         std::cerr << e.what() << std::endl;
         return -1;
@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
 
         // Emulate and track M-cycles for instruction timing
         try {
-            m_cycles = cpu.emulate_cycles(mem);
+            m_cycles = cpu.emulate_cycles(bus);
         } catch (std::invalid_argument &e) {
             std::cerr << e.what() << std::endl;
             return -1;
@@ -49,17 +49,17 @@ int main(int argc, char** argv) {
        
         // System counter is incremented every M-cycle
         for (int i = 0; i < m_cycles; i++ ) 
-            cpu.inc_DIV(mem);
+            cpu.inc_DIV(bus);
 
         // Adjust M-cycles for accuracy
         m_cycles += m_cycles_carry; 
 
-        // CPU timer is incremented every  m_cycles_per_tick  M-cycles
-        if (cpu.is_timer_started(mem)) {
-            int m_cycles_per_tick = cpu.get_timer_clock_speed(mem);
+        // Note: CPU timer is incremented every  m_cycles_per_tick  M-cycles
+        if (cpu.is_timer_started(bus)) {
+            int m_cycles_per_tick = cpu.get_timer_clock_speed(bus);
             int timer_ticks = m_cycles / m_cycles_per_tick;
             for (int i = 0; i < timer_ticks; i++)
-                cpu.inc_TIMA(mem);
+                cpu.inc_TIMA(bus);
             
             m_cycles_carry = m_cycles % m_cycles_per_tick;
         }
