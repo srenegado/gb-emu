@@ -82,43 +82,43 @@ class CPU {
         /**
          * Store value in src register into memory[HL]
          */
-        uint32_t LD_HL_R8(Register8 src, Memory &mem);
+        uint32_t LD_HL_R8(Register8 src, Memory &bus);
 
         /**
          * Load value in memory[HL] into dest register
          */
-        uint32_t LD_R8_HL(Register8 &dest, Memory &mem);
+        uint32_t LD_R8_HL(Register8 &dest, Memory &bus);
 
         /**
          * Load immediate 8-bit value n8 into dest register
          *
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t LD_R8_n8(Register8 &dest, Memory &mem);
+        uint32_t LD_R8_n8(Register8 &dest, Memory &bus);
 
         /**
          * Store immediate 8-bit value n8 into memory[HL]
          *
          * Assumes PC is pointing to n8 before call 
          */
-        uint32_t LD_HL_n8(Memory &mem);
+        uint32_t LD_HL_n8(Memory &bus);
 
         /** 
          * Store value in register A into memory[dest]
          */
-        uint32_t LD_R16_A(const Register16 &dest, Memory &mem);
+        uint32_t LD_R16_A(const Register16 &dest, Memory &bus);
 
         /**
          * Load value in memory[dest] into register A 
          */
-        uint32_t LD_A_R16(const Register16 &dest, Memory &mem);
+        uint32_t LD_A_R16(const Register16 &dest, Memory &bus);
 
         /**
          * Load the immediate little-endian 16-bit value n16 into dest register
          *
          * Assumes PC is pointing to n16 before call 
          */
-        uint32_t LD_R16_n16(Register16 &dest, Memory &mem);
+        uint32_t LD_R16_n16(Register16 &dest, Memory &bus);
 
         /** 
          * Store the value in SP into memory[n16], where n16 is the
@@ -126,14 +126,14 @@ class CPU {
          *
          * Assumes PC is pointing to n16 before call
          */
-        uint32_t LD_n16_SP(Memory &mem);
+        uint32_t LD_n16_SP(Memory &bus);
         /** 
          * Store the value in register A into memory[n16], where n16 is the
          * immediate little-endian 16-bit value
          *
          * Assumes PC is pointing to n16 before call
          */
-        uint32_t LD_n16_A(Memory &mem);
+        uint32_t LD_n16_A(Memory &bus);
 
         /** 
          * Load the value in memory[n16] into register A, where n16 is the
@@ -141,7 +141,7 @@ class CPU {
          *
          * Assumes PC is pointing to n16 before call
          */
-        uint32_t LD_A_n16(Memory &mem);
+        uint32_t LD_A_n16(Memory &bus);
 
         /**
          * Load value in HL into SP 
@@ -150,12 +150,12 @@ class CPU {
         /**
          * Store value in register A into memory[0xFF00 + C]
          */
-        uint32_t LDH_C_A(Memory &mem);
+        uint32_t LDH_C_A(Memory &bus);
 
         /**
          * Load value in memory[0xFF00 + C] into register A 
          */
-        uint32_t LDH_A_C(Memory &mem);
+        uint32_t LDH_A_C(Memory &bus);
 
         /*
          * Store value in register A into memory[0xFF00 + n8] where n8 is
@@ -163,7 +163,7 @@ class CPU {
          * 
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t LDH_n8_A(Memory &mem);
+        uint32_t LDH_n8_A(Memory &bus);
 
         /**
          * Load value in memory[0xFF00 + n8] into register A where n8 is
@@ -171,7 +171,7 @@ class CPU {
          * 
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t LDH_A_n8(Memory &mem);
+        uint32_t LDH_A_n8(Memory &bus);
 
         /**
          * Load SP + e8 into HL, where e8 is the immediate signed 8-bit value
@@ -179,7 +179,7 @@ class CPU {
          * 
          * Assumes PC is point to n8 before call
          */
-        uint32_t LD_HL_SP_e8(Memory &mem);
+        uint32_t LD_HL_SP_e8(Memory &bus);
 
         /** 
          * Increment value in register by 1
@@ -210,7 +210,7 @@ class CPU {
          *
          * Reset N flag. Set Z and H flag accordingly
          */
-        uint32_t INC_HL(Memory &mem);
+        uint32_t INC_HL(Memory &bus);
         /**
          * Decrement register by 1
          *
@@ -223,7 +223,7 @@ class CPU {
          *
          * Set N flag. Set Z and H flag accordingly
          */
-        uint32_t DEC_HL(Memory &mem);
+        uint32_t DEC_HL(Memory &bus);
 
         /** 
          * Add value in register to A
@@ -237,7 +237,7 @@ class CPU {
          *
          * Reset N flag. Set Z, H, and C flags accordingly
          */
-        uint32_t ADD_A_HL(Memory &mem);
+        uint32_t ADD_A_HL(Memory &bus);
 
         /** 
          * Add value in register plus the carry flag to A
@@ -251,7 +251,7 @@ class CPU {
          *
          * Reset N flag. Set Z, H, and C flags accordingly
          */
-        uint32_t ADC_A_HL(Memory &mem);
+        uint32_t ADC_A_HL(Memory &bus);
 
         /** 
          * Subtract value in register from A
@@ -265,7 +265,7 @@ class CPU {
          *
          * Set N flag. Set Z, H, and C flags accordingly
          */
-        uint32_t SUB_A_HL(Memory &mem);
+        uint32_t SUB_A_HL(Memory &bus);
 
         /** 
          * Subtract value in register and carry flag from A
@@ -279,7 +279,7 @@ class CPU {
          *
          * Set N flag. Set Z, H, and C flags accordingly
          */
-        uint32_t SBC_A_HL(Memory &mem) ;
+        uint32_t SBC_A_HL(Memory &bus) ;
 
         /** 
          * Bitwise AND the value in register to A
@@ -293,7 +293,7 @@ class CPU {
          *
          * Reset N and C flags. Set H flag. Set Z flag accordingly.
          */
-        uint32_t AND_A_HL(Memory &mem);
+        uint32_t AND_A_HL(Memory &bus);
 
         /** 
          * Bitwise XOR the value in register to A
@@ -307,7 +307,7 @@ class CPU {
          *
          * Reset N, H, and C flags. Set Z flag accordingly.
          */
-        uint32_t XOR_A_HL(Memory &mem) ;
+        uint32_t XOR_A_HL(Memory &bus) ;
 
         /** 
          * Bitwise OR the value in register to A
@@ -321,7 +321,7 @@ class CPU {
          *
          * Reset N, H, and C flags. Set Z flag accordingly.
          */
-        uint32_t OR_A_HL(Memory &mem);
+        uint32_t OR_A_HL(Memory &bus);
 
         /** 
          * Subtract value in register to A, but don't store the result
@@ -335,7 +335,7 @@ class CPU {
          *
          * Set N flag. Set Z, H, and C flags accordingly
          */
-        uint32_t CP_A_HL(Memory &mem) ;
+        uint32_t CP_A_HL(Memory &bus) ;
 
         /** 
          * Add value n8 to A, where n8 is the immediate 8-bit value
@@ -344,7 +344,7 @@ class CPU {
          *
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t ADD_A_n8(Memory &mem);
+        uint32_t ADD_A_n8(Memory &bus);
 
         /** 
          * Add value n8 plus the carry flag to A, where n8 is the immediate 8-bit value
@@ -353,7 +353,7 @@ class CPU {
          *
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t ADC_A_n8(Memory &mem) ;
+        uint32_t ADC_A_n8(Memory &bus) ;
 
         /** 
          * Subtract value n8 to A, where n8 is the immediate 8-bit value
@@ -362,7 +362,7 @@ class CPU {
          *
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t SUB_A_n8(Memory &mem) ;
+        uint32_t SUB_A_n8(Memory &bus) ;
 
         /** 
          * Subtract value n8 and carry flag from A, where n8 is the immediate 8-bit value
@@ -371,7 +371,7 @@ class CPU {
          *
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t SBC_A_n8(Memory &mem) ;
+        uint32_t SBC_A_n8(Memory &bus) ;
 
         /** 
          * Bitwise AND the value n8 to A, where n8 is the immediate 8-bit value
@@ -380,7 +380,7 @@ class CPU {
          *
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t AND_A_n8(Memory &mem) ;
+        uint32_t AND_A_n8(Memory &bus) ;
 
         /** 
          * Bitwise XOR the value n8 to A, where n8 is the immediate 8-bit value
@@ -389,7 +389,7 @@ class CPU {
          *
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t XOR_A_n8(Memory &mem);
+        uint32_t XOR_A_n8(Memory &bus);
 
         /** 
          * Bitwise OR the value n8 to A,  where n8 is the immediate 8-bit value
@@ -398,7 +398,7 @@ class CPU {
          *
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t OR_A_n8(Memory &mem) ;
+        uint32_t OR_A_n8(Memory &bus) ;
 
         /** 
          * Subtract value n8 to A, but don't store the result, 
@@ -408,7 +408,7 @@ class CPU {
          *
          * Assumes PC is pointing to n8 before call
          */
-        uint32_t CP_A_n8(Memory &mem) ;
+        uint32_t CP_A_n8(Memory &bus) ;
 
         /** 
          * Push address of next instruction onto the stack, then jump to address n16,
@@ -416,7 +416,7 @@ class CPU {
          *
          * Assumes PC is pointing to n16 before call
          */
-        uint32_t CALL_n16(Memory &mem) ;
+        uint32_t CALL_n16(Memory &bus) ;
 
         /** 
          * Push address n16 onto the stack if condition cc is met 
@@ -424,7 +424,7 @@ class CPU {
          *
          * Assumes PC is pointing to n16 before call
          */
-        uint32_t CALL_cc_n16(uint8_t cc, Memory &mem);
+        uint32_t CALL_cc_n16(uint8_t cc, Memory &bus);
 
         /** 
          * Load PC with address in HL
@@ -437,7 +437,7 @@ class CPU {
          *
          * Assumes PC is pointing to n16 before call
          */
-        uint32_t JP_n16(Memory &mem) ;
+        uint32_t JP_n16(Memory &bus) ;
 
         /** 
          * Add value e8 to PC where e8 is the immediate
@@ -445,7 +445,7 @@ class CPU {
          *
          * Assumes PC is pointing to e8 before call
          */
-        uint32_t JR_e8(Memory &mem) ;
+        uint32_t JR_e8(Memory &bus) ;
 
         /** 
          * Add value e8 to PC if condition cc is met, 
@@ -453,27 +453,27 @@ class CPU {
          *
          * Assumes PC is pointing to e8 before call
          */
-        uint32_t JR_cc_e8(uint8_t cc, Memory &mem) ;
+        uint32_t JR_cc_e8(uint8_t cc, Memory &bus) ;
 
         /** 
          * Return from subroutine.
          */
-        uint32_t RET(Memory &mem) ;
+        uint32_t RET(Memory &bus) ;
 
         /** 
          * Return from subroutine and enable interupts
          */
-        uint32_t RETI(Memory &mem);
+        uint32_t RETI(Memory &bus);
 
         /** 
          * Return from subroutine if condition c is met
          */
-        uint32_t RET_cc(uint8_t cc, Memory &mem) ;
+        uint32_t RET_cc(uint8_t cc, Memory &bus) ;
 
         /** 
          * Call address vec
          */
-        uint32_t RST_vec(uint16_t vec, Memory &mem) ;
+        uint32_t RST_vec(uint16_t vec, Memory &bus) ;
 
         /**
          * Add immediate 8-bit signed value e8 to SP
@@ -482,18 +482,18 @@ class CPU {
          *
          * Assumes PC is pointing to e8 before call
          */
-        uint32_t ADD_SP_e8(Memory &mem) ;
+        uint32_t ADD_SP_e8(Memory &bus) ;
 
         /** 
          * Load register with address pointed by the stack pointer
          * Loading register AF modifies all flags Z, N, H, and C by the popped low byte
          */
-        uint32_t POP_R16(Register16 &reg, Memory &mem) ;
+        uint32_t POP_R16(Register16 &reg, Memory &bus) ;
 
         /** 
          * Store stack with address in register
          */
-        uint32_t PUSH_R16(Register16 &reg, Memory &mem);
+        uint32_t PUSH_R16(Register16 &reg, Memory &bus);
 
         /** 
          * Flip the carry flag and reset N and H flags
@@ -536,7 +536,7 @@ class CPU {
          * 
          * Reset N and H flags. Set Z accordingly
          */
-        uint32_t RLC_HL(Memory &mem) ;
+        uint32_t RLC_HL(Memory &bus) ;
 
         /** 
          * Rotate register left through the carry flag
@@ -554,7 +554,7 @@ class CPU {
         * 
         * Reset N and H flags. Set Z accordingly
         */
-        uint32_t RL_HL(Memory &mem) ;
+        uint32_t RL_HL(Memory &bus) ;
 
         /** 
          * Rotate register right
@@ -572,7 +572,7 @@ class CPU {
          * 
          * Reset N and H flags. Set Z accordingly
          */
-        uint32_t RRC_HL(Memory &mem) ;
+        uint32_t RRC_HL(Memory &bus) ;
 
         /** 
          * Rotate register right through the carry flag
@@ -590,7 +590,7 @@ class CPU {
         * 
         * Reset N and H flags. Set Z accordingly
         */
-        uint32_t RR_HL(Memory &mem) ;
+        uint32_t RR_HL(Memory &bus) ;
 
         /** 
          * Shift register arithmetically left (pad with a 0)
@@ -608,7 +608,7 @@ class CPU {
          * 
          * Reset N and H flags. Set Z accordingly
          */
-        uint32_t SLA_HL(Memory &mem) ;
+        uint32_t SLA_HL(Memory &bus) ;
 
         /** 
          * Shift register arithmetically right (most significant bit is unchanged)
@@ -626,7 +626,7 @@ class CPU {
          * 
          * Reset N and H flags. Set Z accordingly
          */
-        uint32_t SRA_HL(Memory &mem) ;
+        uint32_t SRA_HL(Memory &bus) ;
 
         /** 
          * Shift register arithmetically right (pad with a 0)
@@ -644,7 +644,7 @@ class CPU {
          * 
          * Reset N and H flags. Set Z accordingly
          */
-        uint32_t SRL_HL(Memory &mem) ;
+        uint32_t SRL_HL(Memory &bus) ;
 
         /** 
          * Swap upper 4 bits in register with lowers 4 bits
@@ -658,7 +658,7 @@ class CPU {
          *
          * Reset N, H, and C flags. Set Z flag accordingly
          */
-        uint32_t SWAP_HL(Memory &mem) ;
+        uint32_t SWAP_HL(Memory &bus) ;
 
         /** 
          * Set Z flag if register bit at index b3 is not set. Reset N flag. Set H flag
@@ -668,7 +668,7 @@ class CPU {
         /** 
          * Set Z flag if bit at index b3 is not set. Reset N flag. Set H flag
          */
-        uint32_t BIT_b3_HL(uint8_t b3, Memory &mem);
+        uint32_t BIT_b3_HL(uint8_t b3, Memory &bus);
 
         /** 
          * Reset register bit at position b3
@@ -678,7 +678,7 @@ class CPU {
         /** 
          * Reset memory[HL] bit at position b3
          */
-        uint32_t RES_b3_HL(uint8_t b3, Memory &mem) ;
+        uint32_t RES_b3_HL(uint8_t b3, Memory &bus) ;
 
         /** 
          * Set register bit at position b3
@@ -688,17 +688,17 @@ class CPU {
         /** 
          * Set memory[HL] bit at position b3
          */
-        uint32_t SET_b3_HL(uint8_t b3, Memory &mem) ;
+        uint32_t SET_b3_HL(uint8_t b3, Memory &bus) ;
 
         /** 
          * Sets bit in Interrupt flag (IF) based on requested interrupt
          */
-        void request_interrupt(Memory &mem, InterruptType type);
+        void request_interrupt(Memory &bus, InterruptType type);
 
         /** 
          * Give control to interrupt handler
          */
-        uint32_t service_interrupt(Memory &mem, InterruptType type); 
+        uint32_t service_interrupt(Memory &bus, InterruptType type); 
 
     public:
     
@@ -718,20 +718,20 @@ class CPU {
          * FF07 - TAC Timer control
          */
         
-        void inc_DIV(Memory &mem) ;
+        void inc_DIV(Memory &bus) ;
 
-        void inc_TIMA(Memory &mem) ;
+        void inc_TIMA(Memory &bus) ;
 
-        uint32_t get_timer_clock_speed(Memory &mem) ;
+        uint32_t get_timer_clock_speed(Memory &bus) ;
 
-        uint8_t is_timer_started(Memory &mem) ;
+        uint8_t is_timer_started(Memory &bus) ;
 
 
         /**
          * Fetch, decode, and execute an instruction then 
          * return the number of M-cycles that it took
          */
-        uint32_t emulate_cycles(Memory &mem);
+        uint32_t emulate_cycles(Memory &bus);
 
 };
 
