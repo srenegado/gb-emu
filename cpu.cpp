@@ -3,6 +3,7 @@
 CPU::CPU() {}
 CPU::~CPU() {}
 
-void CPU::step() {
-    std::cout << "CPU: Fetch, decode, and execute 1 instruction\n";
+bool CPU::step() {
+    std::cout << "TODO: Implement CPU step\n";
+    return false;
 }

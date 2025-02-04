@@ -8,7 +8,7 @@ class CPU {
     public:
         CPU();
         ~CPU();
-        void step();
+        bool step();
 };
 
 
