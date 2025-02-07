@@ -1,10 +1,16 @@
 #include "cpu.h"
 #include "cart.h"
+#include "memory.h"
+#include "cpu_util.h"
 
 int main(int argc, char** argv) {
-    CPU cpu;
+    
+    // Setup Game Boy components
     Cartridge cart;
+    MemoryBus bus(cart);
+    CPU cpu(bus);
 
+    // Load game ROM
     char *ROM = argv[1];
     if (!cart.load_rom(ROM)) {
         std::cout << "ROM could not be loaded\n";

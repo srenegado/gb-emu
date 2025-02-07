@@ -1,27 +1,17 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-#include <cstdint>
-#include <cstdio>
-#include <cstring>
-#include <stdexcept>
+#include "common.h"
+#include "cart.h"
 
-class Memory {
+class MemoryBus {
     private:
-        uint8_t map[0x10000];
-    
+        Cartridge &cart;
     public:
-        // Constructor
-        Memory();
-
-        // Destructor
-        ~Memory();
-
-        uint8_t read(uint16_t addr);
-
-        void write(uint16_t addr, uint8_t val);
-
-        void load_ROM(char *ROM);
+        MemoryBus(Cartridge &cart_);
+        ~MemoryBus();
+        u8 read(u16 addr);
+        void write(u16 addr, u8 val);
 };
 
 #endif

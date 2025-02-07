@@ -12,6 +12,7 @@ class Cartridge {
         Cartridge();
         ~Cartridge();
         bool load_rom(char *ROM);
+        u8 read(u16 addr);
 };
 
 #endif

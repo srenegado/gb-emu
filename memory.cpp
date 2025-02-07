@@ -1,30 +1,22 @@
 #include "memory.h"
 
-// Constructor
-Memory::Memory() {
-    std::memset(map, 0, sizeof(map));
+MemoryBus::MemoryBus(Cartridge &cart_) : cart(cart_) {}
+MemoryBus::~MemoryBus() {}
+
+u8 MemoryBus::read(u16 addr) {
+    if (addr < 0x8000) {
+        // Reading from ROM
+        return cart.read(addr);
+    }
+
+    std::cout << "TODO: Implement the rest of memory\n";
 }
 
-// Destructor
-Memory::~Memory() {}
-
-uint8_t Memory::read(uint16_t addr) {
-    return map[addr];
-}
-
-void Memory::write(uint16_t addr, uint8_t val) {
-    map[addr] = val;
-}
-
-void Memory::load_ROM(char *ROM) {
-    if (ROM == nullptr)
+void MemoryBus::write(u16 addr, u8 val) {
+    if (addr < 0x8000) {
+        // No writes to ROM
         return;
+    }
 
-    uint8_t *start_addr = &map[0x0100];
-    FILE *ROM_file = std::fopen(ROM, "rb");
-    if (ROM_file == nullptr)
-        throw std::invalid_argument("Opening ROM file failed");
-
-    std::fread(start_addr, 0x8000, 1, ROM_file);
-    std::fclose(ROM_file);
+    std::cout << "TODO: Implement the rest of memory\n";
 }
