@@ -9,13 +9,13 @@ class CPU {
     private:
         MemoryBus &bus;
         Registers regs;
-        Instructions instrs;
+        InstructionSet instr_set;
         bool halted = false;
     public:
         CPU(MemoryBus &bus_);
         ~CPU();
         bool step();
+        bool decode_and_execute(u8 opcode);
 };
-
 
 #endif

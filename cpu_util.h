@@ -2,6 +2,7 @@
 #define CPU_UTIL_H
 
 #include "common.h"
+#include "memory.h"
 
 struct Registers {
     u8 A = 0;
@@ -18,12 +19,42 @@ struct Registers {
     ~Registers();
 }; 
 
-class Instructions {
+typedef enum {
+    TO_HL,
+    FROM_HL,
+    TO_A,
+    FROM_A
+} addr_mode;
+
+class InstructionSet {
     private:
         Registers &regs;
+        MemoryBus &bus;
     public:
-        Instructions(Registers &regs_);
-        ~Instructions();
+        InstructionSet(Registers &regs_, MemoryBus &bus_);
+        ~InstructionSet();
+
+        void emulate_cycles(int cpu_cycles);
+        u8 get_n8();
+        u16 get_n16();
+
+        void nop();
+        void ld(u8 &reg1, u8 reg2);             // LD r8,r8
+        void ld(u8 &reg);                       // LD r8,n8
+        void ld16(u8 &hi_reg, u8 &lo_reg);      // LD r16,n16
+        void ld16(u16 &SP);                     // LD SP,n16
+        void ld_to_HL(u8 reg);                  // LD [HL],r8
+        void ld_to_HL();                        // LD [HL],n8
+        void ld_from_HL(u8 &reg);               // LD r8,[HL]
+        void ld_to_mem(u8 hi_reg, u8 lo_reg);   // LD [r16],A
+        void ld_to_mem();                       // LD [n16],A
+        void ld_from_mem(u8 hi_reg, u8 lo_reg); // LD A,[r16]
+        void ld_from_mem();                     // LD A,[n16]
+        void ld_HLI(addr_mode mode);            // LD [HL+],A or LD A,[HL+]
+        void ld_HLD(addr_mode mode);            // LD [HL-],A or LD A,[HL-]
+        void ld_from_SP();                      // LD [n16],SP
+        void ldh(addr_mode mode);               // LD A,[C] or LD [C],A
+
 };
 
 #endif

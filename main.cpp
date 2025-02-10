@@ -20,6 +20,8 @@ int main(int argc, char** argv) {
     // Main emulation loop
     int running = 1;
     while (running) {
+        
+        // Fetch, decode, and execute an instruction
         if (!cpu.step()) {
             std::cout << "CPU could not step\n";
             return -2;
