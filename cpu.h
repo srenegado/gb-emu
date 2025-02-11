@@ -9,8 +9,8 @@ class CPU {
     private:
         MemoryBus &bus;
         Registers regs;
+        CpuContext ctx;
         InstructionSet instr_set;
-        bool halted = false;
     public:
         CPU(MemoryBus &bus_);
         ~CPU();
