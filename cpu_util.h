@@ -20,11 +20,12 @@ struct Registers {
 }; 
 
 typedef enum {
-    TO_HL,
-    FROM_HL,
-    TO_A,
-    FROM_A
-} addr_mode;
+    DEFAULT,
+    LDI,
+    LDD,
+    LDH_A8,
+    LDH_C
+} ld_addr_mode;
 
 class InstructionSet {
     private:
@@ -46,15 +47,13 @@ class InstructionSet {
         void ld_to_HL(u8 reg);                  // LD [HL],r8
         void ld_to_HL();                        // LD [HL],n8
         void ld_from_HL(u8 &reg);               // LD r8,[HL]
-        void ld_to_mem(u8 hi_reg, u8 lo_reg);   // LD [r16],A
-        void ld_to_mem();                       // LD [n16],A
-        void ld_from_mem(u8 hi_reg, u8 lo_reg); // LD A,[r16]
-        void ld_from_mem();                     // LD A,[n16]
-        void ld_HLI(addr_mode mode);            // LD [HL+],A or LD A,[HL+]
-        void ld_HLD(addr_mode mode);            // LD [HL-],A or LD A,[HL-]
+        void ld_from_A(u8 hi_reg, u8 lo_reg, ld_addr_mode mode = DEFAULT); // LD [r16],A
+        void ld_from_A();                       // LD [n16],A
+        void ld_to_A(u8 hi_reg, u8 lo_reg, ld_addr_mode mode = DEFAULT);   // LD A,[r16]
+        void ld_to_A();                         // LD A,[n16]    
         void ld_from_SP();                      // LD [n16],SP
-        void ldh(addr_mode mode);               // LD A,[a8] or LD [a8],A
-        void ldh_C(addr_mode mode);             // LD A,[C] or LD [C],A
+        void ldh_to_A(ld_addr_mode mode);       // LD A,[a8] or LD A,[C]
+        void ldh_from_A(ld_addr_mode mode);     // LD [a8],A or LD [C],A
 
 };
 

@@ -30,29 +30,31 @@ bool CPU::decode_and_execute(u8 opcode) {
 
     switch (opcode) {
         
-        case 0x00: instr_set.nop(); break;
-        case 0x01: instr_set.ld16(regs.B, regs.C); break;
-        case 0x06: instr_set.ld(regs.B); break;
-        case 0x08: instr_set.ld_from_SP(); break;
-        case 0x0A: instr_set.ld_from_mem(regs.B, regs.C); break;
-        case 0x0E: instr_set.ld(regs.C); break;
+        case 0x00: instr_set.nop();                     break;
+        case 0x01: instr_set.ld16(regs.B, regs.C);      break;
+        case 0x02: instr_set.ld_from_A(regs.B, regs.C); break;
+        case 0x06: instr_set.ld(regs.B);                break;
+        case 0x08: instr_set.ld_from_SP();              break;
+        case 0x0A: instr_set.ld_to_A(regs.B, regs.C);   break;
+        case 0x0E: instr_set.ld(regs.C);                break;
 
-        case 0x11: instr_set.ld16(regs.D, regs.E); break;
-        case 0x16: instr_set.ld(regs.D); break;
-        case 0x1A: instr_set.ld_from_mem(regs.D, regs.E); break;
-        case 0x1E: instr_set.ld(regs.E); break;
+        case 0x11: instr_set.ld16(regs.D, regs.E);      break;
+        case 0x12: instr_set.ld_from_A(regs.D, regs.E); break;
+        case 0x16: instr_set.ld(regs.D);                break;
+        case 0x1A: instr_set.ld_to_A(regs.D, regs.E);   break;
+        case 0x1E: instr_set.ld(regs.E);                break;
         
-        case 0x21: instr_set.ld16(regs.H, regs.L); break;
-        case 0x22: instr_set.ld_HLI(TO_HL); break;
-        case 0x26: instr_set.ld(regs.H); break;
-        case 0x2A: instr_set.ld_HLI(FROM_HL); break;
-        case 0x2E: instr_set.ld(regs.L); break;
+        case 0x21: instr_set.ld16(regs.H, regs.L);           break;
+        case 0x22: instr_set.ld_from_A(regs.H, regs.L, LDI); break;
+        case 0x26: instr_set.ld(regs.H);                     break;
+        case 0x2A: instr_set.ld_to_A(regs.H, regs.L, LDI);   break;
+        case 0x2E: instr_set.ld(regs.L);                     break;
         
-        case 0x31: instr_set.ld16(regs.SP); break;
-        case 0x32: instr_set.ld_HLD(TO_HL); break;
-        case 0x36: instr_set.ld_to_HL(); break;
-        case 0x3A: instr_set.ld_HLD(FROM_HL); break;
-        case 0x3E: instr_set.ld(regs.B); break;
+        case 0x31: instr_set.ld16(regs.SP);                  break;
+        case 0x32: instr_set.ld_from_A(regs.H, regs.L, LDD); break;
+        case 0x36: instr_set.ld_to_HL();                     break;
+        case 0x3A: instr_set.ld_to_A(regs.H, regs.L, LDD);   break;
+        case 0x3E: instr_set.ld(regs.B);                     break;
         
         case 0x40: instr_set.ld(regs.B, regs.B); break;
         case 0x41: instr_set.ld(regs.B, regs.C); break;
@@ -121,13 +123,13 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0x7E: instr_set.ld_from_HL(regs.A); break;
         case 0x7F: instr_set.ld(regs.A, regs.A); break;
 
-        case 0xE0: instr_set.ldh(FROM_A); break;
-        case 0xE2: instr_set.ldh_C(FROM_A); break;
-        case 0xEA: instr_set.ld_to_mem(); break;
+        case 0xE0: instr_set.ldh_from_A(LDH_A8); break;
+        case 0xE2: instr_set.ldh_from_A(LDH_C);  break;
+        case 0xEA: instr_set.ld_from_A();        break;
 
-        case 0xF0: instr_set.ldh(TO_A); break;
-        case 0xF2: instr_set.ldh_C(TO_A); break;
-        case 0xFA: instr_set.ld_from_mem(); break;
+        case 0xF0: instr_set.ldh_to_A(LDH_A8); break;
+        case 0xF2: instr_set.ldh_to_A(LDH_C);  break;
+        case 0xFA: instr_set.ld_to_A();        break;
 
         default: 
             std::cout << "Unknown opcode: unable to decode into an instruction\n";

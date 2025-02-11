@@ -69,64 +69,58 @@ void InstructionSet::ld_from_HL(u8 &reg) {
     emulate_cycles(1);
 }
 
-void InstructionSet::ld_to_mem(u8 hi_reg, u8 lo_reg) {
+void InstructionSet::ld_from_A(u8 hi_reg, u8 lo_reg, ld_addr_mode mode) {
     u16 addr = ((u16)hi_reg << 8) | (u16)lo_reg;
 
     bus.write(addr, regs.A);
     emulate_cycles(1);
+
+    // Register HL is either incremented or decremented
+    if (mode == LDI) {
+        if (regs.L == 0xFF) {
+            regs.H++;
+        }
+        regs.L++;
+    } else if (mode == LDD) {
+        if (regs.L == 0) {
+            regs.H--;
+        }
+        regs.L--;
+    }
 }
 
-void InstructionSet::ld_to_mem() {
+void InstructionSet::ld_from_A() {
     u16 n16 = get_n16();
 
     bus.write(n16, regs.A);
     emulate_cycles(1);
 }
 
-void InstructionSet::ld_from_mem(u8 hi_reg, u8 lo_reg) {
+void InstructionSet::ld_to_A(u8 hi_reg, u8 lo_reg, ld_addr_mode mode) {
     u16 addr = ((u16)hi_reg << 8) | (u16)lo_reg;
 
     regs.A = bus.read(addr);
     emulate_cycles(1);
+
+    // Register HL is either incremented or decremented
+    if (mode == LDI) {
+        if (regs.L == 0xFF) {
+            regs.H++;
+        }
+        regs.L++;
+    } else if (mode == LDD) {
+        if (regs.L == 0) {
+            regs.H--;
+        }
+        regs.L--;
+    }
 }
 
-void InstructionSet::ld_from_mem() {
+void InstructionSet::ld_to_A() {
     u16 n16 = get_n16();
 
     regs.A = bus.read(n16);
     emulate_cycles(1);
-}
-
-void InstructionSet::ld_HLI(addr_mode mode) {
-    u16 addr = ((u16)regs.H << 8) | (u16)regs.L;
-
-    if (mode == TO_HL) {
-        bus.write(addr, regs.A);
-    } else if (mode == FROM_HL) {
-        regs.A = bus.read(addr);
-    }
-    emulate_cycles(1);
-
-    if (regs.L == 0xFF) {
-        regs.H++;
-    }
-    regs.L++;
-}
-
-void InstructionSet::ld_HLD(addr_mode mode) {
-    u16 addr = ((u16)regs.H << 8) | (u16)regs.L;
-
-    if (mode == TO_HL) {
-        bus.write(addr, regs.A);
-    } else if (mode == FROM_HL) { 
-        regs.A = bus.read(addr);
-    }
-    emulate_cycles(1);
-
-    if (regs.L == 0) {
-        regs.H--;
-    }
-    regs.L--;
 }
 
 void InstructionSet::ld_from_SP() {
@@ -138,21 +132,22 @@ void InstructionSet::ld_from_SP() {
     emulate_cycles(1);
 }
 
-void InstructionSet::ldh(addr_mode mode) {
-    u8 a8 = get_n8() + 0xFF00;
-    if (mode == FROM_A) {
-        bus.write(a8, regs.A);
-    } else if (mode == TO_A) {
+void InstructionSet::ldh_to_A(ld_addr_mode mode) {
+    if (mode == LDH_A8) {
+        u8 a8 = get_n8() + 0xFF00;
         regs.A = bus.read(a8);
+    } else if (mode == LDH_C) {
+        regs.A = bus.read(regs.C + 0xFF00);
     }
     emulate_cycles(1);
 }
 
-void InstructionSet::ldh_C(addr_mode mode) {
-    if (mode == FROM_A) {
+void InstructionSet::ldh_from_A(ld_addr_mode mode) {
+    if (mode == LDH_A8) {
+        u8 a8 = get_n8() + 0xFF00;
+        bus.write(a8, regs.A);
+    } else if (mode == LDH_C) {
         bus.write(regs.C + 0xFF00, regs.A);
-    } else if (mode == TO_A) {
-        regs.A = bus.read(regs.C + 0xFF00);
     }
     emulate_cycles(1);
 }
