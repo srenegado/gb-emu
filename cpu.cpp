@@ -121,10 +121,12 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0x7E: instr_set.ld_from_HL(regs.A); break;
         case 0x7F: instr_set.ld(regs.A, regs.A); break;
 
-        case 0xE2: instr_set.ldh(FROM_A); break;
+        case 0xE0: instr_set.ldh(FROM_A); break;
+        case 0xE2: instr_set.ldh_C(FROM_A); break;
         case 0xEA: instr_set.ld_to_mem(); break;
 
-        case 0xF2: instr_set.ldh(TO_A); break;
+        case 0xF0: instr_set.ldh(TO_A); break;
+        case 0xF2: instr_set.ldh_C(TO_A); break;
         case 0xFA: instr_set.ld_from_mem(); break;
 
         default: 

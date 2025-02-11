@@ -53,7 +53,8 @@ class InstructionSet {
         void ld_HLI(addr_mode mode);            // LD [HL+],A or LD A,[HL+]
         void ld_HLD(addr_mode mode);            // LD [HL-],A or LD A,[HL-]
         void ld_from_SP();                      // LD [n16],SP
-        void ldh(addr_mode mode);               // LD A,[C] or LD [C],A
+        void ldh(addr_mode mode);               // LD A,[a8] or LD [a8],A
+        void ldh_C(addr_mode mode);             // LD A,[C] or LD [C],A
 
 };
 

@@ -139,6 +139,16 @@ void InstructionSet::ld_from_SP() {
 }
 
 void InstructionSet::ldh(addr_mode mode) {
+    u8 a8 = get_n8() + 0xFF00;
+    if (mode == FROM_A) {
+        bus.write(a8, regs.A);
+    } else if (mode == TO_A) {
+        regs.A = bus.read(a8);
+    }
+    emulate_cycles(1);
+}
+
+void InstructionSet::ldh_C(addr_mode mode) {
     if (mode == FROM_A) {
         bus.write(regs.C + 0xFF00, regs.A);
     } else if (mode == TO_A) {
