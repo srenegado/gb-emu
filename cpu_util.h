@@ -26,6 +26,8 @@ struct CpuContext {
     ~CpuContext();
 };
 
+// Addressing modes that help out with parsing in some instructions
+// note: not used by all instructions
 typedef enum {
     DEFAULT,
     LDI,
@@ -45,12 +47,21 @@ class InstructionSet {
         InstructionSet(Registers &regs_, CpuContext &ctx_, MemoryBus &bus_);
         ~InstructionSet();
 
+        // For cycle timing
         void emulate_cycles(int cpu_cycles);
+
+        // Helper functions for getting bytes in opcodes
         u8 get_n8();
         u16 get_n16();
 
+        /** 
+         * CPU Instruction Set
+         */
+
+        // Misc.
         void nop();
 
+        // Load instructions
         void ld(u8 &reg1, u8 reg2);             // LD r8,r8
         void ld(u8 &reg);                       // LD r8,n8
         void ld16(u8 &hi_reg, u8 &lo_reg);      // LD r16,n16
@@ -68,6 +79,7 @@ class InstructionSet {
         void ldh_to_A(addr_mode mode);          // LD A,[a8] or LD A,[C]
         void ldh_from_A(addr_mode mode);        // LD [a8],A or LD [C],A
 
+        // Jumping and stack-related
         void push(u8 hi_reg, u8 lo_reg);        // PUSH r16
         void pop(u8 &hi_reg, u8 &lo_reg,
             addr_mode mode = DEFAULT);          // POP r16
@@ -79,6 +91,25 @@ class InstructionSet {
             addr_mode mode = DEFAULT);          // RET or RET cc
         void reti();                            // RETI
         void rst(u16 addr);                     // RST vec
+
+        // Arithmetic instructions
+        void inc(u8 &reg);                      // INC r8
+        void inc(u8 &hi_reg, u8 &lo_reg);       // INC r16
+        void inc_SP();                          // INC SP
+        void inc_HL();                          // INC [HL]
+        void dec(u8 &reg);                      // DEC r8
+        void dec(u8 &hi_reg, u8 &lo_reg);       // DEC r16
+        void dec_SP();                          // DEC SP
+        void dec_HL();                          // DEC [HL]
+        void add(u8 reg);                       // ADD A,r8
+        void add();                             // ADD A,n8
+        void add_HL();                          // ADD A,[HL]
+        void add16(u8 hi_reg, u8 lo_reg);       // ADD HL,r16
+        void add16();                           // ADD HL,SP
+        void add_to_SP();                       // ADD SP,e8
+
+        // Interrupt-related
+        void di();                              // DI
 
 };
 

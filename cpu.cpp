@@ -12,10 +12,10 @@ bool CPU::step() {
         // Fetch opcode
         u8 opcode = bus.read(regs.PC++); 
         instr_set.emulate_cycles(1);
-        std::cout << "Fetching opcode: 0x" << std::hex << +opcode << std::endl;
+        std::cout << "Fetching opcode: 0x" << std::hex << +opcode;
         
         // Decode and execute opcode
-        std::cout << "Decoding and executing opcode...\n";
+        std::cout << "\t-> Decoding and executing opcode...\n";
         if (!decode_and_execute(opcode)) {
             std::cout << "CPU could not decode or execute an instruction\n";
             return false;
@@ -33,32 +33,60 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0x00: instr_set.nop();                     break;
         case 0x01: instr_set.ld16(regs.B, regs.C);      break;
         case 0x02: instr_set.ld_from_A(regs.B, regs.C); break;
+        case 0x03: instr_set.inc(regs.B, regs.C);       break;
+        case 0x04: instr_set.inc(regs.B);               break;
+        case 0x05: instr_set.dec(regs.B);               break;
         case 0x06: instr_set.ld(regs.B);                break;
         case 0x08: instr_set.ld_from_SP();              break;
+        case 0x09: instr_set.add16(regs.B, regs.C);     break;
         case 0x0A: instr_set.ld_to_A(regs.B, regs.C);   break;
+        case 0x0B: instr_set.dec(regs.B, regs.C);       break;
+        case 0x0C: instr_set.inc(regs.C);               break;
+        case 0x0D: instr_set.dec(regs.C);               break;
         case 0x0E: instr_set.ld(regs.C);                break;
 
         case 0x11: instr_set.ld16(regs.D, regs.E);      break;
         case 0x12: instr_set.ld_from_A(regs.D, regs.E); break;
+        case 0x13: instr_set.inc(regs.D, regs.E);       break;
+        case 0x14: instr_set.inc(regs.D);               break;
+        case 0x15: instr_set.dec(regs.D);               break;
         case 0x16: instr_set.ld(regs.D);                break;
         case 0x18: instr_set.jr();                      break;
+        case 0x19: instr_set.add16(regs.D, regs.E);     break;
         case 0x1A: instr_set.ld_to_A(regs.D, regs.E);   break;
+        case 0x1B: instr_set.dec(regs.D, regs.E);       break;
+        case 0x1C: instr_set.inc(regs.E);               break;
+        case 0x1D: instr_set.dec(regs.E);               break;
         case 0x1E: instr_set.ld(regs.E);                break;
         
         case 0x20: instr_set.jr(!BIT(regs.F,7));             break;
         case 0x21: instr_set.ld16(regs.H, regs.L);           break;
         case 0x22: instr_set.ld_from_A(regs.H, regs.L, LDI); break;
+        case 0x23: instr_set.inc(regs.H, regs.L);            break;
+        case 0x24: instr_set.inc(regs.H);                    break;
+        case 0x25: instr_set.dec(regs.H);                    break;
         case 0x26: instr_set.ld(regs.H);                     break;
         case 0x28: instr_set.jr(BIT(regs.F,7));              break;
+        case 0x29: instr_set.add16();                        break;
         case 0x2A: instr_set.ld_to_A(regs.H, regs.L, LDI);   break;
+        case 0x2B: instr_set.dec(regs.H, regs.L);            break;
+        case 0x2C: instr_set.inc(regs.L);                    break;
+        case 0x2D: instr_set.dec(regs.L);                    break;
         case 0x2E: instr_set.ld(regs.L);                     break;
         
         case 0x30: instr_set.jr(!BIT(regs.F,4));             break;
         case 0x31: instr_set.ld16(regs.SP);                  break;
         case 0x32: instr_set.ld_from_A(regs.H, regs.L, LDD); break;
+        case 0x33: instr_set.inc_SP();                       break;
+        case 0x34: instr_set.inc_HL();                       break;
+        case 0x35: instr_set.dec_HL();                       break;
         case 0x36: instr_set.ld_to_HL();                     break;
         case 0x38: instr_set.jr(BIT(regs.F,4));              break;
+        case 0x39: instr_set.add16(regs.B, regs.C);          break;
         case 0x3A: instr_set.ld_to_A(regs.H, regs.L, LDD);   break;
+        case 0x3B: instr_set.dec_SP();                       break;
+        case 0x3C: instr_set.inc(regs.A);                    break;
+        case 0x3D: instr_set.dec(regs.A);                    break;
         case 0x3E: instr_set.ld(regs.B);                     break;
         
         case 0x40: instr_set.ld(regs.B, regs.B); break;
@@ -128,6 +156,15 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0x7E: instr_set.ld_from_HL(regs.A); break;
         case 0x7F: instr_set.ld(regs.A, regs.A); break;
 
+        case 0x80: instr_set.add(regs.B); break;
+        case 0x81: instr_set.add(regs.C); break;
+        case 0x82: instr_set.add(regs.D); break;
+        case 0x83: instr_set.add(regs.E); break;
+        case 0x84: instr_set.add(regs.H); break;
+        case 0x85: instr_set.add(regs.L); break;
+        case 0x86: instr_set.add_HL();    break;
+        case 0x87: instr_set.add(regs.A); break;
+
         case 0xC0: instr_set.ret(!BIT(regs.F, 7), RET_CC); break;
         case 0xC1: instr_set.pop(regs.B, regs.C);          break;
         case 0xC2: instr_set.jp(!BIT(regs.F, 7));          break;
@@ -135,6 +172,7 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0xC4: instr_set.call(!BIT(regs.F, 7));        break;
         case 0xCC: instr_set.call(BIT(regs.F, 7));         break;
         case 0xC5: instr_set.push(regs.B, regs.C);         break;
+        case 0xC6: instr_set.add();                        break;
         case 0xC7: instr_set.rst(0x00);                    break;
         case 0xC8: instr_set.ret(BIT(regs.F, 7), RET_CC);  break;
         case 0xC9: instr_set.ret();                        break;
@@ -159,6 +197,7 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0xE2: instr_set.ldh_from_A(LDH_C);    break;
         case 0xE5: instr_set.push(regs.H, regs.L); break;
         case 0xE7: instr_set.rst(0x20);            break;
+        case 0xE8: instr_set.add_to_SP();          break;
         case 0xE9: instr_set.jp_HL();              break;
         case 0xEA: instr_set.ld_from_A();          break;
         case 0xEF: instr_set.rst(0x28);            break;
@@ -166,11 +205,20 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0xF0: instr_set.ldh_to_A(LDH_A8);            break;
         case 0xF1: instr_set.pop(regs.A, regs.F, POP_AF); break;
         case 0xF2: instr_set.ldh_to_A(LDH_C);             break;
+        case 0xF3: instr_set.di();                        break;
         case 0xF5: instr_set.push(regs.A, regs.F & 0xF0); break;
         case 0xF7: instr_set.rst(0x30);                   break;
         case 0xFA: instr_set.ld_to_A();                   break;
         case 0xFF: instr_set.rst(0x38);                   break;
+
         
+
+        
+
+       
+        
+        
+
         case 0xD3: case 0xE3: case 0xE4: case 0xF4: case 0xDB: 
         case 0xEB: case 0xEC: case 0xFC: case 0xDD: case 0xED: case 0xFD:
             std::cout << "Invalid opcode!\n";

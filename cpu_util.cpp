@@ -159,8 +159,12 @@ void InstructionSet::ldh_from_A(addr_mode mode) {
     emulate_cycles(1);
 }
 
+// note: Stack grows "upside down" memory, and Game Boy memory stores
+// lowest byte first (little endian)
+
 void InstructionSet::push(u8 hi_reg, u8 lo_reg) {
-    // Decrement SP, then write to memory
+
+    // Higher byte pushed first
     bus.write(--regs.SP, hi_reg);
     emulate_cycles(1);
     bus.write(--regs.SP, lo_reg);
@@ -170,7 +174,8 @@ void InstructionSet::push(u8 hi_reg, u8 lo_reg) {
 }
 
 void InstructionSet::pop(u8 &hi_reg, u8 &lo_reg, addr_mode mode) {
-    // Load to register nibble, then increment SP
+
+    // Lower byte popped first
     if (mode == DEFAULT) {
         lo_reg = bus.read(regs.SP++);
     } else if (mode == POP_AF) {
@@ -202,6 +207,9 @@ void InstructionSet::jr(bool cond_code) {
         emulate_cycles(1);
     }
 }
+
+// note: Before calling a subroutine, you have to store the
+// current address onto stack to come back to where you left off
 
 void InstructionSet::call(bool cond_code) {
     u16 n16 = get_n16();
@@ -241,7 +249,6 @@ void InstructionSet::reti() {
 }
 
 void InstructionSet::rst(u16 addr) {
-    // Doing a CALL to addr
     bus.write(--regs.SP, (regs.PC >> 8) & 0xFF);
     emulate_cycles(1);
     bus.write(--regs.SP, regs.PC & 0xFF);
@@ -249,4 +256,166 @@ void InstructionSet::rst(u16 addr) {
 
     regs.PC = addr;
     emulate_cycles(1);
+}
+
+void InstructionSet::inc(u8 &reg) {
+    reg += 1;
+    u8 val = reg;
+
+    // flag calculations
+    if (val == 0) BIT_SET(regs.F, 7);     
+    BIT_RESET(regs.F, 6);
+    if ((val & 0x0F) == 0) BIT_SET(regs.F, 5);
+}
+
+void InstructionSet::inc(u8 &hi_reg, u8 &lo_reg) {
+    emulate_cycles(1);
+
+    if (lo_reg == 0xFF) {
+        hi_reg++;
+    }
+    lo_reg++;
+}
+
+void InstructionSet::inc_SP() {
+    emulate_cycles(1);
+    regs.SP++;
+}
+
+void InstructionSet::inc_HL() {
+    u16 addr = ((u16)regs.H << 8) | (u16)regs.L;
+
+    u8 val = bus.read(addr) + 1;
+    emulate_cycles(1);
+
+    bus.write(addr, val);
+    emulate_cycles(1);
+
+    // flag calculations
+    if (val == 0) BIT_SET(regs.F, 7);
+    BIT_RESET(regs.F, 6);
+    if ((val & 0x0F) == 0) BIT_SET(regs.F, 5);   
+}
+
+void InstructionSet::dec(u8 &reg) {
+    reg -= 1;
+    u8 val = reg;
+
+    // flag calculations
+    if (val == 0) BIT_SET(regs.F, 7);     
+    BIT_SET(regs.F, 6);
+    if ((val & 0x0F) == 0x0F) BIT_SET(regs.F, 5);
+}
+
+void InstructionSet::dec(u8 &hi_reg, u8 &lo_reg) {
+    emulate_cycles(1);
+
+    if (lo_reg == 0x00) {
+        hi_reg--;
+    }
+    lo_reg--;
+}
+
+void InstructionSet::dec_SP() {
+    emulate_cycles(1);
+    regs.SP--;
+}
+
+void InstructionSet::dec_HL() {
+    u16 addr = ((u16)regs.H << 8) | (u16)regs.L;
+
+    u8 val = bus.read(addr) - 1;
+    emulate_cycles(1);
+
+    bus.write(addr, val);
+    emulate_cycles(1);
+
+    // flag calculations
+    if (val == 0) BIT_SET(regs.F, 7);     
+    BIT_SET(regs.F, 6);
+    if ((val & 0x0F) == 0x0F) BIT_SET(regs.F, 5);
+}
+
+void InstructionSet::add(u8 reg) {
+    u16 val = (u16)regs.A + (u16)reg;
+    
+    // flag calculations
+    if ((val & 0xFF) == 0) BIT_SET(regs.F, 7);     
+    BIT_RESET(regs.F, 6);
+    if ((regs.A & 0xF) + (reg & 0xF) > 0xF) BIT_SET(regs.F, 5);
+    if (val > 0xFF) BIT_SET(regs.F, 4);
+
+    regs.A += reg;
+} 
+
+void InstructionSet::add() {
+    u8 n8 = get_n8();
+    u16 val = (u16)regs.A + (u16)n8;
+    
+    // flag calculations
+    if ((val & 0xFF) == 0) BIT_SET(regs.F, 7);     
+    BIT_RESET(regs.F, 6);
+    if ((regs.A & 0xF) + (n8 & 0xF) > 0xF) BIT_SET(regs.F, 5);
+    if (val > 0xFF) BIT_SET(regs.F, 4);
+
+    regs.A += n8;
+}    
+
+void InstructionSet::add_HL() {
+    u8 byte = bus.read(((u16)regs.H << 8) | (u16)regs.L);
+    emulate_cycles(1);
+    u16 val = (u16)regs.A + (u16)byte;
+    
+    // flag calculations
+    if ((val & 0xFF) == 0) BIT_SET(regs.F, 7);     
+    BIT_RESET(regs.F, 6);
+    if ((regs.A & 0xF) + (byte & 0xF) > 0xF) BIT_SET(regs.F, 5);
+    if (val > 0xFF) BIT_SET(regs.F, 4);
+
+    regs.A += byte;
+}
+
+void InstructionSet::add16(u8 hi_reg, u8 lo_reg) {
+    emulate_cycles(1);
+
+    // Let the compiler do the carrying
+    u16 reg = ((u16)hi_reg << 8) | (u16)lo_reg;
+    u16 HL = ((u16)regs.H << 8) | (u16)regs.L;
+    u32 val = HL + reg;
+
+    // flag calculations
+    BIT_RESET(regs.F, 6);
+    if ((reg & 0xFFF) + (HL & 0xFFF) > 0xFFF) BIT_SET(regs.F, 5);
+    if (val > 0xFFFF) BIT_SET(regs.F, 4);
+
+    regs.H = (u8)((val >> 8) & 0xFF);
+    regs.L = (u8)(val & 0xFF);
+}      
+
+void InstructionSet::add16() {
+    emulate_cycles(1);
+
+    // Let the compiler do the carrying
+    u16 HL = ((u16)regs.H << 8) | (u16)regs.L;
+    u32 val = HL + regs.SP;
+
+    BIT_RESET(regs.F, 6);
+    if ((HL & 0xFFF) + (regs.SP & 0xFFF) > 0xFFF) BIT_SET(regs.F, 5);
+    if (val > 0xFFFF) BIT_SET(regs.F, 4);
+
+    regs.H = (u8)((val >> 8) & 0xFF);
+    regs.L = (u8)(val & 0xFF);
+}                         
+
+void InstructionSet::add_to_SP() {
+    char e8 = (char)get_n8();
+
+    BIT_RESET(regs.F, 7);     
+    BIT_RESET(regs.F, 6);
+    if ((regs.SP & 0xF) + ((u8)e8 & 0xF) > 0xF) BIT_SET(regs.F, 5);
+    if ((regs.SP & 0xFF) + ((u8)e8 & 0xFF) > 0xFF) BIT_SET(regs.F, 4);
+}                     
+
+void InstructionSet::di() {
+    ctx.IME = false;
 }
