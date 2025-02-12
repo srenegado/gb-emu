@@ -107,6 +107,29 @@ class InstructionSet {
         void add16(u8 hi_reg, u8 lo_reg);       // ADD HL,r16
         void add16();                           // ADD HL,SP
         void add_to_SP();                       // ADD SP,e8
+        void sub(u8 reg);                       // SUB A,r8
+        void sub();                             // SUB A,n8
+        void sub_HL();                          // SUB A,[HL]
+        void adc(u8 reg);                       // ADC A,r8
+        void adc();                             // ADC A,n8
+        void adc_HL();                          // ADC,[HL]
+        void sbc(u8 reg);                       // SBC A,r8
+        void sbc();                             // SBC A,n8
+        void sbc_HL();                          // SBC,[HL]
+
+        // Bit instructions
+        void and_A(u8 reg);                     // AND A,r8                  
+        void and_A();                           // AND A,n8
+        void and_A_HL();                        // AND A,[HL]
+        void or_A(u8 reg);                      // OR A,r8                  
+        void or_A();                            // OR A,n8
+        void or_A_HL();                         // OR A,[HL]
+        void xor_A(u8 reg);                     // XOR A,r8                  
+        void xor_A();                           // XOR A,n8
+        void xor_A_HL();                        // XOR A,[HL]
+        void cp(u8 reg);                        // CP A,r8
+        void cp();                              // CP A,n8
+        void cp_HL();                           // CP A,[HL]
 
         // Interrupt-related
         void di();                              // DI

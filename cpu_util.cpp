@@ -263,9 +263,9 @@ void InstructionSet::inc(u8 &reg) {
     u8 val = reg;
 
     // flag calculations
-    if (val == 0) BIT_SET(regs.F, 7);     
+    if (val == 0) { BIT_SET(regs.F, 7); }     
     BIT_RESET(regs.F, 6);
-    if ((val & 0x0F) == 0) BIT_SET(regs.F, 5);
+    if ((val & 0x0F) == 0) { BIT_SET(regs.F, 5); }
 }
 
 void InstructionSet::inc(u8 &hi_reg, u8 &lo_reg) {
@@ -292,9 +292,9 @@ void InstructionSet::inc_HL() {
     emulate_cycles(1);
 
     // flag calculations
-    if (val == 0) BIT_SET(regs.F, 7);
+    if (val == 0) { BIT_SET(regs.F, 7); }
     BIT_RESET(regs.F, 6);
-    if ((val & 0x0F) == 0) BIT_SET(regs.F, 5);   
+    if ((val & 0x0F) == 0) { BIT_SET(regs.F, 5); }   
 }
 
 void InstructionSet::dec(u8 &reg) {
@@ -302,9 +302,9 @@ void InstructionSet::dec(u8 &reg) {
     u8 val = reg;
 
     // flag calculations
-    if (val == 0) BIT_SET(regs.F, 7);     
+    if (val == 0) { BIT_SET(regs.F, 7); }     
     BIT_SET(regs.F, 6);
-    if ((val & 0x0F) == 0x0F) BIT_SET(regs.F, 5);
+    if ((val & 0x0F) == 0x0F) { BIT_SET(regs.F, 5); }
 }
 
 void InstructionSet::dec(u8 &hi_reg, u8 &lo_reg) {
@@ -331,19 +331,19 @@ void InstructionSet::dec_HL() {
     emulate_cycles(1);
 
     // flag calculations
-    if (val == 0) BIT_SET(regs.F, 7);     
+    if (val == 0) { BIT_SET(regs.F, 7); }  
     BIT_SET(regs.F, 6);
-    if ((val & 0x0F) == 0x0F) BIT_SET(regs.F, 5);
+    if ((val & 0x0F) == 0x0F) { BIT_SET(regs.F, 5); }
 }
 
 void InstructionSet::add(u8 reg) {
     u16 val = (u16)regs.A + (u16)reg;
     
     // flag calculations
-    if ((val & 0xFF) == 0) BIT_SET(regs.F, 7);     
+    if ((val & 0xFF) == 0) { BIT_SET(regs.F, 7); }
     BIT_RESET(regs.F, 6);
-    if ((regs.A & 0xF) + (reg & 0xF) > 0xF) BIT_SET(regs.F, 5);
-    if (val > 0xFF) BIT_SET(regs.F, 4);
+    if ((regs.A & 0xF) + (reg & 0xF) > 0xF) { BIT_SET(regs.F, 5); }
+    if (val > 0xFF) { BIT_SET(regs.F, 4); }
 
     regs.A += reg;
 } 
@@ -353,10 +353,10 @@ void InstructionSet::add() {
     u16 val = (u16)regs.A + (u16)n8;
     
     // flag calculations
-    if ((val & 0xFF) == 0) BIT_SET(regs.F, 7);     
+    if ((val & 0xFF) == 0) { BIT_SET(regs.F, 7); }
     BIT_RESET(regs.F, 6);
-    if ((regs.A & 0xF) + (n8 & 0xF) > 0xF) BIT_SET(regs.F, 5);
-    if (val > 0xFF) BIT_SET(regs.F, 4);
+    if ((regs.A & 0xF) + (n8 & 0xF) > 0xF) { BIT_SET(regs.F, 5); }
+    if (val > 0xFF) { BIT_SET(regs.F, 4); }
 
     regs.A += n8;
 }    
@@ -367,10 +367,10 @@ void InstructionSet::add_HL() {
     u16 val = (u16)regs.A + (u16)byte;
     
     // flag calculations
-    if ((val & 0xFF) == 0) BIT_SET(regs.F, 7);     
+    if ((val & 0xFF) == 0) { BIT_SET(regs.F, 7); }   
     BIT_RESET(regs.F, 6);
-    if ((regs.A & 0xF) + (byte & 0xF) > 0xF) BIT_SET(regs.F, 5);
-    if (val > 0xFF) BIT_SET(regs.F, 4);
+    if ((regs.A & 0xF) + (byte & 0xF) > 0xF) { BIT_SET(regs.F, 5); }
+    if (val > 0xFF) { BIT_SET(regs.F, 4); }
 
     regs.A += byte;
 }
@@ -385,8 +385,8 @@ void InstructionSet::add16(u8 hi_reg, u8 lo_reg) {
 
     // flag calculations
     BIT_RESET(regs.F, 6);
-    if ((reg & 0xFFF) + (HL & 0xFFF) > 0xFFF) BIT_SET(regs.F, 5);
-    if (val > 0xFFFF) BIT_SET(regs.F, 4);
+    if ((reg & 0xFFF) + (HL & 0xFFF) > 0xFFF) { BIT_SET(regs.F, 5); }
+    if (val > 0xFFFF) { BIT_SET(regs.F, 4); }
 
     regs.H = (u8)((val >> 8) & 0xFF);
     regs.L = (u8)(val & 0xFF);
@@ -400,8 +400,8 @@ void InstructionSet::add16() {
     u32 val = HL + regs.SP;
 
     BIT_RESET(regs.F, 6);
-    if ((HL & 0xFFF) + (regs.SP & 0xFFF) > 0xFFF) BIT_SET(regs.F, 5);
-    if (val > 0xFFFF) BIT_SET(regs.F, 4);
+    if ((HL & 0xFFF) + (regs.SP & 0xFFF) > 0xFFF) { BIT_SET(regs.F, 5); }
+    if (val > 0xFFFF) { BIT_SET(regs.F, 4); }
 
     regs.H = (u8)((val >> 8) & 0xFF);
     regs.L = (u8)(val & 0xFF);
@@ -412,9 +412,186 @@ void InstructionSet::add_to_SP() {
 
     BIT_RESET(regs.F, 7);     
     BIT_RESET(regs.F, 6);
-    if ((regs.SP & 0xF) + ((u8)e8 & 0xF) > 0xF) BIT_SET(regs.F, 5);
-    if ((regs.SP & 0xFF) + ((u8)e8 & 0xFF) > 0xFF) BIT_SET(regs.F, 4);
+    if ((regs.SP & 0xF) + ((u8)e8 & 0xF) > 0xF) { BIT_SET(regs.F, 5); }
+    if ((regs.SP & 0xFF) + ((u8)e8 & 0xFF) > 0xFF) { BIT_SET(regs.F, 4); }
+
+    regs.SP += e8;
 }                     
+
+void InstructionSet::sub(u8 reg) {
+    
+    // flag calculations
+    if (regs.A - reg == 0) { BIT_SET(regs.F, 7); }   
+    BIT_SET(regs.F, 6);
+    if ((regs.A & 0xF) < (reg & 0xF)) { BIT_SET(regs.F, 5); }
+    if (regs.A < reg) { BIT_SET(regs.F, 4); }
+
+    regs.A -= reg;
+}    
+
+void InstructionSet::sub() {
+    u8 n8 = get_n8();
+
+    // flag calculations
+    if (regs.A - n8 == 0) { BIT_SET(regs.F, 7); }
+    BIT_SET(regs.F, 6);
+    if ((regs.A & 0xF) < (n8 & 0xF)) { BIT_SET(regs.F, 5); }
+    if (regs.A < n8) { BIT_SET(regs.F, 4); }
+
+    regs.A -= n8;u16 c = BIT(regs.F, 4);
+}         
+
+void InstructionSet::sub_HL() {
+    u8 byte = bus.read(((u16)regs.H << 8) | (u16)regs.L);
+    emulate_cycles(1);
+
+    // flag calculations
+    if (regs.A - byte == 0) { BIT_SET(regs.F, 7); }
+    BIT_SET(regs.F, 6);
+    if ((regs.A & 0xF) < (byte & 0xF)) { BIT_SET(regs.F, 5); }
+    if (regs.A < byte) { BIT_SET(regs.F, 4); }
+
+    regs.A -= byte;
+} 
+
+void InstructionSet::adc(u8 reg) {
+    u16 c = BIT(regs.F, 4);
+    u16 val = (u16)regs.A + (u16)reg + c;
+    
+    // flag calculations
+    if ((val & 0xFF) == 0) { BIT_SET(regs.F, 7); }
+    BIT_RESET(regs.F, 6);
+    if ((regs.A & 0xF) + (reg & 0xF) + c > 0xF) { BIT_SET(regs.F, 5); }
+    if (val > 0xFF) { BIT_SET(regs.F, 4); }
+
+    regs.A = val & 0xFF;
+}
+
+void InstructionSet::adc() {
+    u16 c = BIT(regs.F, 4);
+    u8 n8 = get_n8();
+    u16 val = (u16)regs.A + (u16)n8 + c;
+    
+    // flag calculations
+    if ((val & 0xFF) == 0) { BIT_SET(regs.F, 7); }
+    BIT_RESET(regs.F, 6);
+    if ((regs.A & 0xF) + (n8 & 0xF) + c > 0xF) { BIT_SET(regs.F, 5); }
+    if (val > 0xFF) { BIT_SET(regs.F, 4); }
+
+    regs.A = val & 0xFF;
+}
+
+void InstructionSet::adc_HL() {
+    u16 c = BIT(regs.F, 4);
+    u8 byte = bus.read(((u16)regs.H << 8) | (u16)regs.L);
+    u16 val = (u16)regs.A + (u16)byte + c;
+    
+    // flag calculations
+    if ((val & 0xFF) == 0) { BIT_SET(regs.F, 7); }
+    BIT_RESET(regs.F, 6);
+    if ((regs.A & 0xF) + (byte & 0xF) + c > 0xF) { BIT_SET(regs.F, 5); }
+    if (val > 0xFF) { BIT_SET(regs.F, 4); }
+
+    regs.A = val & 0xFF;
+}
+
+void InstructionSet::sbc(u8 reg) {
+    u16 c = BIT(regs.F, 4);
+    sub(reg + c);
+}
+
+void InstructionSet::sbc() {
+    u16 c = BIT(regs.F, 4);
+    u8 n8 = get_n8();
+
+    // flag calculations
+    if (regs.A - (n8 + c) == 0) { BIT_SET(regs.F, 7); }
+    BIT_SET(regs.F, 6);
+    if ((regs.A & 0xF) < ((n8 & 0xF) + c)) { BIT_SET(regs.F, 5); }
+    if (regs.A < (n8 + c)) { BIT_SET(regs.F, 4); }
+
+    regs.A -= (n8 + c);
+}
+
+void InstructionSet::sbc_HL() {
+    u16 c = BIT(regs.F, 4);
+    u8 byte = bus.read(((u16)regs.H << 8) | (u16)regs.L);
+    emulate_cycles(1);
+
+    // flag calculations
+    if (regs.A - (byte + c) == 0) { BIT_SET(regs.F, 7); }
+    BIT_SET(regs.F, 6);
+    if ((regs.A & 0xF) < ((byte & 0xF) + c)) { BIT_SET(regs.F, 5); }
+    if (regs.A < (byte + c)) { BIT_SET(regs.F, 4); }
+
+    regs.A -= (byte + c);
+}
+
+void InstructionSet::and_A(u8 reg) {
+    regs.A &= reg;
+
+    if (regs.A == 0) { BIT_SET(regs.F,7); }
+    BIT_RESET(regs.F, 6);
+    BIT_SET(regs.F, 5);
+    BIT_RESET(regs.F, 4);
+}
+
+void InstructionSet::and_A() {
+    and_A(get_n8());
+}
+
+void InstructionSet::and_A_HL() {
+    and_A(bus.read(((u16)regs.H << 8) | (u16)regs.L));
+}
+
+void InstructionSet::or_A(u8 reg) {
+    regs.A |= reg;
+
+    if (regs.A == 0) { BIT_SET(regs.F,7); }
+    BIT_RESET(regs.F, 6);
+    BIT_RESET(regs.F, 5);
+    BIT_RESET(regs.F, 4);
+}
+
+void InstructionSet::or_A() {
+    or_A(get_n8());
+}
+
+void InstructionSet::or_A_HL() {
+    or_A(bus.read(((u16)regs.H << 8) | (u16)regs.L));
+}
+
+void InstructionSet::xor_A(u8 reg) {
+    regs.A ^= reg;
+
+    if (regs.A == 0) { BIT_SET(regs.F,7); }
+    BIT_RESET(regs.F, 6);
+    BIT_RESET(regs.F, 5);
+    BIT_RESET(regs.F, 4);
+}
+
+void InstructionSet::xor_A() {
+    xor_A(get_n8());
+}
+
+void InstructionSet::xor_A_HL() {
+    xor_A(bus.read(((u16)regs.H << 8) | (u16)regs.L));
+}
+
+void InstructionSet::cp(u8 reg) {
+    if (regs.A - reg == 0) { BIT_SET(regs.F, 7); }   
+    BIT_SET(regs.F, 6);
+    if ((regs.A & 0xF) < (reg & 0xF)) { BIT_SET(regs.F, 5); }
+    if (regs.A < reg) { BIT_SET(regs.F, 4); }
+}
+
+void InstructionSet::cp() {
+    cp(get_n8());
+}
+
+void InstructionSet::cp_HL() {
+    cp(bus.read(((u16)regs.H << 8) | (u16)regs.L));
+} 
 
 void InstructionSet::di() {
     ctx.IME = false;
