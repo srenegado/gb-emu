@@ -34,7 +34,31 @@ u16 InstructionSet::get_n16() {
     return n16;
 }
 
-void InstructionSet::nop() {}; // Do nothing
+void InstructionSet::nop() {} // Do nothing
+
+void InstructionSet::stop() {
+    std::cout << "STOPPING" << std::endl;
+}
+
+void InstructionSet::daa() {
+    // https://rgbds.gbdev.io/docs/v0.9.1/gbz80.7#DAA
+
+    u8 adjust = 0;
+    if (BIT(regs.F, 6)) {
+        if (BIT(regs.F, 5)) { adjust += 6; }
+        if (BIT(regs.F, 4)) { adjust += 0x60; }
+        regs.A -= adjust;
+    } else {
+        if (BIT(regs.F, 5) || ((regs.A & 0xF) > 0x9)) { adjust += 6; }
+        if (BIT(regs.F, 4) || (regs.A > 0x99)) { 
+            adjust += 0x60; 
+            BIT_SET(regs.F, 4);
+        }
+    }
+
+    if (regs.A == 0) { BIT_SET(regs.F, 7); }
+    BIT_RESET(regs.F, 5);
+}
 
 void InstructionSet::ld(u8 &reg1, u8 reg2) {
     reg1 = reg2;
@@ -157,6 +181,25 @@ void InstructionSet::ldh_from_A(addr_mode mode) {
         bus.write(0xFF00 + regs.C, regs.A);
     }
     emulate_cycles(1);
+}
+
+void InstructionSet::ld_SP_signed() {
+    emulate_cycles(1);
+
+    char e8 = (char)get_n8();
+
+    BIT_RESET(regs.F, 7);
+    BIT_RESET(regs.F, 6);
+    if ((regs.SP & 0xF) + (e8 & 0xF) > 0xF) { BIT_SET(regs.F, 5); }
+    if ((regs.SP & 0xFF) + (e8 & 0xFF) > 0xFF) { BIT_SET(regs.F, 4); }
+
+    regs.H = ((regs.SP + e8) >> 8) & 0xFF;
+    regs.L = (regs.SP + e8) & 0xFF;
+}
+
+void InstructionSet::ld_SP_HL() {
+    emulate_cycles(1);
+    regs.SP = ((u16)regs.H << 8) | (u16)regs.L;
 }
 
 // note: Stack grows "upside down" memory, and Game Boy memory stores
@@ -395,8 +438,8 @@ void InstructionSet::add_to_SP() {
 
     BIT_RESET(regs.F, 7);     
     BIT_RESET(regs.F, 6);
-    if ((regs.SP & 0xF) + ((u8)e8 & 0xF) > 0xF) { BIT_SET(regs.F, 5); }
-    if ((regs.SP & 0xFF) + ((u8)e8 & 0xFF) > 0xFF) { BIT_SET(regs.F, 4); }
+    if ((regs.SP & 0xF) + (e8 & 0xF) > 0xF) { BIT_SET(regs.F, 5); }
+    if ((regs.SP & 0xFF) + (e8 & 0xFF) > 0xFF) { BIT_SET(regs.F, 4); }
 
     regs.SP += e8;
 }                     
@@ -517,6 +560,45 @@ void InstructionSet::cp() {
 void InstructionSet::cp_HL() {
     cp(bus.read(((u16)regs.H << 8) | (u16)regs.L));
 } 
+
+void InstructionSet::cpl() {
+    regs.A = ~regs.A;
+    BIT_SET(regs.F, 6);
+    BIT_SET(regs.F, 5);
+}
+
+void InstructionSet::ccf() {
+    BIT_RESET(regs.F, 6);
+    BIT_RESET(regs.F, 5);
+    if (BIT(regs.F, 4)) { BIT_RESET(regs.F, 4); }
+    else { BIT_SET(regs.F, 4); }
+}
+
+void InstructionSet::scf() {
+    BIT_RESET(regs.F, 6);
+    BIT_RESET(regs.F, 5);
+    BIT_SET(regs.F, 4);
+}
+
+void InstructionSet::rlca() {
+    shift(RLC, regs.A);
+    BIT_RESET(regs.F, 7);
+}
+
+void InstructionSet::rrca() {
+    shift(RRC, regs.A);
+    BIT_RESET(regs.F, 7);
+}
+
+void InstructionSet::rla() {
+    shift(RL, regs.A);
+    BIT_RESET(regs.F, 7);
+}
+
+void InstructionSet::rra() {
+    shift(RR, regs.A);
+    BIT_RESET(regs.F, 7);
+}
 
 void InstructionSet::di() {
     ctx.IME = false;

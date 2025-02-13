@@ -71,6 +71,8 @@ class InstructionSet {
 
         // Misc.
         void nop();
+        void stop();
+        void daa();
 
         // Load instructions
         void ld(u8 &reg1, u8 reg2);             // LD r8,r8
@@ -89,6 +91,8 @@ class InstructionSet {
         void ld_from_SP();                      // LD [n16],SP
         void ldh_to_A(addr_mode mode);          // LD A,[a8] or LD A,[C]
         void ldh_from_A(addr_mode mode);        // LD [a8],A or LD [C],A
+        void ld_SP_signed();                    // LD HL,SP + e8
+        void ld_SP_HL();                        // LD SP,HL
 
         // Jumping and stack-related
         void push(u8 hi_reg, u8 lo_reg);        // PUSH r16
@@ -141,9 +145,23 @@ class InstructionSet {
         void cp(u8 reg);                        // CP A,r8
         void cp();                              // CP A,n8
         void cp_HL();                           // CP A,[HL]
+        void cpl();                             // CPL
+
+        // Carry flag instrs.
+        // CCF, SCF
+        void ccf();                             
+        void scf();
+
+        // Bit shift instrs. (non-0xCB)
+        // RLCA, RRCA, RLA, RRA
+        void rlca();
+        void rrca();
+        void rla();
+        void rra();
             
         // Interrupt-related
         void di();                              // DI
+        // void ei();                              // EI
 
         // Prefixed 0xCB instructions
 
