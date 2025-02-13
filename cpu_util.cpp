@@ -653,3 +653,43 @@ void InstructionSet::shift_HL(addr_mode mode) {
     BIT_RESET(regs.F, 6);
     BIT_RESET(regs.F, 5);
 }
+
+void InstructionSet::bit_flag(addr_mode mode, u8 bit, u8 &reg) {
+    switch (mode) {
+        case BIT:
+            if (!BIT(reg, bit)) { BIT_SET(regs.F, 7); }
+            BIT_RESET(regs.F, 6);
+            BIT_SET(regs.F, 5);
+            break;
+        case RES:
+            BIT_RESET(reg, bit);
+            break;
+        case SET:
+            BIT_SET(reg, bit);
+            break;
+    }
+}
+
+void InstructionSet::bit_flag_HL(addr_mode mode, u8 bit) {
+    u16 addr = ((u16)regs.H << 8) | (u16)regs.L;
+    u8 byte = bus.read(addr);
+    emulate_cycles(1);
+
+    switch (mode) {
+        case BIT:
+            if (!BIT(byte, bit)) { BIT_SET(regs.F, 7); }
+            BIT_RESET(regs.F, 6);
+            BIT_SET(regs.F, 5);
+            break;
+        case RES:
+            BIT_RESET(byte, bit);
+            bus.write(addr, byte);
+            emulate_cycles(1);
+            break;
+        case SET:
+            BIT_SET(byte, bit);
+            bus.write(addr, byte);
+            emulate_cycles(1);
+            break;
+    }
+}

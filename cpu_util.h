@@ -43,7 +43,10 @@ typedef enum {
     SLA,
     SRA,
     SWAP,
-    SRL
+    SRL,
+    BIT,
+    RES,
+    SET
 } addr_mode;
 
 class InstructionSet {
@@ -147,7 +150,12 @@ class InstructionSet {
         // Bit shift instructions: 
         // RLC, RRC, RL, RR, SLA, SRA, SWAP, SRL
         void shift(addr_mode mode, u8 &reg);
-        void shift_HL(addr_mode mode);        
+        void shift_HL(addr_mode mode);
+        
+        // Bit flag instructions:
+        // BIT, RES, SET
+        void bit_flag(addr_mode mode, u8 bit, u8 &reg);
+        void bit_flag_HL(addr_mode mode, u8 bit);
 };
 
 #endif
