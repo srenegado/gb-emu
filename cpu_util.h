@@ -35,7 +35,15 @@ typedef enum {
     LDH_A8,
     LDH_C,
     POP_AF,
-    RET_CC
+    RET_CC,
+    RLC,
+    RRC,
+    RL,
+    RR,
+    SLA,
+    SRA,
+    SWAP,
+    SRL
 } addr_mode;
 
 class InstructionSet {
@@ -112,10 +120,10 @@ class InstructionSet {
         void sub_HL();                          // SUB A,[HL]
         void adc(u8 reg);                       // ADC A,r8
         void adc();                             // ADC A,n8
-        void adc_HL();                          // ADC,[HL]
+        void adc_HL();                          // ADC A,[HL]
         void sbc(u8 reg);                       // SBC A,r8
         void sbc();                             // SBC A,n8
-        void sbc_HL();                          // SBC,[HL]
+        void sbc_HL();                          // SBC A,[HL]
 
         // Bit instructions
         void and_A(u8 reg);                     // AND A,r8                  
@@ -130,10 +138,16 @@ class InstructionSet {
         void cp(u8 reg);                        // CP A,r8
         void cp();                              // CP A,n8
         void cp_HL();                           // CP A,[HL]
-
+            
         // Interrupt-related
         void di();                              // DI
 
+        // Prefixed 0xCB instructions
+
+        // Bit shift instructions: 
+        // RLC, RRC, RL, RR, SLA, SRA, SWAP, SRL
+        void shift(addr_mode mode, u8 &reg);
+        void shift_HL(addr_mode mode);        
 };
 
 #endif

@@ -280,7 +280,83 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0xF7: instr_set.rst(0x30);                   break;
         case 0xFA: instr_set.ld_to_A();                   break;
         case 0xFE: instr_set.cp();                        break;
-        case 0xFF: instr_set.rst(0x38);                   break;        
+        case 0xFF: instr_set.rst(0x38);                   break;
+        
+        case 0xCB:
+            opcode = bus.read(regs.PC++);
+            std::cout << "Encountered prefixed 0xCB code: 0x" 
+                << std::hex << +opcode << std::endl;
+
+            switch (opcode) {
+                case 0x00: instr_set.shift(RLC, regs.B); break;
+                case 0x01: instr_set.shift(RLC, regs.C); break;
+                case 0x02: instr_set.shift(RLC, regs.D); break;
+                case 0x03: instr_set.shift(RLC, regs.E); break;
+                case 0x04: instr_set.shift(RLC, regs.H); break;
+                case 0x05: instr_set.shift(RLC, regs.L); break;
+                case 0x06: instr_set.shift_HL(RLC);      break;
+                case 0x07: instr_set.shift(RLC, regs.A); break;
+                case 0x08: instr_set.shift(RRC, regs.B); break;
+                case 0x09: instr_set.shift(RRC, regs.C); break;
+                case 0x0A: instr_set.shift(RRC, regs.D); break;
+                case 0x0B: instr_set.shift(RRC, regs.E); break;
+                case 0x0C: instr_set.shift(RRC, regs.H); break;
+                case 0x0D: instr_set.shift(RRC, regs.L); break;
+                case 0x0E: instr_set.shift_HL(RRC);      break;
+                case 0x0F: instr_set.shift(RRC, regs.A); break;
+
+                case 0x10: instr_set.shift(RL, regs.B); break;
+                case 0x11: instr_set.shift(RL, regs.C); break;
+                case 0x12: instr_set.shift(RL, regs.D); break;
+                case 0x13: instr_set.shift(RL, regs.E); break;
+                case 0x14: instr_set.shift(RL, regs.H); break;
+                case 0x15: instr_set.shift(RL, regs.L); break;
+                case 0x16: instr_set.shift_HL(RL);      break;
+                case 0x17: instr_set.shift(RL, regs.A); break;
+                case 0x18: instr_set.shift(RR, regs.B); break;
+                case 0x19: instr_set.shift(RR, regs.C); break;
+                case 0x1A: instr_set.shift(RR, regs.D); break;
+                case 0x1B: instr_set.shift(RR, regs.E); break;
+                case 0x1C: instr_set.shift(RR, regs.H); break;
+                case 0x1D: instr_set.shift(RR, regs.L); break;
+                case 0x1E: instr_set.shift_HL(RR);      break;
+                case 0x1F: instr_set.shift(RR, regs.A); break;
+
+                case 0x20: instr_set.shift(SLA, regs.B); break;
+                case 0x21: instr_set.shift(SLA, regs.C); break;
+                case 0x22: instr_set.shift(SLA, regs.D); break;
+                case 0x23: instr_set.shift(SLA, regs.E); break;
+                case 0x24: instr_set.shift(SLA, regs.H); break;
+                case 0x25: instr_set.shift(SLA, regs.L); break;
+                case 0x26: instr_set.shift_HL(SLA);      break;
+                case 0x27: instr_set.shift(SLA, regs.A); break;
+                case 0x28: instr_set.shift(SRA, regs.B); break;
+                case 0x29: instr_set.shift(SRA, regs.C); break;
+                case 0x2A: instr_set.shift(SRA, regs.D); break;
+                case 0x2B: instr_set.shift(SRA, regs.E); break;
+                case 0x2C: instr_set.shift(SRA, regs.H); break;
+                case 0x2D: instr_set.shift(SRA, regs.L); break;
+                case 0x2E: instr_set.shift_HL(SRA);      break;
+                case 0x2F: instr_set.shift(SRA, regs.A); break;
+
+                case 0x30: instr_set.shift(SWAP, regs.B); break;
+                case 0x31: instr_set.shift(SWAP, regs.C); break;
+                case 0x32: instr_set.shift(SWAP, regs.D); break;
+                case 0x33: instr_set.shift(SWAP, regs.E); break;
+                case 0x34: instr_set.shift(SWAP, regs.H); break;
+                case 0x35: instr_set.shift(SWAP, regs.L); break;
+                case 0x36: instr_set.shift_HL(SWAP);      break;
+                case 0x37: instr_set.shift(SWAP, regs.A); break;
+                case 0x38: instr_set.shift(SRL, regs.B); break;
+                case 0x39: instr_set.shift(SRL, regs.C); break;
+                case 0x3A: instr_set.shift(SRL, regs.D); break;
+                case 0x3B: instr_set.shift(SRL, regs.E); break;
+                case 0x3C: instr_set.shift(SRL, regs.H); break;
+                case 0x3D: instr_set.shift(SRL, regs.L); break;
+                case 0x3E: instr_set.shift_HL(SRL);      break;
+                case 0x3F: instr_set.shift(SRL, regs.A); break;
+            }
+            break;
 
         case 0xD3: case 0xE3: case 0xE4: case 0xF4: case 0xDB: 
         case 0xEB: case 0xEC: case 0xFC: case 0xDD: case 0xED: case 0xFD:

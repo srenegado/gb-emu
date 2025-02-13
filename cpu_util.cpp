@@ -349,30 +349,13 @@ void InstructionSet::add(u8 reg) {
 } 
 
 void InstructionSet::add() {
-    u8 n8 = get_n8();
-    u16 val = (u16)regs.A + (u16)n8;
-    
-    // flag calculations
-    if ((val & 0xFF) == 0) { BIT_SET(regs.F, 7); }
-    BIT_RESET(regs.F, 6);
-    if ((regs.A & 0xF) + (n8 & 0xF) > 0xF) { BIT_SET(regs.F, 5); }
-    if (val > 0xFF) { BIT_SET(regs.F, 4); }
-
-    regs.A += n8;
+    add(get_n8());
 }    
 
 void InstructionSet::add_HL() {
     u8 byte = bus.read(((u16)regs.H << 8) | (u16)regs.L);
     emulate_cycles(1);
-    u16 val = (u16)regs.A + (u16)byte;
-    
-    // flag calculations
-    if ((val & 0xFF) == 0) { BIT_SET(regs.F, 7); }   
-    BIT_RESET(regs.F, 6);
-    if ((regs.A & 0xF) + (byte & 0xF) > 0xF) { BIT_SET(regs.F, 5); }
-    if (val > 0xFF) { BIT_SET(regs.F, 4); }
-
-    regs.A += byte;
+    add(byte);
 }
 
 void InstructionSet::add16(u8 hi_reg, u8 lo_reg) {
@@ -430,69 +413,28 @@ void InstructionSet::sub(u8 reg) {
 }    
 
 void InstructionSet::sub() {
-    u8 n8 = get_n8();
-
-    // flag calculations
-    if (regs.A - n8 == 0) { BIT_SET(regs.F, 7); }
-    BIT_SET(regs.F, 6);
-    if ((regs.A & 0xF) < (n8 & 0xF)) { BIT_SET(regs.F, 5); }
-    if (regs.A < n8) { BIT_SET(regs.F, 4); }
-
-    regs.A -= n8;u16 c = BIT(regs.F, 4);
+    sub(get_n8());
 }         
 
 void InstructionSet::sub_HL() {
     u8 byte = bus.read(((u16)regs.H << 8) | (u16)regs.L);
     emulate_cycles(1);
-
-    // flag calculations
-    if (regs.A - byte == 0) { BIT_SET(regs.F, 7); }
-    BIT_SET(regs.F, 6);
-    if ((regs.A & 0xF) < (byte & 0xF)) { BIT_SET(regs.F, 5); }
-    if (regs.A < byte) { BIT_SET(regs.F, 4); }
-
-    regs.A -= byte;
+    sub(byte);
 } 
 
 void InstructionSet::adc(u8 reg) {
     u16 c = BIT(regs.F, 4);
-    u16 val = (u16)regs.A + (u16)reg + c;
-    
-    // flag calculations
-    if ((val & 0xFF) == 0) { BIT_SET(regs.F, 7); }
-    BIT_RESET(regs.F, 6);
-    if ((regs.A & 0xF) + (reg & 0xF) + c > 0xF) { BIT_SET(regs.F, 5); }
-    if (val > 0xFF) { BIT_SET(regs.F, 4); }
-
-    regs.A = val & 0xFF;
+    add(reg + c);
 }
 
 void InstructionSet::adc() {
-    u16 c = BIT(regs.F, 4);
-    u8 n8 = get_n8();
-    u16 val = (u16)regs.A + (u16)n8 + c;
-    
-    // flag calculations
-    if ((val & 0xFF) == 0) { BIT_SET(regs.F, 7); }
-    BIT_RESET(regs.F, 6);
-    if ((regs.A & 0xF) + (n8 & 0xF) + c > 0xF) { BIT_SET(regs.F, 5); }
-    if (val > 0xFF) { BIT_SET(regs.F, 4); }
-
-    regs.A = val & 0xFF;
+    adc(get_n8());
 }
 
 void InstructionSet::adc_HL() {
-    u16 c = BIT(regs.F, 4);
     u8 byte = bus.read(((u16)regs.H << 8) | (u16)regs.L);
-    u16 val = (u16)regs.A + (u16)byte + c;
-    
-    // flag calculations
-    if ((val & 0xFF) == 0) { BIT_SET(regs.F, 7); }
-    BIT_RESET(regs.F, 6);
-    if ((regs.A & 0xF) + (byte & 0xF) + c > 0xF) { BIT_SET(regs.F, 5); }
-    if (val > 0xFF) { BIT_SET(regs.F, 4); }
-
-    regs.A = val & 0xFF;
+    emulate_cycles(1);
+    adc(byte);
 }
 
 void InstructionSet::sbc(u8 reg) {
@@ -501,30 +443,13 @@ void InstructionSet::sbc(u8 reg) {
 }
 
 void InstructionSet::sbc() {
-    u16 c = BIT(regs.F, 4);
-    u8 n8 = get_n8();
-
-    // flag calculations
-    if (regs.A - (n8 + c) == 0) { BIT_SET(regs.F, 7); }
-    BIT_SET(regs.F, 6);
-    if ((regs.A & 0xF) < ((n8 & 0xF) + c)) { BIT_SET(regs.F, 5); }
-    if (regs.A < (n8 + c)) { BIT_SET(regs.F, 4); }
-
-    regs.A -= (n8 + c);
+    sbc(get_n8());
 }
 
 void InstructionSet::sbc_HL() {
-    u16 c = BIT(regs.F, 4);
     u8 byte = bus.read(((u16)regs.H << 8) | (u16)regs.L);
     emulate_cycles(1);
-
-    // flag calculations
-    if (regs.A - (byte + c) == 0) { BIT_SET(regs.F, 7); }
-    BIT_SET(regs.F, 6);
-    if ((regs.A & 0xF) < ((byte & 0xF) + c)) { BIT_SET(regs.F, 5); }
-    if (regs.A < (byte + c)) { BIT_SET(regs.F, 4); }
-
-    regs.A -= (byte + c);
+    sbc(byte);
 }
 
 void InstructionSet::and_A(u8 reg) {
@@ -595,4 +520,136 @@ void InstructionSet::cp_HL() {
 
 void InstructionSet::di() {
     ctx.IME = false;
+}
+
+void InstructionSet::shift(addr_mode mode, u8 &reg) {
+    u8 bit7 = (reg >> 7) & 0x1;
+    u8 bit0 = reg & 0x1;
+    u8 c = BIT(regs.F, 4);
+
+    switch (mode) {
+        case RLC:
+            reg = (reg << 1) | bit7;
+            if (bit7) { BIT_SET(regs.F, 4); }
+            else { BIT_RESET(regs.F, 4); }
+            break;
+        case RRC:
+            reg = (reg >> 1) | (bit0 << 7);
+            if (bit0) { BIT_SET(regs.F, 4); }
+            else { BIT_RESET(regs.F, 4); }
+            break;
+        case RL:
+            reg = (reg << 1) | c;
+            if (c) { BIT_SET(regs.F, 4); }
+            else { BIT_RESET(regs.F, 4); }
+            break;
+        case RR:
+            reg = (reg >> 1) | (c << 7);
+            if (c) { BIT_SET(regs.F, 4); }
+            else { BIT_RESET(regs.F, 4); }
+            break;
+        case SLA:
+            reg <<= 1;
+            if (bit7) { BIT_SET(regs.F, 4); }
+            else { BIT_RESET(regs.F, 4); }
+            break;
+        case SRA:
+            reg = (reg >> 1) | (bit7 << 7);
+            if (bit0) { BIT_SET(regs.F, 4); }
+            else { BIT_RESET(regs.F, 4); }
+            break;
+        case SWAP:
+            reg = (reg & 0x0F) << 4 | (reg & 0xF0) >> 4;
+            BIT_RESET(regs.F, 4);
+            break;
+        case SRL:
+            reg = (reg >> 1);
+            if (bit0) { BIT_SET(regs.F, 4); }
+            else { BIT_RESET(regs.F, 4); }
+            break;
+    }
+
+    if (reg == 0) { BIT_SET(regs.F, 7); }
+    BIT_RESET(regs.F, 6);
+    BIT_RESET(regs.F, 5);
+}
+
+void InstructionSet::shift_HL(addr_mode mode) {
+    u16 addr = ((u16)regs.H << 8) | (u16)regs.L;
+    u8 byte = bus.read(addr);
+    emulate_cycles(1);
+
+    u8 bit7 = (byte >> 7) & 0x1;
+    u8 bit0 = byte & 0x1;
+    u8 c = BIT(regs.F, 4);
+
+    switch (mode) {
+        case RLC:
+            byte = (byte << 1) | bit7;
+            bus.write(addr, byte);
+            emulate_cycles(1);
+
+            if (bit7) { BIT_SET(regs.F, 4); }
+            else { BIT_RESET(regs.F, 4); }
+            break;
+        case RRC:
+            byte = (byte >> 1) | (bit0 << 7);
+            bus.write(addr, byte);
+            emulate_cycles(1);
+
+            if (bit0) { BIT_SET(regs.F, 4); }
+            else { BIT_RESET(regs.F, 4); }
+            break;
+        case RL:
+            byte = (byte << 1) | c;
+            bus.write(addr, byte);
+            emulate_cycles(1);
+
+            if (c) { BIT_SET(regs.F, 4); }
+            else { BIT_RESET(regs.F, 4); }
+            break;
+        case RR:
+            byte = (byte >> 1) | (c << 7);
+            bus.write(addr, byte);
+            emulate_cycles(1);
+
+            if (c) { BIT_SET(regs.F, 4); }
+            else { BIT_RESET(regs.F, 4); }
+            break;
+        case SLA:
+            byte <<= 1;
+            bus.write(addr, byte);
+            emulate_cycles(1);
+
+            if (bit7) { BIT_SET(regs.F, 4); }
+            else { BIT_RESET(regs.F, 4); }
+            break;
+        case SRA:
+            byte = (byte >> 1) | (bit7 << 7);
+            bus.write(addr, byte);
+            emulate_cycles(1);
+
+            if (bit0) { BIT_SET(regs.F, 4); }
+            else { BIT_RESET(regs.F, 4); }
+            break;
+        case SWAP:
+            byte = (byte & 0x0F) << 4 | (byte & 0xF0) >> 4;
+            bus.write(addr, byte);
+            emulate_cycles(1);
+
+            BIT_RESET(regs.F, 4);
+            break;
+        case SRL:
+            byte = (byte >> 1);
+            bus.write(addr, byte);
+            emulate_cycles(1);
+
+            if (bit0) { BIT_SET(regs.F, 4); }
+            else { BIT_RESET(regs.F, 4); }
+            break;
+    }
+
+    if (byte == 0) { BIT_SET(regs.F, 7); }
+    BIT_RESET(regs.F, 6);
+    BIT_RESET(regs.F, 5);
 }
