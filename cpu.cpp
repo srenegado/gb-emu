@@ -1,6 +1,6 @@
 #include "cpu.h"
 
-CPU::CPU(MemoryBus &bus_) : bus(bus_), instr_set(regs, ctx, bus) {}
+CPU::CPU(MemoryBus &bus_) : bus(bus_), instr_set(regs, ctx, bus), int_handler(regs, ctx, bus) {}
 CPU::~CPU() {}
 
 bool CPU::step() {
@@ -26,6 +26,15 @@ bool CPU::step() {
             return false;
         }
     
+    }
+
+    if (ctx.IME) {
+        int_handler.handle_interrupts();
+    }
+
+    if (ctx.IME_next) { // Enable interrupts
+        ctx.IME = true;
+        ctx.IME_next = false;
     }
     
     return true;
@@ -290,7 +299,7 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0xF8: instr_set.ld_SP_signed();              break;
         case 0xF9: instr_set.ld_SP_HL();                  break;
         case 0xFA: instr_set.ld_to_A();                   break;
-        // case 0xFB: instr_set.ei();                        break;
+        case 0xFB: instr_set.ei();                        break;
         case 0xFE: instr_set.cp();                        break;
         case 0xFF: instr_set.rst(0x38);                   break;
         

@@ -3,7 +3,8 @@
 
 #include "common.h"
 #include "memory.h"
-#include "cpu_util.h"
+#include "instruction_set.h"
+#include "cpu_util.h" 
 
 class CPU {
     private:
@@ -11,6 +12,7 @@ class CPU {
         Registers regs;
         CpuContext ctx;
         InstructionSet instr_set;
+        InterruptHandler int_handler;
     public:
         CPU(MemoryBus &bus_);
         ~CPU();
