@@ -7,34 +7,42 @@ u8 MemoryBus::read(u16 addr) {
     if (addr < 0x8000) {
         // Reading from ROM
         return cart.read(addr);
+
     } else if (addr < 0xA000) {
         // Reading from VRAM
         std::cout << "Unsupported bus read at: " << addr << std::endl;
         return 0;
+
     } else if (addr < 0xC000) {
         // Reading from Cartridge RAM
         return cart.read(addr);
+
     } else if (addr < 0xE000) {
         // Reading from WRAM
         return ram.wram_read(addr);
+
     } else if (addr < 0xFE00) {
         // Echo RAM is reserved
         return 0;
+
     } else if (addr < 0xFEA0) {
         // Reading from OAM
         std::cout << "Unsupported bus read at: " << addr << std::endl;
         return 0;
+
     } else if (addr < 0xFF00) {
         // Not usable
         return 0;
+
     } else if (addr < 0xFF80) {
         // Reading from I/O registers
         std::cout << "Unsupported bus read at: " << addr << std::endl;
         return 0;
-    } else if (addr == 0xFF00) {
+
+    } else if (addr == 0xFFFF) {
         // Reading IE register
-        std::cout << "Unsupported bus read at: " << addr << std::endl;
-        return 0;
+        return IE;
+        
     }
 
     // Reading from HRAM
@@ -71,9 +79,9 @@ void MemoryBus::write(u16 addr, u8 val) {
         // Writing to I/O registers
         std::cout << "Unsupported bus write at: " << addr << std::endl;
         
-    } else if (addr == 0xFF00) {
+    } else if (addr == 0xFFFF) {
         // Setting IE register
-        std::cout << "Unsupported bus write at: " << addr << std::endl;
+        IE = val;
         
     } else {
         // Writing to HRAM

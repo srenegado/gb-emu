@@ -2,7 +2,6 @@
 #define CPU_UTIL_H
 
 #include "common.h"
-#include "memory.h"
 
 struct Registers {
     u8 A = 0;
@@ -23,8 +22,6 @@ struct CpuContext {
     bool halted = false;
     bool IME = false;
     bool IME_next = false;
-    u8 IE = 0;
-    u8 IF = 0;
     CpuContext();
     ~CpuContext();
 };
@@ -36,17 +33,5 @@ typedef enum {
     Serial,
     Joypad
 } interrupt_type;
-
-class InterruptHandler {
-    private:
-        Registers &regs;    
-        CpuContext &ctx;
-        MemoryBus &bus;
-    public:
-        InterruptHandler(Registers &regs_, CpuContext &ctx, MemoryBus &bus_);
-        ~InterruptHandler();
-        void handle_interrupts();
-        void service_interrupt(interrupt_type type);
-};
 
 #endif

@@ -169,6 +169,7 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0x73: instr_set.ld_to_HL(regs.E); break;
         case 0x74: instr_set.ld_to_HL(regs.H); break;
         case 0x75: instr_set.ld_to_HL(regs.L); break;
+        case 0x76: instr_set.halt();           break;
         case 0x77: instr_set.ld_to_HL(regs.A); break;
         case 0x78: instr_set.ld(regs.A, regs.B); break;
         case 0x79: instr_set.ld(regs.A, regs.C); break;

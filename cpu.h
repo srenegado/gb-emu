@@ -3,8 +3,9 @@
 
 #include "common.h"
 #include "memory.h"
-#include "instruction_set.h"
-#include "cpu_util.h" 
+#include "cpu_util.h"
+#include "instruction_set.h" 
+#include "interrupt_handler.h"
 
 class CPU {
     private:

@@ -6,8 +6,8 @@
 
 class RAM {
     private:
-        u8 wram[0x2000];
-        u8 hram[0x80];
+        u8 wram[0x2000]; // Work RAM
+        u8 hram[0x80];   // High RAM
     public:
         RAM();
         ~RAM();
@@ -22,6 +22,8 @@ class MemoryBus {
         Cartridge &cart;
         RAM ram;
     public:
+        u8 IE = 0;                   // Interrupt enable register
+        u8 IF = 0;                   // Interrupt flag register
         MemoryBus(Cartridge &cart_);
         ~MemoryBus();
         u8 read(u16 addr);

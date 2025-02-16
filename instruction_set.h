@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "cpu_util.h"
+#include "memory.h"
 
 // Addressing modes that help out with parsing in some instructions
 // note: not used by all instructions
