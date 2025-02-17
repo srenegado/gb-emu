@@ -7,17 +7,18 @@ bool CPU::step() {
     
     if (!ctx.halted) {
 
-        std::cout << "Current PC = 0x" << std::hex << regs.PC << std::endl;
-        char z = BIT(regs.F, 7) ? 'Z' : '-';
-        char n = BIT(regs.F, 6) ? 'N' : '-';
-        char h = BIT(regs.F, 5) ? 'H' : '-';
-        char c = BIT(regs.F, 4) ? 'C' : '-';
-        std::cout << "Flags set: " << z << n << h << c << std::endl;
+        std::cout << "> Current PC = 0x" << std::hex << regs.PC << std::endl;
 
         // Fetch opcode
         u8 opcode = bus.read(regs.PC++); 
         instr_set.emulate_cycles(1);
         std::cout << "Fetching opcode: 0x" << std::hex << +opcode;
+
+        char z = BIT(regs.F, 7) ? 'Z' : '-';
+        char n = BIT(regs.F, 6) ? 'N' : '-';
+        char h = BIT(regs.F, 5) ? 'H' : '-';
+        char c = BIT(regs.F, 4) ? 'C' : '-';
+        std::cout << "\tFlags set: " << z << n << h << c;
         
         // Decode and execute opcode
         std::cout << "\t-> Decoding and executing opcode...\n";

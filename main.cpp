@@ -7,7 +7,8 @@ int main(int argc, char** argv) {
     
     // Setup Game Boy components
     Cartridge cart;
-    MemoryBus bus(cart);
+    IO io;
+    MemoryBus bus(cart, io);
     CPU cpu(bus);
 
     // Load game ROM

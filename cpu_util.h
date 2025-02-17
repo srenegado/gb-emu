@@ -26,12 +26,4 @@ struct CpuContext {
     ~CpuContext();
 };
 
-typedef enum {
-    VBlank,
-    LCD_STAT,
-    Timer,
-    Serial,
-    Joypad
-} interrupt_type;
-
 #endif

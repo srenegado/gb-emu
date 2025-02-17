@@ -18,9 +18,9 @@ void InterruptHandler::service_interrupt(interrupt_type type) {
         case (VBlank):   int_handler_addr = 0x40; disable = ~0x01; break;
     }
 
-    bus.IF &= disable;  // Acknowledge interrupt
-    ctx.IME = 0;        // Prevent any further interrupts
-    ctx.halted = false; // CPU resumes after interrupt handling
+    bus.set_IF(bus.get_IF() & disable);  // Acknowledge interrupt
+    ctx.IME = 0;                         // Prevent any further interrupts
+    ctx.halted = false;                  // CPU resumes after interrupt handling
 
     // Call interrupt handler
     bus.write(--regs.SP, (regs.PC >> 8) & 0xFF);
@@ -34,12 +34,13 @@ void InterruptHandler::service_interrupt(interrupt_type type) {
 
 void InterruptHandler::handle_interrupts() {
     // emulate_cycles(2);
+    u8 IF = bus.get_IF();
 
-    bool joypad_requested = bus.IF & 0x10;
-    bool serial_requested = bus.IF & 0x08;
-    bool timer_requested  = bus.IF & 0x04;
-    bool LCD_requested    = bus.IF & 0x02;
-    bool VBlank_requested = bus.IF & 0x01;
+    bool joypad_requested = IF & 0x10;
+    bool serial_requested = IF & 0x08;
+    bool timer_requested  = IF & 0x04;
+    bool LCD_requested    = IF & 0x02;
+    bool VBlank_requested = IF & 0x01;
     bool joypad_enabled = bus.IE & 0x10;
     bool serial_enabled = bus.IE & 0x08;
     bool timer_enabled  = bus.IE & 0x04;

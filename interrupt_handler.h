@@ -5,6 +5,14 @@
 #include "memory.h"
 #include "cpu_util.h"
 
+typedef enum {
+    VBlank,
+    LCD_STAT,
+    Timer,
+    Serial,
+    Joypad
+} interrupt_type;
+
 class InterruptHandler {
     private:
         Registers &regs;    

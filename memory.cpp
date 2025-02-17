@@ -1,6 +1,6 @@
 #include "memory.h"
 
-MemoryBus::MemoryBus(Cartridge &cart_) : cart(cart_) {}
+MemoryBus::MemoryBus(Cartridge &cart_, IO &io_) : cart(cart_), io(io_) {}
 MemoryBus::~MemoryBus() {}
 
 u8 MemoryBus::read(u16 addr) {
@@ -36,8 +36,7 @@ u8 MemoryBus::read(u16 addr) {
 
     } else if (addr < 0xFF80) {
         // Reading from I/O registers
-        std::cout << "Unsupported bus read at: " << addr << std::endl;
-        return 0;
+        return io.io_read(addr);
 
     } else if (addr == 0xFFFF) {
         // Reading IE register
@@ -77,7 +76,7 @@ void MemoryBus::write(u16 addr, u8 val) {
        
     } else if (addr < 0xFF80) {
         // Writing to I/O registers
-        std::cout << "Unsupported bus write at: " << addr << std::endl;
+        io.io_write(addr, val);
         
     } else if (addr == 0xFFFF) {
         // Setting IE register
@@ -89,6 +88,14 @@ void MemoryBus::write(u16 addr, u8 val) {
 
     }
 
+}
+
+u8 MemoryBus::get_IF() {
+    return io.IF;
+}
+
+void MemoryBus::set_IF(u8 val) {
+    io.IF = val;
 }
 
 RAM::RAM() {}
@@ -116,4 +123,46 @@ void RAM::hram_write(u16 addr, u8 val) {
     u16 offset = 0xFF80;
     addr -= offset;
     hram[addr] = val;
+}
+
+IO::IO() {}
+IO::~IO() {}
+
+u8 IO::io_read(u16 addr) {
+    if (addr == 0xFF01) {
+        return serial_data[0];
+
+    } else if (addr == 0xFF02) {
+        return serial_data[1];
+
+    } else if (0xFF04 <= addr && addr <= 0xFF07) {
+        // Reading timers
+
+    } else if (addr == 0xFF0F) {
+        // Reading Interrupt flags (IF)
+        return IF;
+
+    }
+
+    std::cout << "Unsupported bus read at: " << addr << std::endl;
+    return 0;
+}
+
+void IO::io_write(u16 addr, u8 val) {
+    if (addr == 0xFF01) {
+        serial_data[0] = val;
+
+    } else if (addr == 0xFF02) {
+        serial_data[1] = val;
+
+    } else if (0xFF04 <= addr && addr <= 0xFF07) {
+        // Writing to timers
+
+    } else if (addr == 0xFF0F) {
+        // Writing to Interrupt flags (IF)
+        IF = val;
+        
+    }
+
+    std::cout << "Unsupported bus write at: " << addr << std::endl;
 }
