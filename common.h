@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdint>
+#include <iomanip>
 
 typedef uint8_t u8;
 typedef uint16_t u16;

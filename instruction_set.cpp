@@ -37,9 +37,11 @@ void InstructionSet::stop() {
 void InstructionSet::daa() {
     // https://rgbds.gbdev.io/docs/v0.9.1/gbz80.7#DAA
 
+    BIT_RESET(regs.F, 4);
+
     u8 adjust = 0;
     if (BIT(regs.F, 6)) {
-        if (BIT(regs.F, 5)) { adjust += 6; }
+        if (BIT(regs.F, 5)) { adjust += 0x6; }
         if (BIT(regs.F, 4)) { adjust += 0x60; }
         regs.A -= adjust;
     } else {
@@ -48,6 +50,7 @@ void InstructionSet::daa() {
             adjust += 0x60; 
             BIT_SET(regs.F, 4);
         }
+        regs.A += adjust;
     }
 
     if (regs.A == 0) { BIT_SET(regs.F, 7); }
@@ -565,7 +568,7 @@ void InstructionSet::xor_A_HL() {
 }
 
 void InstructionSet::cp(u8 reg) {
-    if (regs.A - reg == 0) { BIT_SET(regs.F, 7); }
+    if ((regs.A - reg) == 0) { BIT_SET(regs.F, 7); }
     else { BIT_RESET(regs.F, 7); }    
     BIT_SET(regs.F, 6);
     if ((regs.A & 0xF) < (reg & 0xF)) { BIT_SET(regs.F, 5); }
@@ -656,7 +659,7 @@ void InstructionSet::shift(addr_mode mode, u8 &reg) {
             break;
         case RR:
             reg = (reg >> 1) | (c << 7);
-            if (c) { BIT_SET(regs.F, 4); }
+            if (bit0) { BIT_SET(regs.F, 4); }
             else { BIT_RESET(regs.F, 4); }
             break;
         case SLA:
@@ -725,7 +728,7 @@ void InstructionSet::shift_HL(addr_mode mode) {
             bus.write(addr, byte);
             emulate_cycles(1);
 
-            if (c) { BIT_SET(regs.F, 4); }
+            if (bit0) { BIT_SET(regs.F, 4); }
             else { BIT_RESET(regs.F, 4); }
             break;
         case SLA:

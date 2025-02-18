@@ -19,8 +19,8 @@ class IO {
 
 class RAM {
     private:
-        u8 wram[0x2000]; // Work RAM
-        u8 hram[0x80];   // High RAM
+        u8 wram[0x2000]; // Work RAM: 0xC000 - 0xDFFF
+        u8 hram[0x80];   // High RAM: 0xFF80 - 0xFFFE
     public:
         RAM();
         ~RAM();

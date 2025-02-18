@@ -23,6 +23,7 @@ u8 MemoryBus::read(u16 addr) {
 
     } else if (addr < 0xFE00) {
         // Echo RAM is reserved
+        std::cout << "Echo ram: reading prohibited area at: 0x" << addr << std::endl;
         return 0;
 
     } else if (addr < 0xFEA0) {
@@ -32,6 +33,7 @@ u8 MemoryBus::read(u16 addr) {
 
     } else if (addr < 0xFF00) {
         // Not usable
+        std::cout << "Not usable: reading prohibited area at: 0x" << addr << std::endl;
         return 0;
 
     } else if (addr < 0xFF80) {
@@ -56,6 +58,7 @@ void MemoryBus::write(u16 addr, u8 val) {
     } else if (addr < 0xA000) {
         // Writing to VRAM
         std::cout << "Unsupported bus write at: 0x" << addr << std::endl;
+
     } else if (addr < 0xC000) {
         // Writing to Cartridge RAM
         std::cout << "Unsupported bus write at: 0x" << addr << std::endl;
@@ -66,6 +69,7 @@ void MemoryBus::write(u16 addr, u8 val) {
   
     } else if (addr < 0xFE00) {
         // Echo RAM is reserved
+        std::cout << "Echo ram: writing to prohibited area at: 0x" << addr << std::endl;
      
     } else if (addr < 0xFEA0) {
         // Writing to OAM
@@ -73,6 +77,7 @@ void MemoryBus::write(u16 addr, u8 val) {
        
     } else if (addr < 0xFF00) {
         // Not usable
+        std::cout << "Not usable: writing to prohibited area at: 0x" << addr << std::endl;
        
     } else if (addr < 0xFF80) {
         // Writing to I/O registers

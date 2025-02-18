@@ -5,6 +5,8 @@
 
 int main(int argc, char** argv) {
     
+    // std::freopen("output.txt","w",stdout);
+
     // Setup Game Boy components
     Cartridge cart;
     MemoryBus bus(cart);
