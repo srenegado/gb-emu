@@ -51,6 +51,7 @@ void InstructionSet::daa() {
     }
 
     if (regs.A == 0) { BIT_SET(regs.F, 7); }
+    else { BIT_RESET(regs.F, 7); }
     BIT_RESET(regs.F, 5);
 }
 
@@ -300,9 +301,11 @@ void InstructionSet::inc(u8 &reg) {
     u8 val = reg;
 
     // flag calculations
-    if (val == 0) { BIT_SET(regs.F, 7); }     
+    if (val == 0) { BIT_SET(regs.F, 7); }
+    else { BIT_RESET(regs.F, 7); }     
     BIT_RESET(regs.F, 6);
     if ((val & 0x0F) == 0) { BIT_SET(regs.F, 5); }
+    else { BIT_RESET(regs.F, 5); }
 }
 
 void InstructionSet::inc(u8 &hi_reg, u8 &lo_reg) {
@@ -330,8 +333,10 @@ void InstructionSet::inc_HL() {
 
     // flag calculations
     if (val == 0) { BIT_SET(regs.F, 7); }
+    else { BIT_RESET(regs.F, 7); } 
     BIT_RESET(regs.F, 6);
-    if ((val & 0x0F) == 0) { BIT_SET(regs.F, 5); }   
+    if ((val & 0x0F) == 0) { BIT_SET(regs.F, 5); }  
+    else { BIT_RESET(regs.F, 5); }  
 }
 
 void InstructionSet::dec(u8 &reg) {
@@ -339,9 +344,11 @@ void InstructionSet::dec(u8 &reg) {
     u8 val = reg;
 
     // flag calculations
-    if (val == 0) { BIT_SET(regs.F, 7); }     
+    if (val == 0) { BIT_SET(regs.F, 7); }
+    else { BIT_RESET(regs.F, 7); }      
     BIT_SET(regs.F, 6);
     if ((val & 0x0F) == 0x0F) { BIT_SET(regs.F, 5); }
+    else { BIT_RESET(regs.F, 5); } 
 }
 
 void InstructionSet::dec(u8 &hi_reg, u8 &lo_reg) {
@@ -369,8 +376,10 @@ void InstructionSet::dec_HL() {
 
     // flag calculations
     if (val == 0) { BIT_SET(regs.F, 7); }  
+    else { BIT_RESET(regs.F, 7); } 
     BIT_SET(regs.F, 6);
     if ((val & 0x0F) == 0x0F) { BIT_SET(regs.F, 5); }
+    else { BIT_RESET(regs.F, 5); } 
 }
 
 void InstructionSet::add(u8 reg) {
@@ -378,9 +387,12 @@ void InstructionSet::add(u8 reg) {
     
     // flag calculations
     if ((val & 0xFF) == 0) { BIT_SET(regs.F, 7); }
+    else { BIT_RESET(regs.F, 7); } 
     BIT_RESET(regs.F, 6);
     if ((regs.A & 0xF) + (reg & 0xF) > 0xF) { BIT_SET(regs.F, 5); }
+    else { BIT_RESET(regs.F, 5); } 
     if (val > 0xFF) { BIT_SET(regs.F, 4); }
+    else { BIT_RESET(regs.F, 4); } 
 
     regs.A += reg;
 } 
@@ -406,7 +418,9 @@ void InstructionSet::add16(u8 hi_reg, u8 lo_reg) {
     // flag calculations
     BIT_RESET(regs.F, 6);
     if ((reg & 0xFFF) + (HL & 0xFFF) > 0xFFF) { BIT_SET(regs.F, 5); }
+    else { BIT_RESET(regs.F, 5); } 
     if (val > 0xFFFF) { BIT_SET(regs.F, 4); }
+    else { BIT_RESET(regs.F, 4); } 
 
     regs.H = (u8)((val >> 8) & 0xFF);
     regs.L = (u8)(val & 0xFF);
@@ -421,7 +435,9 @@ void InstructionSet::add16() {
 
     BIT_RESET(regs.F, 6);
     if ((HL & 0xFFF) + (regs.SP & 0xFFF) > 0xFFF) { BIT_SET(regs.F, 5); }
+    else { BIT_RESET(regs.F, 5); } 
     if (val > 0xFFFF) { BIT_SET(regs.F, 4); }
+    else { BIT_RESET(regs.F, 4); } 
 
     regs.H = (u8)((val >> 8) & 0xFF);
     regs.L = (u8)(val & 0xFF);
@@ -433,7 +449,9 @@ void InstructionSet::add_to_SP() {
     BIT_RESET(regs.F, 7);     
     BIT_RESET(regs.F, 6);
     if ((regs.SP & 0xF) + (e8 & 0xF) > 0xF) { BIT_SET(regs.F, 5); }
+    else { BIT_RESET(regs.F, 5); } 
     if ((regs.SP & 0xFF) + (e8 & 0xFF) > 0xFF) { BIT_SET(regs.F, 4); }
+    else { BIT_RESET(regs.F, 4); } 
 
     regs.SP += e8;
 }                     
@@ -441,10 +459,13 @@ void InstructionSet::add_to_SP() {
 void InstructionSet::sub(u8 reg) {
     
     // flag calculations
-    if (regs.A - reg == 0) { BIT_SET(regs.F, 7); }   
+    if (regs.A - reg == 0) { BIT_SET(regs.F, 7); }
+    else { BIT_RESET(regs.F, 7); }    
     BIT_SET(regs.F, 6);
     if ((regs.A & 0xF) < (reg & 0xF)) { BIT_SET(regs.F, 5); }
+    else { BIT_RESET(regs.F, 5); } 
     if (regs.A < reg) { BIT_SET(regs.F, 4); }
+    else { BIT_RESET(regs.F, 4); } 
 
     regs.A -= reg;
 }    
@@ -493,6 +514,7 @@ void InstructionSet::and_A(u8 reg) {
     regs.A &= reg;
 
     if (regs.A == 0) { BIT_SET(regs.F,7); }
+    else { BIT_RESET(regs.F, 7); } 
     BIT_RESET(regs.F, 6);
     BIT_SET(regs.F, 5);
     BIT_RESET(regs.F, 4);
@@ -510,6 +532,7 @@ void InstructionSet::or_A(u8 reg) {
     regs.A |= reg;
 
     if (regs.A == 0) { BIT_SET(regs.F,7); }
+    else { BIT_RESET(regs.F, 7); } 
     BIT_RESET(regs.F, 6);
     BIT_RESET(regs.F, 5);
     BIT_RESET(regs.F, 4);
@@ -527,6 +550,7 @@ void InstructionSet::xor_A(u8 reg) {
     regs.A ^= reg;
 
     if (regs.A == 0) { BIT_SET(regs.F,7); }
+    else { BIT_RESET(regs.F, 7); } 
     BIT_RESET(regs.F, 6);
     BIT_RESET(regs.F, 5);
     BIT_RESET(regs.F, 4);
@@ -541,10 +565,13 @@ void InstructionSet::xor_A_HL() {
 }
 
 void InstructionSet::cp(u8 reg) {
-    if (regs.A - reg == 0) { BIT_SET(regs.F, 7); }   
+    if (regs.A - reg == 0) { BIT_SET(regs.F, 7); }
+    else { BIT_RESET(regs.F, 7); }    
     BIT_SET(regs.F, 6);
     if ((regs.A & 0xF) < (reg & 0xF)) { BIT_SET(regs.F, 5); }
+    else { BIT_RESET(regs.F, 5); } 
     if (regs.A < reg) { BIT_SET(regs.F, 4); }
+    else { BIT_RESET(regs.F, 4); } 
 }
 
 void InstructionSet::cp() {
@@ -654,6 +681,7 @@ void InstructionSet::shift(addr_mode mode, u8 &reg) {
     }
 
     if (reg == 0) { BIT_SET(regs.F, 7); }
+    else { BIT_RESET(regs.F, 7); } 
     BIT_RESET(regs.F, 6);
     BIT_RESET(regs.F, 5);
 }
@@ -734,6 +762,7 @@ void InstructionSet::shift_HL(addr_mode mode) {
     }
 
     if (byte == 0) { BIT_SET(regs.F, 7); }
+    else { BIT_RESET(regs.F, 7); } 
     BIT_RESET(regs.F, 6);
     BIT_RESET(regs.F, 5);
 }
@@ -742,6 +771,7 @@ void InstructionSet::bit_flag(addr_mode mode, u8 bit, u8 &reg) {
     switch (mode) {
         case BIT:
             if (!BIT(reg, bit)) { BIT_SET(regs.F, 7); }
+            else { BIT_RESET(regs.F, 7); } 
             BIT_RESET(regs.F, 6);
             BIT_SET(regs.F, 5);
             break;
@@ -762,6 +792,7 @@ void InstructionSet::bit_flag_HL(addr_mode mode, u8 bit) {
     switch (mode) {
         case BIT:
             if (!BIT(byte, bit)) { BIT_SET(regs.F, 7); }
+            else { BIT_RESET(regs.F, 7); } 
             BIT_RESET(regs.F, 6);
             BIT_SET(regs.F, 5);
             break;

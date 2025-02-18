@@ -14,6 +14,9 @@ class CPU {
         CpuContext ctx;
         InstructionSet instr_set;
         InterruptHandler int_handler;
+
+        char debug_msg[1024] = {0};
+        int debug_msg_size = 0;
     public:
         CPU(MemoryBus &bus_);
         ~CPU();

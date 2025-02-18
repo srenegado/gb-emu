@@ -35,17 +35,18 @@ void InterruptHandler::service_interrupt(interrupt_type type) {
 void InterruptHandler::handle_interrupts() {
     // emulate_cycles(2);
     u8 IF = bus.get_IF();
+    u8 IE = bus.get_IE();
 
     bool joypad_requested = IF & 0x10;
     bool serial_requested = IF & 0x08;
     bool timer_requested  = IF & 0x04;
     bool LCD_requested    = IF & 0x02;
     bool VBlank_requested = IF & 0x01;
-    bool joypad_enabled = bus.IE & 0x10;
-    bool serial_enabled = bus.IE & 0x08;
-    bool timer_enabled  = bus.IE & 0x04;
-    bool LCD_enabled    = bus.IE & 0x02;
-    bool VBlank_enabled = bus.IE & 0x01;
+    bool joypad_enabled = IE & 0x10;
+    bool serial_enabled = IE & 0x08;
+    bool timer_enabled  = IE & 0x04;
+    bool LCD_enabled    = IE & 0x02;
+    bool VBlank_enabled = IE & 0x01;
 
     // Highest priority is VBlank while lowest is Joypad
     if (VBlank_enabled && VBlank_requested) {

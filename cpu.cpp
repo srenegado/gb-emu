@@ -7,26 +7,34 @@ bool CPU::step() {
     
     if (!ctx.halted) {
 
-        std::cout << "> Current PC = 0x" << std::hex << regs.PC << std::endl;
+        std::cout << "PC = 0x" << std::hex << regs.PC << ":";
 
         // Fetch opcode
         u8 opcode = bus.read(regs.PC++); 
         instr_set.emulate_cycles(1);
-        std::cout << "Fetching opcode: 0x" << std::hex << +opcode;
+        std::cout << " Opcode: 0x" << std::hex << +opcode;
 
         char z = BIT(regs.F, 7) ? 'Z' : '-';
         char n = BIT(regs.F, 6) ? 'N' : '-';
         char h = BIT(regs.F, 5) ? 'H' : '-';
         char c = BIT(regs.F, 4) ? 'C' : '-';
-        std::cout << "\tFlags set: " << z << n << h << c;
-        
+        std::cout << " Flags set: " << z << n << h << c << std::endl;
+    
         // Decode and execute opcode
-        std::cout << "\t-> Decoding and executing opcode...\n";
         if (!decode_and_execute(opcode)) {
             std::cout << "CPU could not decode or execute an instruction\n";
             return false;
         }
-    
+
+        if (bus.read(0xFF02) == 0x81) {
+            char debug_c = bus.read(0xFF01);
+            debug_msg[debug_msg_size++] = debug_c;
+            bus.write(0xFF02, 0);
+        }
+
+        if (debug_msg[0]) {
+            std::cout << "Serial port: " << debug_msg << std::endl;
+        }
     }
 
     if (ctx.IME) {
@@ -110,7 +118,7 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0x3B: instr_set.dec_SP();                       break;
         case 0x3C: instr_set.inc(regs.A);                    break;
         case 0x3D: instr_set.dec(regs.A);                    break;
-        case 0x3E: instr_set.ld(regs.B);                     break;
+        case 0x3E: instr_set.ld(regs.A);                     break;
         case 0x3F: instr_set.ccf();                          break;
         
         case 0x40: instr_set.ld(regs.B, regs.B); break;

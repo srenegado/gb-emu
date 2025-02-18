@@ -7,12 +7,14 @@
 class IO {
     private:
         char serial_data[2];
+        u8 IF = 0xE1; // Interrupt flag register
     public:
-        u8 IF = 0; // Interrupt flag register
         IO();
         ~IO();
-        u8 io_read(u16 addr);
-        void io_write(u16 addr, u8 val);
+        u8 read(u16 addr);
+        void write(u16 addr, u8 val);
+        u8 get_IF();
+        void set_IF(u8 val);
 };
 
 class RAM {
@@ -31,16 +33,17 @@ class RAM {
 class MemoryBus {
     private:
         Cartridge &cart;
-        IO &io;
+        IO io;
         RAM ram;
+        u8 IE = 0x00; // Interrupt enable register
     public:
-        u8 IE = 0; // Interrupt enable register
-        MemoryBus(Cartridge &cart_, IO &io_);
+        MemoryBus(Cartridge &cart_);
         ~MemoryBus();
         u8 read(u16 addr);
         void write(u16 addr, u8 val);
         u8 get_IF();
         void set_IF(u8 val);
+        u8 get_IE();
 };
 
 #endif
