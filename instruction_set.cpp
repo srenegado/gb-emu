@@ -486,7 +486,19 @@ void InstructionSet::sub_HL() {
 
 void InstructionSet::adc(u8 reg) {
     u16 c = BIT(regs.F, 4);
-    add(reg + c);
+    u16 val = (u16)regs.A + (u16)reg + c;
+    
+    // flag calculations
+    if ((val & 0xFF) == 0) { BIT_SET(regs.F, 7); }
+    else { BIT_RESET(regs.F, 7); } 
+    BIT_RESET(regs.F, 6);
+    if ((regs.A & 0xF) + (reg & 0xF) + c > 0xF) { BIT_SET(regs.F, 5); }
+    else { BIT_RESET(regs.F, 5); } 
+    if (val > 0xFF) { BIT_SET(regs.F, 4); }
+    else { BIT_RESET(regs.F, 4); } 
+
+    regs.A += (reg + c);
+    
 }
 
 void InstructionSet::adc() {
@@ -500,8 +512,18 @@ void InstructionSet::adc_HL() {
 }
 
 void InstructionSet::sbc(u8 reg) {
-    u16 c = BIT(regs.F, 4);
-    sub(reg + c);
+    u8 c = BIT(regs.F, 4);
+    u8 val = reg + c;
+
+    if (regs.A - val == 0) { BIT_SET(regs.F, 7); }
+    else { BIT_RESET(regs.F, 7); }    
+    BIT_SET(regs.F, 6);
+    if ((int)(regs.A & 0xF) - (int)(reg & 0xF) - (int)c < 0) { BIT_SET(regs.F, 5); }
+    else { BIT_RESET(regs.F, 5); } 
+    if ((int)regs.A - (int)reg - (int)c < 0) { BIT_SET(regs.F, 4); }
+    else { BIT_RESET(regs.F, 4); } 
+
+    regs.A -= val;
 }
 
 void InstructionSet::sbc() {
