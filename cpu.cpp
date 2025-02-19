@@ -80,7 +80,7 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0x05: instr_set.dec(regs.B);               break;
         case 0x06: instr_set.ld(regs.B);                break;
         // case 0x07: instr_set.rlca();                    break;
-        // case 0x08: instr_set.ld_from_SP();              break;
+        case 0x08: instr_set.ld_from_SP();              break;
         // case 0x09: instr_set.add16(regs.B, regs.C);     break;
         // case 0x0A: instr_set.ld_to_A(regs.B, regs.C);   break;
         // case 0x0B: instr_set.dec(regs.B, regs.C);       break;
@@ -120,21 +120,21 @@ bool CPU::decode_and_execute(u8 opcode) {
         // case 0x2B: instr_set.dec(regs.H, regs.L);            break;
         case 0x2C: instr_set.inc(regs.L);                    break;
         case 0x2D: instr_set.dec(regs.L);                    break;
-        // case 0x2E: instr_set.ld(regs.L);                     break;
+        case 0x2E: instr_set.ld(regs.L);                     break;
         case 0x2F: instr_set.cpl();                          break;
         
         case 0x30: instr_set.jr(!BIT(regs.F,4));             break;
         case 0x31: instr_set.ld16(regs.SP);                  break;
         case 0x32: instr_set.ld_from_A(regs.H, regs.L, LDD); break;
-        // case 0x33: instr_set.inc_SP();                       break;
+        case 0x33: instr_set.inc_SP();                       break;
         // case 0x34: instr_set.inc_HL();                       break;
         case 0x35: instr_set.dec_HL();                       break;
         // case 0x36: instr_set.ld_to_HL();                     break;
         // case 0x37: instr_set.scf();                          break;
         case 0x38: instr_set.jr(BIT(regs.F,4));              break;
-        // case 0x39: instr_set.add16();                        break;
+        case 0x39: instr_set.add16();                        break;
         // case 0x3A: instr_set.ld_to_A(regs.H, regs.L, LDD);   break;
-        // case 0x3B: instr_set.dec_SP();                       break;
+        case 0x3B: instr_set.dec_SP();                       break;
         case 0x3C: instr_set.inc(regs.A);                    break;
         case 0x3D: instr_set.dec(regs.A);                    break;
         case 0x3E: instr_set.ld(regs.A);                     break;
@@ -170,22 +170,22 @@ bool CPU::decode_and_execute(u8 opcode) {
         // case 0x5A: instr_set.ld(regs.E, regs.D); break;
         // case 0x5B: instr_set.ld(regs.E, regs.E); break;
         // case 0x5C: instr_set.ld(regs.E, regs.H); break;
-        // case 0x5D: instr_set.ld(regs.E, regs.L); break;
-        // case 0x5E: instr_set.ld_from_HL(regs.E); break;
+        case 0x5D: instr_set.ld(regs.E, regs.L); break;
+        case 0x5E: instr_set.ld_from_HL(regs.E); break;
         case 0x5F: instr_set.ld(regs.E, regs.A); break;
 
         // case 0x60: instr_set.ld(regs.H, regs.B); break;
         // case 0x61: instr_set.ld(regs.H, regs.C); break;
-        // case 0x62: instr_set.ld(regs.H, regs.D); break;
+        case 0x62: instr_set.ld(regs.H, regs.D); break;
         // case 0x63: instr_set.ld(regs.H, regs.E); break;
         // case 0x64: instr_set.ld(regs.H, regs.H); break;
         // case 0x65: instr_set.ld(regs.H, regs.L); break;
-        // case 0x66: instr_set.ld_from_HL(regs.H); break;
+        case 0x66: instr_set.ld_from_HL(regs.H); break;
         case 0x67: instr_set.ld(regs.H, regs.A); break;
         // case 0x68: instr_set.ld(regs.L, regs.B); break;
         // case 0x69: instr_set.ld(regs.L, regs.C); break;
         // case 0x6A: instr_set.ld(regs.L, regs.D); break;
-        // case 0x6B: instr_set.ld(regs.L, regs.E); break;
+        case 0x6B: instr_set.ld(regs.L, regs.E); break;
         // case 0x6C: instr_set.ld(regs.L, regs.H); break;
         // case 0x6D: instr_set.ld(regs.L, regs.L); break;
         case 0x6E: instr_set.ld_from_HL(regs.L); break;
@@ -194,7 +194,7 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0x70: instr_set.ld_to_HL(regs.B); break;
         case 0x71: instr_set.ld_to_HL(regs.C); break;
         case 0x72: instr_set.ld_to_HL(regs.D); break;
-        // case 0x73: instr_set.ld_to_HL(regs.E); break;
+        case 0x73: instr_set.ld_to_HL(regs.E); break;
         // case 0x74: instr_set.ld_to_HL(regs.H); break;
         // case 0x75: instr_set.ld_to_HL(regs.L); break;
         // case 0x76: instr_set.halt();           break;
@@ -255,11 +255,11 @@ bool CPU::decode_and_execute(u8 opcode) {
         // case 0xAA: instr_set.xor_A(regs.D); break;
         // case 0xAB: instr_set.xor_A(regs.E); break;
         // case 0xAC: instr_set.xor_A(regs.H); break;
-        // case 0xAD: instr_set.xor_A(regs.L); break;
+        case 0xAD: instr_set.xor_A(regs.L); break;
         case 0xAE: instr_set.xor_A_HL();    break;
-        // case 0xAF: instr_set.xor_A(regs.A); break;
+        case 0xAF: instr_set.xor_A(regs.A); break;
 
-        // case 0xB0: instr_set.or_A(regs.B);  break;
+        case 0xB0: instr_set.or_A(regs.B);  break;
         case 0xB1: instr_set.or_A(regs.C);  break;
         // case 0xB2: instr_set.or_A(regs.D);  break;
         // case 0xB3: instr_set.or_A(regs.E);  break;
@@ -312,7 +312,7 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0xE5: instr_set.push(regs.H, regs.L); break;
         case 0xE6: instr_set.and_A();              break;
         // case 0xE7: instr_set.rst(0x20);            break;
-        // case 0xE8: instr_set.add_to_SP();          break;
+        case 0xE8: instr_set.add_to_SP();          break;
         case 0xE9: instr_set.jp_HL();              break;
         case 0xEA: instr_set.ld_from_A();          break;
         case 0xEE: instr_set.xor_A();              break;
@@ -325,8 +325,8 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0xF5: instr_set.push(regs.A, regs.F & 0xF0); break;
         // case 0xF6: instr_set.or_A();                      break;
         // case 0xF7: instr_set.rst(0x30);                   break;
-        // case 0xF8: instr_set.ld_SP_signed();              break;
-        // case 0xF9: instr_set.ld_SP_HL();                  break;
+        case 0xF8: instr_set.ld_SP_signed();              break;
+        case 0xF9: instr_set.ld_SP_HL();                  break;
         case 0xFA: instr_set.ld_to_A();                   break;
         // case 0xFB: instr_set.ei();                        break;
         case 0xFE: instr_set.cp();                        break;
@@ -366,7 +366,7 @@ bool CPU::decode_and_execute(u8 opcode) {
         //         case 0x18: instr_set.shift(RR, regs.B); break;
                 case 0x19: instr_set.shift(RR, regs.C); break;
                 case 0x1A: instr_set.shift(RR, regs.D); break;
-        //         case 0x1B: instr_set.shift(RR, regs.E); break;
+                case 0x1B: instr_set.shift(RR, regs.E); break;
         //         case 0x1C: instr_set.shift(RR, regs.H); break;
         //         case 0x1D: instr_set.shift(RR, regs.L); break;
         //         case 0x1E: instr_set.shift_HL(RR);      break;

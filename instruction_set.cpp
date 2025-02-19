@@ -188,7 +188,9 @@ void InstructionSet::ld_SP_signed() {
     BIT_RESET(regs.F, 7);
     BIT_RESET(regs.F, 6);
     if ((regs.SP & 0xF) + (e8 & 0xF) > 0xF) { BIT_SET(regs.F, 5); }
+    else { BIT_RESET(regs.F, 5); }
     if ((regs.SP & 0xFF) + (e8 & 0xFF) > 0xFF) { BIT_SET(regs.F, 4); }
+    else { BIT_RESET(regs.F, 4); }
 
     regs.H = ((regs.SP + e8) >> 8) & 0xFF;
     regs.L = (regs.SP + e8) & 0xFF;
