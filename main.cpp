@@ -5,7 +5,7 @@
 
 int main(int argc, char** argv) {
     
-    // std::freopen("output.txt","w",stdout);
+    // std::freopen("log.txt","w",stdout);
 
     // Setup Game Boy components
     Cartridge cart;

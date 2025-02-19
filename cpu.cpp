@@ -44,6 +44,7 @@ bool CPU::step() {
             return false;
         }
 
+        // Printing from serial port for blargg tests
         if (bus.read(0xFF02) == 0x81) {
             char debug_c = bus.read(0xFF01);
             debug_msg[debug_msg_size++] = debug_c;
@@ -130,7 +131,7 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0x35: instr_set.dec_HL();                       break;
         // case 0x36: instr_set.ld_to_HL();                     break;
         // case 0x37: instr_set.scf();                          break;
-        // case 0x38: instr_set.jr(BIT(regs.F,4));              break;
+        case 0x38: instr_set.jr(BIT(regs.F,4));              break;
         // case 0x39: instr_set.add16();                        break;
         // case 0x3A: instr_set.ld_to_A(regs.H, regs.L, LDD);   break;
         // case 0x3B: instr_set.dec_SP();                       break;
@@ -266,9 +267,9 @@ bool CPU::decode_and_execute(u8 opcode) {
         // case 0xB5: instr_set.or_A(regs.L);  break;
         case 0xB6: instr_set.or_A_HL();     break;
         case 0xB7: instr_set.or_A(regs.A);  break;
-        // case 0xB8: instr_set.cp(regs.B);    break;
-        // case 0xB9: instr_set.cp(regs.C);    break;
-        // case 0xBA: instr_set.cp(regs.D);    break;
+        case 0xB8: instr_set.cp(regs.B);    break;
+        case 0xB9: instr_set.cp(regs.C);    break;
+        case 0xBA: instr_set.cp(regs.D);    break;
         case 0xBB: instr_set.cp(regs.E);    break;
         // case 0xBC: instr_set.cp(regs.H);    break;
         // case 0xBD: instr_set.cp(regs.L);    break;
@@ -336,7 +337,7 @@ bool CPU::decode_and_execute(u8 opcode) {
             std::cout << "Encountered prefixed 0xCB code: 0x" 
                 << std::hex << +opcode << std::endl;
 
-        //     switch (opcode) {
+            switch (opcode) {
         //         case 0x00: instr_set.shift(RLC, regs.B); break;
         //         case 0x01: instr_set.shift(RLC, regs.C); break;
         //         case 0x02: instr_set.shift(RLC, regs.D); break;
@@ -363,8 +364,8 @@ bool CPU::decode_and_execute(u8 opcode) {
         //         case 0x16: instr_set.shift_HL(RL);      break;
         //         case 0x17: instr_set.shift(RL, regs.A); break;
         //         case 0x18: instr_set.shift(RR, regs.B); break;
-        //         case 0x19: instr_set.shift(RR, regs.C); break;
-        //         case 0x1A: instr_set.shift(RR, regs.D); break;
+                case 0x19: instr_set.shift(RR, regs.C); break;
+                case 0x1A: instr_set.shift(RR, regs.D); break;
         //         case 0x1B: instr_set.shift(RR, regs.E); break;
         //         case 0x1C: instr_set.shift(RR, regs.H); break;
         //         case 0x1D: instr_set.shift(RR, regs.L); break;
@@ -395,7 +396,7 @@ bool CPU::decode_and_execute(u8 opcode) {
         //         case 0x34: instr_set.shift(SWAP, regs.H); break;
         //         case 0x35: instr_set.shift(SWAP, regs.L); break;
         //         case 0x36: instr_set.shift_HL(SWAP);      break;
-        //         case 0x37: instr_set.shift(SWAP, regs.A); break;
+                case 0x37: instr_set.shift(SWAP, regs.A); break;
                 case 0x38: instr_set.shift(SRL, regs.B); break;
         //         case 0x39: instr_set.shift(SRL, regs.C); break;
         //         case 0x3A: instr_set.shift(SRL, regs.D); break;
@@ -608,8 +609,11 @@ bool CPU::decode_and_execute(u8 opcode) {
         //         case 0xFD: instr_set.bit_flag(SET, 7, regs.L); break;
         //         case 0xFE: instr_set.bit_flag_HL(SET, 7);      break;
         //         case 0xFF: instr_set.bit_flag(SET, 7, regs.A); break;
-        //     }
-        //     break;
+                default:
+                    std::cout << "Unknown 0xCB opcode: 0x" << +opcode << std::endl;
+                    return false;
+            }
+            break;
 
         case 0xD3: case 0xE3: case 0xE4: case 0xF4: case 0xDB: 
         case 0xEB: case 0xEC: case 0xFC: case 0xDD: case 0xED: case 0xFD:

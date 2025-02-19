@@ -35,27 +35,26 @@ void InstructionSet::stop() {
 }
 
 void InstructionSet::daa() {
-    // https://rgbds.gbdev.io/docs/v0.9.1/gbz80.7#DAA
+    // https://github.com/rockytriton/LLD_gbemu/blob/e6be3433526a96401f7d42b653b37ab6a955415d/part10/lib/cpu_proc.c#L201
+    
+    // As opposed to https://rgbds.gbdev.io/docs/v0.9.1/gbz80.7#DAA, the C flag does NOT reset by DAA
 
-    BIT_RESET(regs.F, 4);
+    u8 u = 0;
 
-    u8 adjust = 0;
-    if (BIT(regs.F, 6)) {
-        if (BIT(regs.F, 5)) { adjust += 0x6; }
-        if (BIT(regs.F, 4)) { adjust += 0x60; }
-        regs.A -= adjust;
-    } else {
-        if (BIT(regs.F, 5) || ((regs.A & 0xF) > 0x9)) { adjust += 6; }
-        if (BIT(regs.F, 4) || (regs.A > 0x99)) { 
-            adjust += 0x60; 
-            BIT_SET(regs.F, 4);
-        }
-        regs.A += adjust;
+    if (BIT(regs.F, 5) || (!BIT(regs.F,6) && (regs.A & 0xF) > 9)) {
+        u = 6;
+    }
+    
+    if (BIT(regs.F, 4) || (!BIT(regs.F,6) && regs.A > 0x99)) {
+        u |= 0x60;
+        BIT_SET(regs.F, 4);
     }
 
-    if (regs.A == 0) { BIT_SET(regs.F, 7); }
-    else { BIT_RESET(regs.F, 7); }
+    regs.A += BIT(regs.F,6) ? -u : u;
+    if (regs.A == 0) {BIT_SET(regs.F, 7); }
+    else {BIT_RESET(regs.F, 7); }
     BIT_RESET(regs.F, 5);
+
 }
 
 void InstructionSet::ld(u8 &reg1, u8 reg2) {
@@ -654,7 +653,7 @@ void InstructionSet::shift(addr_mode mode, u8 &reg) {
             break;
         case RL:
             reg = (reg << 1) | c;
-            if (c) { BIT_SET(regs.F, 4); }
+            if (bit7) { BIT_SET(regs.F, 4); }
             else { BIT_RESET(regs.F, 4); }
             break;
         case RR:
@@ -720,7 +719,7 @@ void InstructionSet::shift_HL(addr_mode mode) {
             bus.write(addr, byte);
             emulate_cycles(1);
 
-            if (c) { BIT_SET(regs.F, 4); }
+            if (bit7) { BIT_SET(regs.F, 4); }
             else { BIT_RESET(regs.F, 4); }
             break;
         case RR:
