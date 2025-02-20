@@ -27,7 +27,7 @@ bool Timer::tick() {
     if (timer_enabled && timer_update) {
         TIMA++;
 
-        if (TIMA == 0xFF) { 
+        if (TIMA == 0) { 
             
             // Reset TIMA if it overflows
             TIMA = TMA;

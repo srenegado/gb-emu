@@ -446,6 +446,8 @@ void InstructionSet::add16() {
 }                         
 
 void InstructionSet::add_to_SP() {
+    bus.emulate_cycles(1);
+
     char e8 = (char)get_n8();
 
     BIT_RESET(regs.F, 7);     
@@ -456,6 +458,7 @@ void InstructionSet::add_to_SP() {
     else { BIT_RESET(regs.F, 4); } 
 
     regs.SP += e8;
+    bus.emulate_cycles(1);
 }                     
 
 void InstructionSet::sub(u8 reg) {
@@ -549,6 +552,7 @@ void InstructionSet::and_A() {
 }
 
 void InstructionSet::and_A_HL() {
+    bus.emulate_cycles(1);
     and_A(bus.read(((u16)regs.H << 8) | (u16)regs.L));
 }
 
@@ -567,6 +571,7 @@ void InstructionSet::or_A() {
 }
 
 void InstructionSet::or_A_HL() {
+    bus.emulate_cycles(1);
     or_A(bus.read(((u16)regs.H << 8) | (u16)regs.L));
 }
 
@@ -585,6 +590,7 @@ void InstructionSet::xor_A() {
 }
 
 void InstructionSet::xor_A_HL() {
+    bus.emulate_cycles(1);
     xor_A(bus.read(((u16)regs.H << 8) | (u16)regs.L));
 }
 
@@ -603,6 +609,7 @@ void InstructionSet::cp() {
 }
 
 void InstructionSet::cp_HL() {
+    bus.emulate_cycles(1);
     cp(bus.read(((u16)regs.H << 8) | (u16)regs.L));
 } 
 
