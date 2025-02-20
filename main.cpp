@@ -1,66 +1,33 @@
-#include <iostream>
-#include <stdexcept>
-#include "SDL.h"
 #include "cpu.h"
+#include "cart.h"
 #include "memory.h"
-#include "graphics.h"
 
 int main(int argc, char** argv) {
-    SDL_Init(SDL_INIT_VIDEO);
-
-    CPU cpu;
-    PPU ppu;
-    Memory mem;
-
-    // Load game into ROM
-    try {
-        char *ROM = argv[1];
-        mem.load_ROM(ROM);
-    } catch (std::invalid_argument &e) {
-        std::cerr << e.what() << std::endl;
-        return -1;
-    }
     
+    // std::freopen("log.txt","w",stdout);
+
+    // Setup Game Boy components
+    Cartridge cart;
+    MemoryBus bus(cart);
+    CPU cpu(bus);
+
+    // Load game ROM
+    char *ROM = argv[1];
+    if (!cart.load_rom(ROM)) {
+        std::cout << "ROM could not be loaded\n";
+        return -1;
+    } 
+
     // Main emulation loop
     int running = 1;
-    unsigned int m_cycles = 0;
-    unsigned int m_cycles_carry = 0;
     while (running) {
-
-        // Quit if user pressed ESC
-        SDL_Event event;
-
-        while (SDL_PollEvent(&event)) {
-            switch (event.type) {
-                case (SDL_KEYDOWN):
-                    if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) 
-                        running = 0;
-                    break;
-            }
+        
+        // Fetch, decode, and execute an instruction
+        if (!cpu.step()) {
+            std::cout << "CPU could not step\n";
+            return -2;
         }
-
-        // Emulate and track M-cycles for instruction timing
-        // m_cycles = cpu.emulate_cycles(mem);
-
-        // System counter is incremented every M-cycle
-        for (int i = 0; i < m_cycles; i++ ) 
-            cpu.inc_DIV(mem);
-
-        // Adjust M-cycles for accuracy
-        m_cycles += m_cycles_carry; 
-
-        // CPU timer is incremented every  m_cycles_per_tick  M-cycles
-        if (cpu.is_timer_started(mem)) {
-            int m_cycles_per_tick = cpu.get_timer_clock_speed(mem);
-            int timer_ticks = m_cycles / m_cycles_per_tick;
-            for (int i = 0; i < timer_ticks; i++)
-                cpu.inc_TIMA(mem);
-            
-            m_cycles_carry = m_cycles % m_cycles_per_tick;
-        }
-
     }
-
-    SDL_Quit();
+    
     return 0;
-}   
+}

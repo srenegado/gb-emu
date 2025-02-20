@@ -1,4 +1,6 @@
 make: main.cpp
-	g++ main.cpp cpu.cpp graphics.cpp memory.cpp -o main `sdl2-config --cflags --libs`
+	g++ main.cpp cpu.cpp cpu_util.cpp cart.cpp memory.cpp instruction_set.cpp interrupt_handler.cpp timer.cpp -o main `sdl2-config --cflags --libs`
+debug:
+	g++ -g main.cpp cpu.cpp cpu_util.cpp cart.cpp memory.cpp instruction_set.cpp interrupt_handler.cpp timer.cpp -o main `sdl2-config --cflags --libs`
 clean:
 	rm -f main

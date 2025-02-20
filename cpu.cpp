@@ -1,2636 +1,643 @@
 #include "cpu.h"
 
-// Constructor
-Register16::Register16() {
-    hi = 0x0000;
-    lo = 0x0000;
-}
-
-// Destructor
-Register16::~Register16() {}
-
-/**
-  * Combine values in hi and lo then 
-  * return the resulting 2-byte value 
-  */
-uint16_t Register16::get_data16() const {
-    return ((uint16_t)hi << 8) | (uint16_t)lo;
-}
-
-/** 
-  * Store a 16-bit value into the register
-  */
-void Register16::set_data16(uint16_t data) {
-    hi = (uint8_t)(data >> 8);
-    lo = (uint8_t)(data & 0xFF);
-}
-
-// Addition assignment
-Register16& Register16::operator+=(Register16 reg) {
-    uint16_t sum = this->get_data16() + reg.get_data16();
-    this->hi = (uint8_t)(sum >> 8);
-    this->lo = (uint8_t)(sum & 0xFF);
-    return *this;
-}
-
-// Postfix increment
-Register16 Register16::operator++(int) {
-    // Store temp state to return later
-    Register16 temp = *this;
-
-    // Combine hi and lo into 16-bit value, and increment it
-    uint16_t full_value = ((uint16_t)hi << 8) | (uint16_t)lo;
-    full_value++;
-
-    // Update hi and lo
-    hi = (uint8_t)(full_value >> 8);   // msb
-    lo = (uint8_t)(full_value & 0xFF); // lsb
-
-    return temp;
-}
-
-// Postfix decrement
-Register16 Register16::operator--(int) {
-    // Store temp state to return later
-    Register16 temp = *this;
-
-    // Combine hi and lo into 16-bit value, and increment it
-    uint16_t full_value = ((uint16_t)hi << 8) | (uint16_t)lo;
-    full_value--;
-
-    // Update hi and lo
-    hi = (uint8_t)(full_value >> 8);   // msb
-    lo = (uint8_t)(full_value & 0xFF); // lsb
-
-    return temp;
-}
-
-
-/** 
-  * Opcodes
-  * 
-  * Each opcode returns the number of M-cycles they use
-  */ 
-#define B BC.hi
-#define C BC.lo
-#define D DE.hi
-#define E DE.lo
-#define H HL.hi
-#define L HL.lo
-#define A AF.hi
-#define F AF.lo
-
-/**
-  * Load value in src register into dest resigter
-  */
-uint32_t CPU::LD_R8_R8(Register8 &dest, Register8 src) {
-    dest = src;
-    return 1;
-}
-
-/**
-  * Store value in src register into memory[HL]
-  */
-uint32_t CPU::LD_HL_R8(Register8 src, Memory &mem) {
-    uint16_t addr = HL.get_data16();
-    if (addr == 0xFF04) { // Write to DIV resets it
-        mem.write(addr, 0x00);
-        DIV = 0;
-    } else {
-        mem.write(addr, src);
-    }
-    return 2;
-}
-
-/**
-  * Load value in memory[HL] into dest register
-  */
-uint32_t CPU::LD_R8_HL(Register8 &dest, Memory &mem) {
-    dest = mem.read(HL.get_data16());
-    return 2;
-}
-
-/**
-  * Load immediate 8-bit value n8 into dest register
-  *
-  * Assumes PC is pointing to n8 before call
-  */
-uint32_t CPU::LD_R8_n8(Register8 &dest, Memory &mem) {
-    
-    // Get n8 and move PC to next instruction
-    uint8_t n8 = mem.read(PC++);
-
-    dest = n8;
-    return 2;
-}
-
-/**
-  * Store immediate 8-bit value n8 into memory[HL]
-  *
-  * Assumes PC is pointing to n8 before call 
-  */
-uint32_t CPU::LD_HL_n8(Memory &mem) {
-
-    // Get n8 and move PC to next instruction
-    uint8_t n8 = mem.read(PC++);
-
-    uint16_t addr = HL.get_data16();
-    if (addr == 0xFF04) { // Write to DIV resets it
-        mem.write(addr, 0x00);
-        DIV = 0;
-    } else {
-        mem.write(addr, n8);
-    }
-
-    return 3;
-}
-
-/** 
-  * Store value in register A into memory[dest]
-  */
-uint32_t CPU::LD_R16_A(const Register16 &dest, Memory &mem) {
-    uint16_t addr = dest.get_data16();
-    if (addr == 0xFF04) { // Write to DIV resets it
-        mem.write(addr, 0x00);
-        DIV = 0;
-    } else {
-        mem.write(addr, A);
-    }
-    return 2;
-}
-
-/**
-  * Load value in memory[dest] into register A 
-  */
-uint32_t CPU::LD_A_R16(const Register16 &dest, Memory &mem) {
-    A = mem.read(dest.get_data16());
-    return 2;    
-}
-
-/**
-  * Load the immediate little-endian 16-bit value n16 into dest register
-  *
-  * Assumes PC is pointing to n16 before call 
-  */
-uint32_t CPU::LD_R16_n16(Register16 &dest, Memory &mem) {
-    
-    // Get n16 and move PC to next instruction
-    uint8_t lsb = mem.read(PC++);
-    uint8_t msb = mem.read(PC++);
-    uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb; 
-    
-    dest.set_data16(n16);
-    return 3;
-}
-
-/** 
-  * Store the value in SP into memory[n16], where n16 is the
-  * immediate little-endian 16-bit value
-  *
-  * Assumes PC is pointing to n16 before call
-  */
-uint32_t CPU::LD_n16_SP(Memory &mem) {
-    
-    // Get n16 and move PC to next instruction
-    uint8_t lsb = mem.read(PC++);
-    uint8_t msb = mem.read(PC++);
-    uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb;
-
-    // Store least significant byte first
-
-    if (n16 == 0xFF04) { // Write to DIV resets it
-        mem.write(n16, 0x00);
-        DIV = 0;
-    } else {
-        mem.write(n16, SP.lo);
-    }
-
-    if (n16 + 1 == 0xFF04) { // Write to DIV resets it
-        mem.write(n16 + 1, 0x00);
-        DIV = 0;
-    } else {
-        mem.write(n16 + 1, SP.hi);
-    }
-
-    return 5;
-}
-
-/** 
-  * Store the value in register A into memory[n16], where n16 is the
-  * immediate little-endian 16-bit value
-  *
-  * Assumes PC is pointing to n16 before call
-  */
-uint32_t CPU::LD_n16_A(Memory &mem) {
-    
-    // Get n16 and move PC to next instruction
-    uint8_t lsb = mem.read(PC++);
-    uint8_t msb = mem.read(PC++);
-    uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb;
-
-    if (n16 == 0xFF04) { // Write to DIV resets it
-        mem.write(n16, 0x00);
-        DIV = 0;
-    } else {
-        mem.write(n16, A);
-    }
-
-    return 4;
-}
-
-/** 
-  * Load the value in memory[n16] into register A, where n16 is the
-  * immediate little-endian 16-bit value
-  *
-  * Assumes PC is pointing to n16 before call
-  */
-uint32_t CPU::LD_A_n16(Memory &mem) {
-    
-    // Get n16 and move PC to next instruction
-    uint8_t lsb = mem.read(PC++);
-    uint8_t msb = mem.read(PC++);
-    uint16_t n16 = ((uint16_t)msb << 8) | (uint16_t)lsb;
-
-    A = mem.read(n16);
-
-    return 4;
-}
-
-/**
-  * Load value in HL into SP 
-  */
-uint32_t CPU::LD_SP_HL() {
-    SP.set_data16(HL.get_data16());
-    return 2;
-}
-
-/**
-  * Store value in register A into memory[0xFF00 + C]
-  */
-uint32_t CPU::LDH_C_A(Memory &mem) {
-    uint16_t addr = 0xFF00 + (uint16_t)C;
-    if (addr == 0xFF04) { // Write to DIV resets it
-        mem.write(addr, 0x00);
-        DIV = 0;
-    } else {
-        mem.write(addr, A);
-    }
-    return 2;
-}
-
-/**
-  * Load value in memory[0xFF00 + C] into register A 
-  */
-uint32_t CPU::LDH_A_C(Memory &mem) {
-    A = mem.read(0xFF00 + (uint16_t)C);
-    return 2;
-}
-
-/*
-  * Store value in register A into memory[0xFF00 + n8] where n8 is
-  * the immediate 8-bit value
-  * 
-  * Assumes PC is pointing to n8 before call
-  */
-uint32_t CPU::LDH_n8_A(Memory &mem) {
-
-    // Get n8 and move PC to next instruction
-    uint8_t n8 = mem.read(PC++);
-
-    uint16_t addr = 0xFF00 + (uint16_t)n8;
-    if (addr == 0xFF04) {
-        mem.write(addr, 0x00);
-        DIV = 0;
-    } else {
-        mem.write(addr, A);
-    }
-
-    return 3;
-}
-
-/**
-  * Load value in memory[0xFF00 + n8] into register A where n8 is
-  * the immediate 8-bit value
-  * 
-  * Assumes PC is pointing to n8 before call
-  */
-uint32_t CPU::LDH_A_n8(Memory &mem) {
-
-    // Get n8 and move PC to next instruction
-    uint8_t n8 = mem.read(PC++);
-
-    A = mem.read(0xFF00 + (uint16_t)n8);
-    return 3;
-}
-
-/**
-  * Load SP + e8 into HL, where e8 is the immediate signed 8-bit value
-  * Reset Z and N flags.  The flags H and C are set accordingly
-  * 
-  * Assumes PC is point to n8 before call
-  */
-uint32_t CPU::LD_HL_SP_e8(Memory &mem) {
-    
-    // Get e8 and move PC to next instruction
-    int8_t e8 = (int8_t) mem.read(PC++);
-
-    F &= 0x7F; // Reset Z
-    F &= 0xBF; // Reset N
-
-    uint8_t set_H = (SP.lo & 0x0F) + ((uint8_t)e8 & 0x0F) > 0xF;
-    if (set_H) 
-        F |= 0x20; // Set H
-    
-    uint8_t set_C = ((uint8_t)e8 + SP.lo) > 0xFF;
-    if (set_C) 
-        F |= 0x10; // Set C
-
-    HL.set_data16(SP.get_data16() + e8);
-
-    return 3;
-}
-
-/** 
-  * Increment value in register by 1
-  */
-uint32_t CPU::INC_R16(Register16 &reg) {
-    reg++;
-    return 2;
-}
-
-/** 
-  * Decrement value in register by 1
-  */
-uint32_t CPU::DEC_R16(Register16 &reg) {
-    reg--;
-    return 2;
-}
-
-/**
-  * Add value in register to HL
-  *
-  * Reset N flag. Set H and C flag appropriately
-  */
-uint32_t CPU::ADD_HL_R16(Register16 &reg) {
-    F &= 0xBF; // Reset N
-
-    uint16_t HL_data16 = HL.get_data16();
-    uint16_t reg_data16 = reg.get_data16();
-
-    uint8_t set_H = (HL_data16 & 0x0FFF) + (reg_data16 & 0x0FFF) > 0x0FFF;
-    if (set_H) 
-        F |= 0x20; // Set H
-    
-    
-    uint8_t set_C = HL_data16 + reg_data16 > 0xFFFF;
-    if (set_C) 
-        F |= 0x10; // Set C
-    
-    HL += reg;
-    return 2;
-}
-
-/**
-  * Increment register by 1
-  *
-  * Reset N flag. Set Z and H flag accordingly
-  */
-uint32_t CPU::INC_R8(Register8 &reg) {
-
-    F &= 0xBF; // Reset N
-    
-    uint8_t set_Z = (reg + 0x01) == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z            
-
-    uint8_t set_H = (reg & 0xF) + 0x1 > 0xF;
-    if (set_H) {
-        F |= 0x20; // Set H
-    }
-
-    reg++;
-    return 1;
-}
-
-/**
-  * Increment memory[HL] by 1
-  *
-  * Reset N flag. Set Z and H flag accordingly
-  */
-uint32_t CPU::INC_HL(Memory &mem) {
-    uint8_t HLmem = mem.read(HL.get_data16());
-
-    F &= 0xBF; // Reset N
-    
-    uint8_t set_Z = HLmem + 0x01 == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z           
-
-    uint8_t set_H = (HLmem & 0xF) + 0x1 > 0xF;
-    if (set_H) 
-        F |= 0x20; // Set H
-    
-    mem.write(HL.get_data16(), HLmem + 0x01);
-    return 3;
-}
-
-/**
-  * Decrement register by 1
-  *
-  * Set N flag. Set Z and H flag accordingly
-  */
-uint32_t CPU::DEC_R8(Register8 &reg) {
-    F != 0x40; // Set N
-
-    uint8_t set_Z = reg - 0x01 == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z            
-
-    uint8_t set_H = reg & 0xF < 0x1 ; 
-    if (set_H) 
-        F |= 0x20; // Set H
-
-    reg--;
-    return 1;
-}
-
-/**
-  * Decrement memory[HL] by 1
-  *
-  * Set N flag. Set Z and H flag accordingly
-  */
-uint32_t CPU::DEC_HL(Memory &mem) {
-    uint8_t HLmem = mem.read(HL.get_data16());
-
-    F != 0x40; // Set N
-    
-    uint8_t set_Z = HLmem - 0x01 == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z           
-
-    uint8_t set_H = HLmem & 0xF < 0x1 ;
-    if (set_H) 
-        F |= 0x20; // Set H
-
-    mem.write(HL.get_data16(), HLmem - 0x01);
-    return 3;
-}
-
-/** 
-  * Add value in register to A
-  *
-  * Reset N flag. Set Z, H, and C flags accordingly
-  */
-uint32_t CPU::ADD_A_R8(Register8 reg) {
-    F &= 0xBF; // Reset N
-
-    uint8_t set_Z = A + reg == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-
-    uint8_t set_H = (A & 0xF) + (reg & 0xF) > 0xF;
-    if (set_H) 
-        F |= 0x20; // Set H
-
-    uint8_t set_C = A + reg > 0xFF;
-    if (set_C) 
-        F |= 0x10; // Set C
-    
-    A += reg;
-    return 1;
-}
-
-/** 
-  * Add value in memory[HL] to A
-  *
-  * Reset N flag. Set Z, H, and C flags accordingly
-  */
-uint32_t CPU::ADD_A_HL(Memory &mem) {
-    F &= 0xBF; // Reset N
-
-    uint8_t HLmem = mem.read(HL.get_data16());
-
-    uint8_t set_Z = A + HLmem == 0; 
-    if (set_Z)
-        F |= 0x80; // Set Z
-
-    uint8_t set_H = (A & 0xF) + (HLmem & 0xF) > 0xF;
-    if (set_H) 
-        F |= 0x20; // Set H
-
-    uint8_t set_C = A + HLmem > 0xFF;
-    if (set_C) 
-        F |= 0x10; // Set C
-
-    A += HLmem;
-    return 2;
-}
-
-/** 
-  * Add value in register plus the carry flag to A
-  *
-  * Reset N flag. Set Z, H, and C flags accordingly
-  */
-uint32_t CPU::ADC_A_R8(Register8 reg) {
-    // Get C flag value
-    uint8_t carry = (F & 0x10) ? 1 : 0;
-    
-    F &= 0xBF; // Reset N
-
-    uint8_t set_Z = A + reg + carry == 0; 
-    if (set_Z)
-        F |= 0x80; // Set Z    
-    
-    uint8_t set_H = (A & 0xF) + (reg & 0xF) + carry > 0xF;
-    if (set_H) 
-        F |= 0x20; // Set H
-    
-    uint8_t set_C = A + reg + carry > 0xFF;
-    if (set_C) 
-        F |= 0x10; // Set C
-        
-    A += (reg + carry);
-    return 1;
-}
-
-/** 
-  * Add value in memory[HL] plus the carry flag to A
-  *
-  * Reset N flag. Set Z, H, and C flags accordingly
-  */
-uint32_t CPU::ADC_A_HL(Memory &mem) {
-    uint8_t HLmem = mem.read(HL.get_data16());
-
-    // Get C flag value
-    uint8_t carry = (F & 0x10) ? 1 : 0;
-
-    F &= 0xBF; // Reset N
-
-    uint8_t set_Z = A + HLmem + carry == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z   
-
-    uint8_t set_H = (A & 0xF) + (HLmem & 0xF) + carry > 0xF;
-    if (set_H) 
-        F |= 0x20; // Set H
-
-    uint8_t set_C = A + HLmem + carry > 0xFF;
-    if (set_C)
-        F |= 0x10; // Set C
-
-    A += (HLmem + carry);
-    return 2;
-}
-
-/** 
-  * Subtract value in register from A
-  *
-  * Set N flag. Set Z, H, and C flags accordingly
-  */
-uint32_t CPU::SUB_A_R8(Register8 reg) {
-    F != 0x40; // Set N
-
-    uint8_t set_Z = A - reg == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-
-    uint8_t set_H = (A & 0xF) < (reg & 0xF);
-    if (set_H) 
-        F |= 0x20; // Set H
-
-    uint8_t set_C = A < reg;
-    if (set_C) 
-        F |= 0x10; // Set C
-    
-    A -= reg;
-    return 1;
-}
-
-/** 
-  * Subtract value in memory[HL] from A
-  *
-  * Set N flag. Set Z, H, and C flags accordingly
-  */
-uint32_t CPU::SUB_A_HL(Memory &mem) {
-    uint8_t HLmem = mem.read(HL.get_data16());
-
-    F != 0x40; // Set N
-
-    uint8_t set_Z = A - HLmem == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-
-    uint8_t set_H = (A & 0xF) < (HLmem & 0xF);
-    if (set_H) 
-        F |= 0x20; // Set H
-
-    uint8_t set_C = A < HLmem;
-    if (set_C) 
-        F |= 0x10; // Set C
-    
-    A -= HLmem;
-    return 2;
-}
-
-/** 
-  * Subtract value in register and carry flag from A
-  *
-  * Set N flag. Set Z, H, and C flags accordingly
-  */
-uint32_t CPU::SBC_A_R8(Register8 reg) {
-    // Get C flag value
-    uint8_t carry = (F & 0x10) ? 1 : 0;
-
-    F != 0x40; // Set N
-
-    uint8_t set_Z = A - reg - carry == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-
-    uint8_t set_H = (A & 0xF) < (reg & 0xF + carry);
-    if (set_H) 
-        F |= 0x20; // Set H
-
-    uint8_t set_C = A < (reg + carry);
-    if (set_C) 
-        F |= 0x10; // Set C
-    
-    A -= (reg + carry);
-    return 1;
-}
-
-/** 
-  * Subtract value in memory[HL] and carry flag from A
-  *
-  * Set N flag. Set Z, H, and C flags accordingly
-  */
-uint32_t CPU::SBC_A_HL(Memory &mem) {
-    uint8_t HLmem = mem.read(HL.get_data16());
-
-    // Get C flag value
-    uint8_t carry = (F & 0x10) ? 1 : 0;
-
-    F != 0x40; // Set N
-
-    uint8_t set_Z = A - HLmem - carry == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-
-    uint8_t set_H = (A & 0xF) < (HLmem & 0xF + carry);
-    if (set_H) 
-        F |= 0x20; // Set H
-
-    uint8_t set_C = A < (HLmem + carry);
-    if (set_C) 
-        F |= 0x10; // Set C
-    
-    A -= (HLmem + carry);
-    return 2;
-}
-
-/** 
-  * Bitwise AND the value in register to A
-  *
-  * Reset N and C flags. Set H flag. Set Z flag accordingly.
-  */
-uint32_t CPU::AND_A_R8(Register8 reg) {
-    F &= 0xBF; // Reset N
-    F |= 0x20; // Set H
-    F &= 0xEF; // Reset C
-    
-    uint8_t set_Z = A & reg == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-    
-    A &= reg;
-    return 1;
-}
-
-/** 
-  * Bitwise AND the value in memory[HL] to A
-  *
-  * Reset N and C flags. Set H flag. Set Z flag accordingly.
-  */
-uint32_t CPU::AND_A_HL(Memory &mem) {
-    uint8_t HLmem = mem.read(HL.get_data16());
-
-    F &= 0xBF; // Reset N
-    F |= 0x20; // Set H
-    F &= 0xEF; // Reset C
-    
-    uint8_t set_Z = A & HLmem == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-    
-    A &= HLmem;
-    return 2;
-}
-
-/** 
-  * Bitwise XOR the value in register to A
-  *
-  * Reset N, H, and C flags. Set Z flag accordingly.
-  */
-uint32_t CPU::XOR_A_R8(Register8 reg) {
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    F &= 0xEF; // Reset C
-    
-    uint8_t set_Z = A ^ reg == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-    
-    A ^= reg;
-    return 1;
-}
-
-/** 
-  * Bitwise XOR the value in memory[HL] to A
-  *
-  * Reset N, H, and C flags. Set Z flag accordingly.
-  */
-uint32_t CPU::XOR_A_HL(Memory &mem) {
-    uint8_t HLmem = mem.read(HL.get_data16());
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    F &= 0xEF; // Reset C
-    
-    uint8_t set_Z = A ^ HLmem == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-    
-    A ^= HLmem;
-    return 2;
-}
-
-/** 
-  * Bitwise OR the value in register to A
-  *
-  * Reset N, H, and C flags. Set Z flag accordingly.
-  */
-uint32_t CPU::OR_A_R8(Register8 reg) {
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    F &= 0xEF; // Reset C
-    
-    uint8_t set_Z = A | reg == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-    
-    A |= reg;
-    return 1;
-}
-
-/** 
-  * Bitwise OR the value in memory[HL] to A
-  *
-  * Reset N, H, and C flags. Set Z flag accordingly.
-  */
-uint32_t CPU::OR_A_HL(Memory &mem) {
-    uint8_t HLmem = mem.read(HL.get_data16());
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    F &= 0xEF; // Reset C
-    
-    uint8_t set_Z = A | HLmem == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-    
-    A |= HLmem;
-    return 2;
-}
-
-/** 
-  * Subtract value in register to A, but don't store the result
-  *
-  * Set N flag. Set Z, H, and C flags accordingly
-  */
-uint32_t CPU::CP_A_R8(Register8 reg) {
-    F != 0x40; // Set N
-
-    uint8_t set_Z = A - reg == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-
-    uint8_t set_H = (A & 0xF) < (reg & 0xF);
-    if (set_H) 
-        F |= 0x20; // Set H
-
-    uint8_t set_C = A < reg ;
-    if (set_C) 
-        F |= 0x10; // Set C
-    
-    return 1;
-}
-
-/** 
-  * Subtract value in memory[HL] from A, but don't store the result
-  *
-  * Set N flag. Set Z, H, and C flags accordingly
-  */
-uint32_t CPU::CP_A_HL(Memory &mem) {
-    uint8_t HLmem = mem.read(HL.get_data16());
-
-    F != 0x40; // Set N
-
-    uint8_t set_Z = A - HLmem == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-
-    uint8_t set_H = (A & 0xF) < (HLmem & 0xF) ;
-    if (set_H) 
-        F |= 0x20; // Set H
-
-    uint8_t set_C = A < HLmem ;
-    if (set_C) 
-        F |= 0x10; // Set C
-    
-    return 2;
-}
-
-/** 
-  * Add value n8 to A, where n8 is the immediate 8-bit value
-  *
-  * Reset N flag. Set Z, H, and C flags accordingly
-  *
-  * Assumes PC is pointing to n8 before call
-  */
-uint32_t CPU::ADD_A_n8(Memory &mem) {
-    // Get n8 and move PC to next instruction
-    uint8_t n8 = mem.read(PC++);
-
-    F &= 0xBF; // Reset N
-
-    uint8_t set_Z = A + n8 == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-
-    uint8_t set_H = (A & 0xF) + (n8 & 0xF) > 0xF;
-    if (set_H) 
-        F |= 0x20; // Set H
-
-    uint8_t set_C = A + n8 > 0xFF;
-    if (set_C) 
-        F |= 0x10; // Set C
-    
-    A += n8;
-    return 2;
-}
-
-/** 
-  * Add value n8 plus the carry flag to A, where n8 is the immediate 8-bit value
-  *
-  * Reset N flag. Set Z, H, and C flags accordingly
-  *
-  * Assumes PC is pointing to n8 before call
-  */
-uint32_t CPU::ADC_A_n8(Memory &mem) {
-    // Get n8 and move PC to next instruction
-    uint8_t n8 = mem.read(PC++);
-
-    // Get C flag value
-    uint8_t carry = (F & 0x10) ? 1 : 0;
-    
-    F &= 0xBF; // Reset N
-
-    uint8_t set_Z = A + n8 + carry == 0; 
-    if (set_Z)
-        F |= 0x80; // Set Z    
-    
-    uint8_t set_H = (A & 0xF) + (n8 & 0xF) + carry > 0xF;
-    if (set_H) 
-        F |= 0x20; // Set H
-    
-    uint8_t set_C = A + n8 + carry > 0xFF;
-    if (set_C) 
-        F |= 0x10; // Set C
-        
-    A += (n8 + carry);
-    return 2;
-}
-
-/** 
-  * Subtract value n8 to A, where n8 is the immediate 8-bit value
-  *
-  * Set N flag. Set Z, H, and C flags accordingly
-  *
-  * Assumes PC is pointing to n8 before call
-  */
-uint32_t CPU::SUB_A_n8(Memory &mem) {
-    // Get n8 and move PC to next instruction
-    uint8_t n8 = mem.read(PC++);
-
-    F != 0x40; // Set N
-
-    uint8_t set_Z = A - n8 == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-
-    uint8_t set_H = (A & 0xF) < (n8 & 0xF) ;
-    if (set_H) 
-        F |= 0x20; // Set H
-
-    uint8_t set_C = A < n8 ;
-    if (set_C) 
-        F |= 0x10; // Set C
-    
-    A -= n8;
-    return 2;
-}
-
-/** 
-  * Subtract value n8 and carry flag from A, where n8 is the immediate 8-bit value
-  *
-  * Set N flag. Set Z, H, and C flags accordingly
-  *
-  * Assumes PC is pointing to n8 before call
-  */
-uint32_t CPU::SBC_A_n8(Memory &mem) {
-    // Get n8 and move PC to next instruction
-    uint8_t n8 = mem.read(PC++);
-
-    // Get C flag value
-    uint8_t carry = (F & 0x10) ? 1 : 0;
-
-    F != 0x40; // Set N
-
-    uint8_t set_Z = A - n8 - carry == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-
-    uint8_t set_H = (A & 0xF) < (n8 & 0xF + carry) ;
-    if (set_H) 
-        F |= 0x20; // Set H
-
-    uint8_t set_C = A < (n8 + carry) ;
-    if (set_C) 
-        F |= 0x10; // Set C
-    
-    A -= (n8 + carry);
-    return 2;
-}
-
-/** 
-  * Bitwise AND the value n8 to A, where n8 is the immediate 8-bit value
-  *
-  * Reset N and C flags. Set H flag. Set Z flag accordingly.
-  *
-  * Assumes PC is pointing to n8 before call
-  */
-uint32_t CPU::AND_A_n8(Memory &mem) {
-    // Get n8 and move PC to next instruction
-    uint8_t n8 = mem.read(PC++);
-
-    F &= 0xBF; // Reset N
-    F |= 0x20; // Set H
-    F &= 0xEF; // Reset C
-    
-    uint8_t set_Z = A & n8 == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-    
-    A &= n8;
-    return 2;
-}
-
-/** 
-  * Bitwise XOR the value n8 to A, where n8 is the immediate 8-bit value
-  *
-  * Reset N, H, and C flags. Set Z flag accordingly.
-  *
-  * Assumes PC is pointing to n8 before call
-  */
-uint32_t CPU::XOR_A_n8(Memory &mem) {
-    // Get n8 and move PC to next instruction
-    uint8_t n8 = mem.read(PC++);
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    F &= 0xEF; // Reset C
-    
-    uint8_t set_Z = A ^ n8 == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-    
-    A ^= n8;
-    return 2;
-}
-
-/** 
-  * Bitwise OR the value n8 to A,  where n8 is the immediate 8-bit value
-  *
-  * Reset N, H, and C flags. Set Z flag accordingly.
-  *
-  * Assumes PC is pointing to n8 before call
-  */
-uint32_t CPU::OR_A_n8(Memory &mem) {
-    // Get n8 and move PC to next instruction
-    uint8_t n8 = mem.read(PC++);
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    F &= 0xEF; // Reset C
-    
-    uint8_t set_Z = A | n8 == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-    
-    A |= n8;
-    return 2;
-}
-
-/** 
-  * Subtract value n8 to A, but don't store the result, 
-  * where n8 is the immediate 8-bit value
-  *
-  * Set N flag. Set Z, H, and C flags accordingly
-  *
-  * Assumes PC is pointing to n8 before call
-  */
-uint32_t CPU::CP_A_n8(Memory &mem) {
-    // Get n8 and move PC to next instruction
-    uint8_t n8 = mem.read(PC++);
-
-    F != 0x40; // Set N
-
-    uint8_t set_Z = A - n8 == 0;
-    if (set_Z)
-        F |= 0x80; // Set Z
-
-    uint8_t set_H = (A & 0xF) < (n8 & 0xF);
-    if (set_H) 
-        F |= 0x20; // Set H
-
-    uint8_t set_C = A < n8;
-    if (set_C) 
-        F |= 0x10; // Set C
-    
-    return 2;
-}
-
-/** 
-  * Push address of next instruction onto the stack, then jump to address n16,
-  * where n16 is the immediate little-endian 16-bit value
-  *
-  * Assumes PC is pointing to n16 before call
-  */
-uint32_t CPU::CALL_n16(Memory &mem) {
-    // Get bytes of n16 and move PC to next instruction
-    uint16_t lsb = mem.read(PC++);
-    uint16_t msb = mem.read(PC++);
-
-    // PC now is loaded with address of next instruction
-
-    // Push PC onto stack
-    SP--;
-    mem.write(SP.get_data16(), PC >> 8);   // msb of PC
-    SP--;            
-    mem.write(SP.get_data16(), PC & 0xFF); // lsb of PC
-
-    // Jump to n16
-    PC = (msb << 8) | lsb;    
-    return 6;
-}
-
-/** 
-  * Push address n16 onto the stack if condition cc is met 
-  * where n16 is the immediate little-endian 16-bit value
-  *
-  * Assumes PC is pointing to n16 before call
-  */
-uint32_t CPU::CALL_cc_n16(uint8_t cc, Memory &mem) {
-    // Get bytes of n16 and move PC to next instruction
-    uint16_t lsb = mem.read(PC++);
-    uint16_t msb = mem.read(PC++);
-
-    // PC now is loaded with address of next instruction
-
-    if (cc) {
-        // Push PC onto stack
-        SP--;
-        mem.write(SP.get_data16(), (uint8_t)(PC >> 8));   // msb of PC
-        SP--;            
-        mem.write(SP.get_data16(), (uint8_t)(PC & 0xFF)); // lsb of PC
-
-        // Jump to n16
-        PC = (msb << 8) | lsb;   
-
-        return 6;
-    } else { 
-        return 3;
-    }
-
-}
-
-/** 
-  * Load PC with address in HL
-  */
-uint32_t CPU::JP_HL() {
-    PC = HL.get_data16();
-    return 1;
-}
-
-/** 
-  * Load PC with value n16, where n16 is the 
-  * immediate little-endian 16-bit value
-  *
-  * Assumes PC is pointing to n16 before call
-  */
-uint32_t CPU::JP_n16(Memory &mem) {
-    // Get n16 and move PC to next instruction
-    uint16_t lsb = mem.read(PC++);
-    uint16_t msb = mem.read(PC++);
-    uint16_t n16 = (msb << 8) | lsb; 
-
-    PC = n16;
-    return 4;
-}
-
-/** 
-  * Add value e8 to PC where e8 is the immediate
-  * signed 8-bit value
-  *
-  * Assumes PC is pointing to e8 before call
-  */
-uint32_t CPU::JR_e8(Memory &mem) {
-    int8_t e8 = (int8_t)mem.read(PC);
-    PC += e8;
-    
-    return 3;
-}
-
-/** 
-  * Add value e8 to PC if condition cc is met, 
-  * where e8 is the immediate signed 8-bit value
-  *
-  * Assumes PC is pointing to e8 before call
-  */
-uint32_t CPU::JR_cc_e8(uint8_t cc, Memory &mem) {
-    int8_t e8 = (int8_t)mem.read(PC);
-
-    if (cc) {
-        PC += e8;
-        return 3;
-    } else {
-        PC++;
-        return 2;
-    }
-}
-
-/** 
-  * Return from subroutine.
-  */
-uint32_t CPU::RET(Memory &mem) {
-    uint16_t lsb = mem.read(SP.get_data16());
-    SP++;
-    uint16_t msb = mem.read(SP.get_data16());
-    SP++;
-    PC = (msb << 8) | lsb;
-    return 4;
-}
-
-/** 
-  * Return from subroutine and enable interupts
-  */
-uint32_t CPU::RETI(Memory &mem) {
-    uint16_t lsb = mem.read(SP.get_data16());
-    SP++;
-    uint16_t msb = mem.read(SP.get_data16());
-    SP++;
-    PC = (msb << 8) | lsb;
-    IME = 1;
-    return 4;
-}
-
-/** 
-  * Return from subroutine if condition c is met
-  */
-uint32_t CPU::RET_cc(uint8_t cc, Memory &mem) {
-    if (cc) {
-        uint16_t lsb = mem.read(SP.get_data16());
-        SP++;
-        uint16_t msb = mem.read(SP.get_data16());
-        SP++;
-        PC = (msb << 8) | lsb;
-        return 5;
-    } else {
-        return 2;
-    }
-}
-
-/** 
-  * Call address vec
-  */
-uint32_t CPU::RST_vec(uint16_t vec, Memory &mem) {
-    // PC is currently pointing to the next instruction
-
-    // Push PC onto the stack
-    SP--;
-    mem.write(SP.get_data16(), (uint8_t)(PC >> 8));   // msb of PC
-    SP--;
-    mem.write(SP.get_data16(), (uint8_t)(PC & 0xFF)); // lsb of PC
-
-    // Jump to address vec
-    PC = vec;
-    return 4;
-}
-
-/**
-  * Add immediate 8-bit signed value e8 to SP
-  *
-  * Reset Z and N flag. Sets H and C flags accordingly
-  *
-  * Assumes PC is pointing to e8 before call
-  */
-uint32_t CPU::ADD_SP_e8(Memory &mem) {
-    int8_t e8 = (int8_t)mem.read(PC++);
-
-    F &= 0x7F; // Reset Z
-    F &= 0xBF; // Reset N
-    
-    uint8_t set_H = SP.lo & 0xF + (uint8_t)e8 & 0xF > 0xF;
-    if (set_H) 
-        F |= 0x20; // Set H
-
-    uint8_t set_C = SP.get_data16() + (uint8_t)e8 > 0xFF;
-    if (set_C) 
-        F |= 0x10; // Set C
-
-    SP.set_data16(SP.get_data16() + e8);
-    return 4;
-}
-
-/** 
-  * Load register with address pointed by the stack pointer
-  * Loading register AF modifies all flags Z, N, H, and C by the popped low byte
-  */
-uint32_t CPU::POP_R16(Register16 &reg, Memory &mem) {
-    uint16_t lsb = mem.read(SP.get_data16());
-    SP++;
-    uint16_t msb = mem.read(SP.get_data16());
-    SP++;
-    reg.hi = msb;
-    reg.lo = lsb;
-    return 3;
-}
-
-/** 
-  * Store stack with address in register
-  */
-uint32_t CPU::PUSH_R16(Register16 &reg, Memory &mem) {
-    SP--;            
-    mem.write(SP.get_data16(), reg.hi);
-    SP--;
-    mem.write(SP.get_data16(), reg.lo);
-    return 4;
-}
-
-/** 
-  * Flip the carry flag and reset N and H flags
-  */
-uint32_t CPU::CCF() {
-    uint8_t carry_flag = (F & 0x10) >> 4;
-    carry_flag = ~carry_flag;
-    F = (F & 0xEF) | (carry_flag << 4);
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    return 1; 
-}
-
-/** 
-  * Flip the A register and sets N and H flags
-  */
-uint32_t CPU::CPL() {
-    A = ~A;
-    F != 0x40; // Set N
-    F |= 0x20; // Set H
-    return 1;
-}
-
-/** 
-  * Disable interrupts
-  */
-uint32_t CPU::DI() {
-    IME = 0;
-    return 1;
-}
-
-/** 
-  * Enable interrupts after the instruction following EI
-  */
-uint32_t CPU::EI() {
-    IME_next = 1;
-    return 1;
-}
-
-/** 
-  * Set the carry flag and reset the N and H flags
-  */
-uint32_t CPU::SCF() {
-    F |= 0x10; // Set C
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    return 1;
-}
-
-/** 
-  * Rotate register left
-  *
-  * Load C flag with register's most significant bit (before shift)
-  * 
-  * Reset N and H flags. Set Z accordingly
-  */
-uint32_t CPU::RLC_R8(Register8 &r8) {
-    uint8_t b7 = r8 & 0x80;
-    r8 <<= 1;
-    
-    // Load C flag
-    F = (F & 0xEF) | (b7 >> 3); 
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    
-    if (r8 == 0)
-        F |= 0x80; // Set Z   
-
-    return 2;
-}
-
-/** 
-  * Rotate memory[HL] left
-  *
-  * Load C flag with memory[HL]'s most significant bit (before shift)
-  * 
-  * Reset N and H flags. Set Z accordingly
-  */
-uint32_t CPU::RLC_HL(Memory &mem) {
-    uint16_t addr = HL.get_data16();
-    uint8_t mem_data = mem.read(addr); 
-    uint8_t b7 = mem_data & 0x80;
-    mem_data <<= 1;
-    mem.write(addr, mem_data);
-
-    // Load C flag
-    F = (F & 0xEF) | (b7 >> 3); 
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    
-    if (mem_data == 0)
-        F |= 0x80; // Set Z   
-
-    return 4;
-}
-
-/** 
-  * Rotate register left through the carry flag
-  *
-  * Load C flag with register's most significant bit (before shift)
-  * 
-  * Reset N and H flags. Set Z accordingly
-  */
-uint32_t CPU::RL_R8(Register8 &r8) {
-    uint8_t b7 = r8 & 0x80;
-    r8 <<= 1;
-    uint8_t carry_flag = F & 0x10;
-    r8 = (r8 & 0xFE) | (carry_flag >> 4); // C goes in least sig bit
-
-    // Load C flag
-    F = (F & 0xEF) | (b7 >> 3); 
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    
-    if (r8 == 0)
-        F |= 0x80; // Set Z   
-
-    return 2;
-}
-
-/** 
-* Rotate register left through the carry flag
-*
-* Load C flag with most significant bit (before shift)
-* 
-* Reset N and H flags. Set Z accordingly
-*/
-uint32_t CPU::RL_HL(Memory &mem) {
-    uint16_t addr = HL.get_data16();
-    uint8_t mem_data = mem.read(addr); 
-    uint8_t b7 = mem_data & 0x80;
-    mem_data <<= 1;
-    uint8_t carry_flag = F & 0x10;
-    mem_data = (mem_data & 0xFE) | (carry_flag >> 4); // C goes in least sig bit
-    mem.write(addr, mem_data);
-
-    // Load C flag
-    F = (F & 0xEF) | (b7 >> 4); 
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    
-    if (mem_data == 0)
-        F |= 0x80; // Set Z   
-
-    return 4;
-}
-
-/** 
-  * Rotate register right
-  *
-  * Load C flag with register's least significant bit (before shift)
-  * 
-  * Reset N and H flags. Set Z accordingly
-  */
-uint32_t CPU::RRC_R8(Register8 &r8) {
-    uint8_t b0 = r8 & 0x01;
-    r8 >>= 1;
-
-    // Load C flag
-    F = (F & 0xEF) | (b0 << 4); 
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    
-    if (r8 == 0)
-        F |= 0x80; // Set Z   
-
-    return 2;
-}
-
-/** 
-  * Rotate memory[HL] right
-  *
-  * Load C flag with least significant bit (before shift)
-  * 
-  * Reset N and H flags. Set Z accordingly
-  */
-uint32_t CPU::RRC_HL(Memory &mem) {
-    uint16_t addr = HL.get_data16();
-    uint8_t mem_data = mem.read(addr); 
-    uint8_t b0 = mem_data & 0x01;
-    mem_data >>= 1;
-    mem.write(addr, mem_data);
-
-    // Load C flag
-    F = (F & 0xEF) | (b0 << 4); 
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    
-    if (mem_data == 0)
-        F |= 0x80; // Set Z   
-
-    return 4;
-}
-
-/** 
-  * Rotate register right through the carry flag
-  *
-  * Load C flag with register's least significant bit (before shift)
-  * 
-  * Reset N and H flags. Set Z accordingly
-  */
-uint32_t CPU::RR_R8(Register8 &r8) {
-    int8_t b0 = r8 & 0x01;
-    uint8_t carry_flag = F & 0x10;
-    r8 >>= 1;
-    r8 = (r8 & 0x7F) | (carry_flag << 3); // C goes in most sig bit
-
-    // Load C flag 
-    F = (F & 0xEF) | (b0 << 4); 
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    
-    if (r8 == 0)
-        F |= 0x80; // Set Z   
-
-    return 2;
-}
-
-/** 
-* Rotate memory[HL] through the carry flag
-*
-* Load C flag with most significant bit (before shift)
-* 
-* Reset N and H flags. Set Z accordingly
-*/
-uint32_t CPU::RR_HL(Memory &mem) {
-    uint16_t addr = HL.get_data16();
-    uint8_t mem_data = mem.read(addr); 
-    uint8_t b0 = mem_data & 0x01; 
-    uint8_t carry_flag = F & 0x10;
-    mem_data >>= 1;
-    mem_data = (mem_data & 0x7F) | (carry_flag << 3); // C goes in most sig bit
-    mem.write(addr, mem_data);
-
-    // Load C flag
-    F = (F & 0xEF) | (b0 << 4); 
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    
-    if (mem_data == 0)
-        F |= 0x80; // Set Z   
-
-    return 4;
-}
-
-/** 
-  * Shift register arithmetically left (pad with a 0)
-  *
-  * Load C flag with most significant bit (before shift)
-  * 
-  * Reset N and H flags. Set Z accordingly
-  */
-uint32_t CPU::SLA_R8(Register8 &r8) {
-    uint8_t b7 = r8 & 0x80; 
-    r8 <<= 1;
-    
-    // Load C flag
-    F = (F & 0xEF) | (b7 >> 3); 
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    
-    if (r8 == 0)
-        F |= 0x80; // Set Z   
-
-    return 2;
-}
-
-    /** 
-  * Shift memory [HL] arithmetically left
-  *
-  * Load C flag with most significant bit (before shift)
-  * 
-  * Reset N and H flags. Set Z accordingly
-  */
-uint32_t CPU::SLA_HL(Memory &mem) {
-    uint16_t addr = HL.get_data16();
-    uint8_t mem_data = mem.read(addr);
-    uint8_t b7 = mem_data & 0x80;
-    mem_data <<= 1;
-
-    // Load C flag
-    F = (F & 0xEF) | (b7 >> 3); 
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    
-    if (mem_data == 0)
-        F |= 0x80; // Set Z   
-
-    return 4;
-}
-
-/** 
-  * Shift register arithmetically right (most significant bit is unchanged)
-  *
-  * Load C flag with least significant bit (before shift)
-  * 
-  * Reset N and H flags. Set Z accordingly
-  */
-uint32_t CPU::SRA_R8(Register8 &r8) {
-    uint8_t b0 = r8 & 0x01; 
-    uint8_t b7 = r8 & 0x80; 
-    r8 >>= 1;
-    r8 = (r8 & 0x7F) | b7;
-
-    // Load C flag
-    F = (F & 0xEF) | (b0 << 4); 
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    
-    if (r8 == 0)
-        F |= 0x80; // Set Z   
-
-    return 2;
-}
-
-/** 
-  * Shift memory[HL] arithmetically right (most significant bit is unchanged)
-  *
-  * Load C flag with least significant bit (before shift)
-  * 
-  * Reset N and H flags. Set Z accordingly
-  */
-uint32_t CPU::SRA_HL(Memory &mem) {
-    uint16_t addr = HL.get_data16();
-    uint8_t mem_data = mem.read(addr);
-    uint8_t b0 = mem_data & 0x01; 
-    uint8_t b7 = mem_data & 0x80; 
-    mem_data >>= 1;
-    mem_data = (mem_data & 0x7F) | b7;
-    mem.write(addr, mem_data);
-
-    // Load C flag
-    F = (F & 0xEF) | (b0 << 4); 
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    
-    if (mem_data == 0)
-        F |= 0x80; // Set Z   
-
-    return 4;
-}
-
-/** 
-  * Shift register arithmetically right (pad with a 0)
-  *
-  * Load C flag with least significant bit (before shift)
-  * 
-  * Reset N and H flags. Set Z accordingly
-  */
-uint32_t CPU::SRL_R8(Register8 &r8) {
-    uint8_t b0 = r8 & 0x01; 
-    r8 >>= 1;
-
-    // Load C flag
-    F = (F & 0xEF) | (b0 << 4); 
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    
-    if (r8 == 0)
-        F |= 0x80; // Set Z   
-
-    return 2;
-}
-
-/** 
-  * Shift memory[HL] logically right (pad with a 0)
-  *
-  * Load C flag with least significant bit (before shift)
-  * 
-  * Reset N and H flags. Set Z accordingly
-  */
-uint32_t CPU::SRL_HL(Memory &mem) {
-    uint16_t addr = HL.get_data16();
-    uint8_t mem_data = mem.read(addr);
-    uint8_t b0 = mem_data & 0x01; 
-    mem_data >>= 1;
-    mem.write(addr, mem_data);
-
-    // Load C flag
-    F = (F & 0xEF) | (b0 << 4); 
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    
-    if (mem_data == 0)
-        F |= 0x80; // Set Z   
-
-    return 4;
-}
-
-/** 
-  * Swap upper 4 bits in register with lowers 4 bits
-  *
-  * Reset N, H, and C flags. Set Z flag accordingly
-  */
-uint32_t CPU::SWAP_R8(Register8 &r8) {
-    uint8_t lower_nib = r8 & 0xF;
-    uint8_t upper_nib = r8 & 0xF0;
-    r8 = (lower_nib << 4) | (upper_nib >> 4); 
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    F &= 0xEF; // Reset C
-
-    if (r8 == 0)
-        F |= 0x80; // Set Z  
-    
-    return 2;
-}
-
-/** 
-  * Swap upper 4 bits in memory[HL] with lowers 4 bits
-  *
-  * Reset N, H, and C flags. Set Z flag accordingly
-  */
-uint32_t CPU::SWAP_HL(Memory &mem) {
-    uint16_t addr = HL.get_data16();
-    uint8_t mem_data = mem.read(addr);
-    uint8_t lower_nib = mem_data & 0xF;
-    uint8_t upper_nib = mem_data & 0xF0;
-    mem_data = (lower_nib << 4) | (upper_nib >> 4); 
-    mem.write(addr, mem_data);
-
-    F &= 0xBF; // Reset N
-    F &= 0xDF; // Reset H
-    F &= 0xEF; // Reset C
-
-    if (mem_data == 0)
-        F |= 0x80; // Set Z  
-    
-    return 4;
-}
-
-/** 
-  * Set Z flag if register bit at index b3 is not set. Reset N flag. Set H flag
-  */
-uint32_t CPU::BIT_b3_R8(uint8_t b3, const Register8 r8) {
-    uint8_t bit = (r8 >> b3) & 0x01;
-    if (!bit)
-        F |= 0x80; // Set Z  
-    F &= 0xBF; // Reset N
-    F |= 0x20; // Set H
-    return 2;
-}
-
-/** 
-  * Reset register bit at position b3
-  */
-uint32_t CPU::BIT_b3_HL(uint8_t b3, Memory &mem) {
-    uint16_t addr = HL.get_data16();
-    uint8_t mem_data = mem.read(addr);
-    uint8_t bit = (mem_data >> b3) & 0x01;
-    if (!bit)
-        F |= 0x80; // Set Z  
-    F &= 0xBF; // Reset N
-    F |= 0x20; // Set H
-    return 3;
-}
-
-/** 
-  * Reset register bit at position b3
-  */
-uint32_t CPU::RES_b3_R8(uint8_t b3, Register8 &r8) {
-    r8 = r8 & (~(0x01 << b3));
-    return 2;
-}
-
-/** 
-  * Reset memory[HL] bit at position b3
-  */
-uint32_t CPU::RES_b3_HL(uint8_t b3, Memory &mem) {
-    uint16_t addr = HL.get_data16();
-    uint8_t mem_data = mem.read(addr);
-    mem_data = mem_data & (~(0x01 << b3));
-    mem.write(addr, mem_data);
-    return 4;
-}
-
-/** 
-  * Set register bit at position b3
-  */
-uint32_t CPU::SET_b3_R8(uint8_t b3, Register8 &r8) {
-    r8 = r8 & (0x01 << b3);
-    return 2;
-}
-
-/** 
-  * Set memory[HL] bit at position b3
-  */
-uint32_t CPU::SET_b3_HL(uint8_t b3, Memory &mem) {
-    uint16_t addr = HL.get_data16();
-    uint8_t mem_data = mem.read(addr);
-    mem_data = mem_data & (0x01 << b3);
-    mem.write(addr, mem_data);
-    return 4;
-}
-
-// Constructor
-CPU::CPU(): AF(), BC(), DE(), HL(), SP()
-{
-    PC = 0x0100;
-    SP.set_data16(0xFFFE);
-    IME = 0; // Disable interrupts
-    DIV = 0;
-}
-
-// Destructor
+CPU::CPU(MemoryBus &bus_) : bus(bus_), instr_set(regs, ctx, bus), int_handler(regs, ctx, bus) {}
 CPU::~CPU() {}
 
-void CPU::inc_DIV(Memory &mem) {
-    DIV++;
-    if (DIV > 0x3F) { 
-        uint16_t DIV_exposed = (DIV & 0x3FC0) >> 6;
-        mem.write(0xFF04, DIV_exposed + 1);  
-    }
-}
-
-void CPU::inc_TIMA(Memory &mem) {
-    uint16_t res = mem.read(0xFF05) + 1;
-    if (res > 0xFF) {
-        // Timer counter overflowed
-        mem.write(0xFF05, mem.read(0xFF06)); // TIMA <- TMA
-        request_interrupt(mem, Timer);
-    } else {
-        mem.write(0xFF05, res);
-    }
-}
-
-uint32_t CPU::get_timer_clock_speed(Memory &mem) {
-    uint8_t clock_select = mem.read(0xFF07) & 0x03;
-    switch (clock_select) {
-        case 0x00: return 256; break;
-        case 0x01: return 4;   break;
-        case 0x10: return 16;  break;
-        case 0x11: return 64;  break;
-    }
-    return 0;
-}
-
-uint8_t CPU::is_timer_started(Memory &mem) {
-    uint8_t timer_stop = (mem.read(0xFF07) & 0x04) >> 2;
-    return timer_stop;
-}
-
-/** 
- * Sets bit in Interrupt flag (IF) based on requested interrupt
- */
-void CPU::request_interrupt(Memory &mem, InterruptType type) {
-    uint8_t enable = 0;
-    switch (type) {
-        case Joypad: enable = 0x10; break;
-        case Serial: enable = 0x08; break;
-        case Timer:  enable = 0x04; break;
-        case LCD:    enable = 0x02; break;
-        case VBlank: enable = 0x01; break;
-    }
-    mem.write(0xFF0F, mem.read(0xFF0F) | enable);
-}
-
-uint32_t CPU::service_interrupt(Memory &mem, InterruptType type) {
-    // Choose the right interrupt
-    uint16_t handler_addr = 0x0000;
-    uint8_t disable = 0x00; 
-    switch (type) {
-        case (Joypad): handler_addr = 0x0060; disable = ~0x10; break;
-        case (Serial): handler_addr = 0x0058; disable = ~0x08; break;
-        case (Timer):  handler_addr = 0x0050; disable = ~0x04; break;
-        case (LCD):    handler_addr = 0x0048; disable = ~0x02; break;
-        case (VBlank): handler_addr = 0x0040; disable = ~0x01; break;
-    }
-
-    // Reset corresponding IF bit to acknowledge interrupt
-    mem.write(0xFF0F, mem.read(0xFF0F) & disable);
+bool CPU::step() {
     
-    // Prevent any further interrupts from happening
-    IME = 0;
+    if (!ctx.halted) {
 
-    // Servicing happens after fetching the next opcode
-    PC--;
+        std::cout << "PC = 0x" << std::hex << std::setw(4) << std::setfill('0') << regs.PC << ":";
 
-    // Call interrupt handler
-    SP--;
-    mem.write(SP.get_data16(), PC >> 8);
-    SP--;
-    mem.write(SP.get_data16(), PC & 0xFF);
-    PC = handler_addr; 
+        // Fetch opcode
+        u8 opcode = bus.read(regs.PC++); 
+        bus.emulate_cycles(1);
+        std::cout << " Opcode: 0x" << std::hex << std::setw(2) << std::setfill('0') << +opcode;
 
-    return 5;
-}
+        // Debugging flags and registers
+        char z = BIT(regs.F, 7) ? 'Z' : '-';
+        char n = BIT(regs.F, 6) ? 'N' : '-';
+        char h = BIT(regs.F, 5) ? 'H' : '-';
+        char c = BIT(regs.F, 4) ? 'C' : '-';
+        std::cout << " Flags set: " << z << n << h << c;
 
+        std::cout << " AF: 0x" 
+            << std::hex << std::setw(2) << std::setfill('0') << +regs.A 
+            << std::hex << std::setw(2) << std::setfill('0') << +regs.F;
+        std::cout << " BC: 0x" 
+            << std::hex << std::setw(2) << std::setfill('0') << +regs.B 
+            << std::hex << std::setw(2) << std::setfill('0') << +regs.C; 
+        std::cout << " DE: 0x" 
+            << std::hex << std::setw(2) << std::setfill('0') << +regs.D 
+            << std::hex << std::setw(2) << std::setfill('0') << +regs.E; 
+        std::cout << " HL: 0x" 
+            << std::hex << std::setw(2) << std::setfill('0') << +regs.H 
+            << std::hex << std::setw(2) << std::setfill('0') << +regs.L;  
+        std::cout << " SP: 0x" 
+            << std::hex << std::setw(4) << std::setfill('0') << +regs.SP; 
 
-/**
-  * Fetch, decode, and execute an instruction then 
-  * return the number of M-cycles that it took
-  */
-uint32_t CPU::emulate_cycles(Memory &mem) {
-    uint32_t m_cycles = 0;
+        std::cout << std::endl;
+    
+        // Decode and execute opcode
+        if (!decode_and_execute(opcode)) {
+            std::cout << "CPU could not decode or execute an instruction\n";
+            return false;
+        }
 
-    // Fetch
-    uint8_t opcode = mem.read(PC++); // Point to next byte
+        // Printing from serial port for blargg tests
+        if (bus.read(0xFF02) == 0x81) {
+            char debug_c = bus.read(0xFF01);
+            debug_msg[debug_msg_size++] = debug_c;
+            bus.write(0xFF02, 0);
+        }
 
-    // Service any interrupts    
-    if (IME) {
-        // Interrupts are enabled by the master flag
+        if (debug_msg[0]) {
+            std::cout << "Serial port: " << debug_msg << std::endl;
+        }
+    } else { 
+        // CPU is halted
 
-        // Get IF bits
-        uint8_t IF_reg = mem.read(0xFF0F);
-        uint8_t joypad_requested = IF_reg & 0x10;
-        uint8_t serial_requested = IF_reg & 0x08;
-        uint8_t timer_requested  = IF_reg & 0x04;
-        uint8_t LCD_requested    = IF_reg & 0x02;
-        uint8_t VBlank_requested = IF_reg & 0x01;
+        // Let the timer run
+        bus.emulate_cycles(1); 
 
-        // Get IE bits
-        uint8_t IE_reg = mem.read(0xFFFF);
-        uint8_t joypad_enabled = IE_reg & 0x10;
-        uint8_t serial_enabled = IE_reg & 0x08;
-        uint8_t timer_enabled  = IE_reg & 0x04;
-        uint8_t LCD_enabled    = IE_reg & 0x02;
-        uint8_t VBlank_enabled = IE_reg & 0x01;
-
-        // Highest priority is VBlank while lowest is Joypad
-        if (VBlank_enabled && VBlank_requested) {
-            m_cycles += service_interrupt(mem, VBlank);
+        if (bus.get_IF() && bus.get_IE()) { // An interrupt is pending
+            std::cout << "Waking up the CPU\n";
+            ctx.halted = false;
         } 
-        else if (LCD_enabled && LCD_requested) {
-            m_cycles += service_interrupt(mem, LCD);
-        }
-        else if (timer_enabled && timer_requested) {
-            m_cycles += service_interrupt(mem, Timer);
-        }
-        else if (serial_enabled && serial_requested) {
-            m_cycles += service_interrupt(mem, Serial);
-        }
-        else if (joypad_enabled && joypad_requested) {
-            m_cycles += service_interrupt(mem, Joypad);
-        }
+
     }
 
-    // Decode and execute
+    if (ctx.IME) {
+        int_handler.handle_interrupts();
+    }
+
+    if (ctx.IME_next) { // Enable interrupts
+        ctx.IME = true;
+        ctx.IME_next = false;
+    }
+
+    return true;
+}
+
+bool CPU::decode_and_execute(u8 opcode) {
+
     switch (opcode) {
         
-        case 0x00: // NOP
-            m_cycles += 1; break;
+        case 0x00: instr_set.nop();                     break;
+        case 0x01: instr_set.ld16(regs.B, regs.C);      break;
+        case 0x02: instr_set.ld_from_A(regs.B, regs.C); break;
+        case 0x03: instr_set.inc(regs.B, regs.C);       break;
+        case 0x04: instr_set.inc(regs.B);               break;
+        case 0x05: instr_set.dec(regs.B);               break;
+        case 0x06: instr_set.ld(regs.B);                break;
+        case 0x07: instr_set.rlca();                    break;
+        case 0x08: instr_set.ld_from_SP();              break;
+        case 0x09: instr_set.add16(regs.B, regs.C);     break;
+        case 0x0A: instr_set.ld_to_A(regs.B, regs.C);   break;
+        case 0x0B: instr_set.dec(regs.B, regs.C);       break;
+        case 0x0C: instr_set.inc(regs.C);               break;
+        case 0x0D: instr_set.dec(regs.C);               break;
+        case 0x0E: instr_set.ld(regs.C);                break;
+        case 0x0F: instr_set.rrca();                    break;
 
-        // LD R8, R8
-        case 0x40: m_cycles += LD_R8_R8(B, B); break;
-        case 0x41: m_cycles += LD_R8_R8(B, C); break;
-        case 0x42: m_cycles += LD_R8_R8(B, D); break;
-        case 0x43: m_cycles += LD_R8_R8(B, E); break;
-        case 0x44: m_cycles += LD_R8_R8(B, H); break;
-        case 0x45: m_cycles += LD_R8_R8(B, L); break;
-        case 0x47: m_cycles += LD_R8_R8(B, A); break;
-        case 0x48: m_cycles += LD_R8_R8(C, B); break;
-        case 0x49: m_cycles += LD_R8_R8(C, C); break;
-        case 0x4A: m_cycles += LD_R8_R8(C, D); break;
-        case 0x4B: m_cycles += LD_R8_R8(C, E); break;
-        case 0x4C: m_cycles += LD_R8_R8(C, H); break;
-        case 0x4D: m_cycles += LD_R8_R8(C, L); break;
-        case 0x4F: m_cycles += LD_R8_R8(C, A); break;
-        case 0x50: m_cycles += LD_R8_R8(D, B); break;
-        case 0x51: m_cycles += LD_R8_R8(D, C); break;
-        case 0x52: m_cycles += LD_R8_R8(D, D); break;
-        case 0x53: m_cycles += LD_R8_R8(D, E); break;
-        case 0x54: m_cycles += LD_R8_R8(D, H); break;
-        case 0x55: m_cycles += LD_R8_R8(D, L); break;
-        case 0x57: m_cycles += LD_R8_R8(D, A); break;
-        case 0x58: m_cycles += LD_R8_R8(E, B); break;
-        case 0x59: m_cycles += LD_R8_R8(E, C); break;
-        case 0x5A: m_cycles += LD_R8_R8(E, D); break;
-        case 0x5B: m_cycles += LD_R8_R8(E, E); break;
-        case 0x5C: m_cycles += LD_R8_R8(E, H); break;
-        case 0x5D: m_cycles += LD_R8_R8(E, L); break;
-        case 0x5F: m_cycles += LD_R8_R8(E, A); break;
-        case 0x60: m_cycles += LD_R8_R8(H, B); break;
-        case 0x61: m_cycles += LD_R8_R8(H, C); break;
-        case 0x62: m_cycles += LD_R8_R8(H, D); break;
-        case 0x63: m_cycles += LD_R8_R8(H, E); break;
-        case 0x64: m_cycles += LD_R8_R8(H, H); break;
-        case 0x65: m_cycles += LD_R8_R8(H, L); break;
-        case 0x67: m_cycles += LD_R8_R8(H, A); break;
-        case 0x68: m_cycles += LD_R8_R8(L, B); break;
-        case 0x69: m_cycles += LD_R8_R8(L, C); break;
-        case 0x6A: m_cycles += LD_R8_R8(L, D); break;
-        case 0x6B: m_cycles += LD_R8_R8(L, E); break;
-        case 0x6C: m_cycles += LD_R8_R8(L, H); break;
-        case 0x6D: m_cycles += LD_R8_R8(L, L); break;
-        case 0x6F: m_cycles += LD_R8_R8(L, A); break;
-        case 0x78: m_cycles += LD_R8_R8(A, B); break;
-        case 0x79: m_cycles += LD_R8_R8(A, C); break;
-        case 0x7A: m_cycles += LD_R8_R8(A, D); break;
-        case 0x7B: m_cycles += LD_R8_R8(A, E); break;
-        case 0x7C: m_cycles += LD_R8_R8(A, H); break;
-        case 0x7D: m_cycles += LD_R8_R8(A, L); break;
-        case 0x7F: m_cycles += LD_R8_R8(A, A); break;
-
-        // LD [HL], R8
-        case 0x70: m_cycles += LD_HL_R8(B, mem); break;
-        case 0x71: m_cycles += LD_HL_R8(C, mem); break;
-        case 0x72: m_cycles += LD_HL_R8(D, mem); break;
-        case 0x73: m_cycles += LD_HL_R8(E, mem); break;
-        case 0x74: m_cycles += LD_HL_R8(H, mem); break;
-        case 0x75: m_cycles += LD_HL_R8(L, mem); break;
-        case 0x77: m_cycles += LD_HL_R8(A, mem); break;
-
-        // LD R8, [HL]
-        case 0x46: m_cycles += LD_R8_HL(B, mem); break;
-        case 0x4E: m_cycles += LD_R8_HL(C, mem); break;
-        case 0x56: m_cycles += LD_R8_HL(D, mem); break;
-        case 0x5E: m_cycles += LD_R8_HL(E, mem); break;
-        case 0x66: m_cycles += LD_R8_HL(H, mem); break;
-        case 0x6E: m_cycles += LD_R8_HL(L, mem); break;
-        case 0x7E: m_cycles += LD_R8_HL(A, mem); break;
-
-        case 0x76: // TODO: HALT
-            break;
-
-        // LD R8, n8
-        case 0x06: m_cycles += LD_R8_n8(B, mem); break;
-        case 0x0E: m_cycles += LD_R8_n8(C, mem); break;
-        case 0x16: m_cycles += LD_R8_n8(D, mem); break;
-        case 0x1E: m_cycles += LD_R8_n8(E, mem); break;
-        case 0x26: m_cycles += LD_R8_n8(H, mem); break;
-        case 0x2E: m_cycles += LD_R8_n8(L, mem); break;
-        case 0x3E: m_cycles += LD_R8_n8(B, mem); break;
-
-        // LD [HL], n8
-        case 0x36: m_cycles += LD_HL_n8(mem); break;
-
-        // LD [R16], A
-        case 0x02: m_cycles += LD_R16_A(BC, mem);   break;
-        case 0x12: m_cycles += LD_R16_A(DE, mem);   break;
-        case 0x22: m_cycles += LD_R16_A(HL++, mem); break;
-        case 0x32: m_cycles += LD_R16_A(HL--, mem); break;
-
-        // LD A, [R16]
-        case 0x0A: m_cycles += LD_A_R16(BC, mem); break;
-        case 0x1A: m_cycles += LD_A_R16(DE, mem); break;
-        case 0x2A: m_cycles += LD_A_R16(HL++, mem); break;
-        case 0x3A: m_cycles += LD_A_R16(HL--, mem); break;
-
-        // LD R16, n16
-        case 0x01: m_cycles += LD_R16_n16(BC, mem); break;
-        case 0x11: m_cycles += LD_R16_n16(DE, mem); break;
-        case 0x21: m_cycles += LD_R16_n16(HL, mem); break;
-        case 0x31: m_cycles += LD_R16_n16(SP, mem); break;
-
-        // LD [n16], SP
-        case 0x08: m_cycles += LD_n16_SP(mem); break;
-
-        // LD [n16], A
-        case 0xEA: m_cycles += LD_n16_A(mem); break;
-
-        // LD A, [n16]
-        case 0xFA: m_cycles += LD_A_n16(mem); break;
-
-        // LD SP, HL
-        case 0xF9: m_cycles += LD_SP_HL(); break;
-
-        // LDH [C], A
-        case 0xE2: m_cycles += LDH_C_A(mem); break;
-
-        // LDH A, [C]
-        case 0xF2: m_cycles += LDH_A_C(mem); break;
-
-        // LDH [n8], A
-        case 0xE0: m_cycles += LDH_n8_A(mem); break;
-
-        // LDH A, [n8]
-        case 0xF0: m_cycles += LDH_A_n8(mem); break;
-
-         // LD HL, SP + n8
-        case 0xF8: m_cycles += LD_HL_SP_e8(mem); break;
-
-        // INC R16
-        case 0x03: m_cycles += INC_R16(BC); break;
-        case 0x13: m_cycles += INC_R16(DE); break;
-        case 0x23: m_cycles += INC_R16(HL); break;
-        case 0x33: m_cycles += INC_R16(SP); break;
-
-        // DEC R16
-        case 0x0B: m_cycles += DEC_R16(BC); break;
-        case 0x1B: m_cycles += DEC_R16(DE); break;
-        case 0x2B: m_cycles += DEC_R16(HL); break;
-        case 0x3B: m_cycles += DEC_R16(SP); break;
-
-        // ADD HL, R16
-        case 0x09: m_cycles += ADD_HL_R16(BC); break;
-        case 0x19: m_cycles += ADD_HL_R16(DE); break;
-        case 0x29: m_cycles += ADD_HL_R16(HL); break;
-        case 0x39: m_cycles += ADD_HL_R16(SP); break;
-
-        // INC R8
-        case 0x04: m_cycles += INC_R8(B); break;
-        case 0x0C: m_cycles += INC_R8(C); break;
-        case 0x14: m_cycles += INC_R8(D); break;
-        case 0x1C: m_cycles += INC_R8(E); break;
-        case 0x24: m_cycles += INC_R8(H); break;
-        case 0x2C: m_cycles += INC_R8(L); break;
-        case 0x3C: m_cycles += INC_R8(A); break;
+        case 0x10: instr_set.stop();                    break;
+        case 0x11: instr_set.ld16(regs.D, regs.E);      break;
+        case 0x12: instr_set.ld_from_A(regs.D, regs.E); break;
+        case 0x13: instr_set.inc(regs.D, regs.E);       break;
+        case 0x14: instr_set.inc(regs.D);               break;
+        case 0x15: instr_set.dec(regs.D);               break;
+        case 0x16: instr_set.ld(regs.D);                break;
+        case 0x17: instr_set.rla();                     break;
+        case 0x18: instr_set.jr();                      break;
+        case 0x19: instr_set.add16(regs.D, regs.E);     break;
+        case 0x1A: instr_set.ld_to_A(regs.D, regs.E);   break;
+        case 0x1B: instr_set.dec(regs.D, regs.E);       break;
+        case 0x1C: instr_set.inc(regs.E);               break;
+        case 0x1D: instr_set.dec(regs.E);               break;
+        case 0x1E: instr_set.ld(regs.E);                break;
+        case 0x1F: instr_set.rra();                     break;
         
-        // INC [HL]
-        case 0x34: m_cycles += INC_HL(mem); break;
-
-        // DEC R8
-        case 0x05: m_cycles += DEC_R8(B); break;
-        case 0x0D: m_cycles += DEC_R8(C); break;
-        case 0x15: m_cycles += DEC_R8(D); break;
-        case 0x1D: m_cycles += DEC_R8(E); break;
-        case 0x25: m_cycles += DEC_R8(H); break;
-        case 0x2D: m_cycles += DEC_R8(L); break;
-        case 0x3D: m_cycles += DEC_R8(A); break;
-                
-        // DEC [HL]
-        case 0x35: m_cycles += DEC_HL(mem); break;
-
-        // ADD A,R8
-        case 0x80: m_cycles += ADD_A_R8(B); break;
-        case 0x81: m_cycles += ADD_A_R8(C); break;
-        case 0x82: m_cycles += ADD_A_R8(D); break;
-        case 0x83: m_cycles += ADD_A_R8(E); break;
-        case 0x84: m_cycles += ADD_A_R8(H); break;
-        case 0x85: m_cycles += ADD_A_R8(L); break;
-        case 0x87: m_cycles += ADD_A_R8(A); break;
-
-        // ADD A,[HL]
-        case 0x86: m_cycles += ADD_A_HL(mem); break;
-
-        // ADC A,R8
-        case 0x88: m_cycles += ADC_A_R8(B); break;
-        case 0x89: m_cycles += ADC_A_R8(C); break;
-        case 0x8A: m_cycles += ADC_A_R8(D); break;
-        case 0x8B: m_cycles += ADC_A_R8(E); break;
-        case 0x8C: m_cycles += ADC_A_R8(H); break;
-        case 0x8D: m_cycles += ADC_A_R8(L); break;
-        case 0x8F: m_cycles += ADC_A_R8(A); break;
+        case 0x20: instr_set.jr(!BIT(regs.F,7));             break;
+        case 0x21: instr_set.ld16(regs.H, regs.L);           break;
+        case 0x22: instr_set.ld_from_A(regs.H, regs.L, LDI); break;
+        case 0x23: instr_set.inc(regs.H, regs.L);            break;
+        case 0x24: instr_set.inc(regs.H);                    break;
+        case 0x25: instr_set.dec(regs.H);                    break;
+        case 0x26: instr_set.ld(regs.H);                     break;
+        case 0x27: instr_set.daa();                          break;
+        case 0x28: instr_set.jr(BIT(regs.F,7));              break;
+        case 0x29: instr_set.add16(regs.H, regs.L);          break;
+        case 0x2A: instr_set.ld_to_A(regs.H, regs.L, LDI);   break;
+        case 0x2B: instr_set.dec(regs.H, regs.L);            break;
+        case 0x2C: instr_set.inc(regs.L);                    break;
+        case 0x2D: instr_set.dec(regs.L);                    break;
+        case 0x2E: instr_set.ld(regs.L);                     break;
+        case 0x2F: instr_set.cpl();                          break;
         
-        // ADC A,[HL]
-        case 0x8E: m_cycles += ADC_A_HL(mem); break;
-
-        // SUB A,R8
-        case 0x90: m_cycles += SUB_A_R8(B); break;
-        case 0x91: m_cycles += SUB_A_R8(C); break;
-        case 0x92: m_cycles += SUB_A_R8(D); break;
-        case 0x93: m_cycles += SUB_A_R8(E); break;
-        case 0x94: m_cycles += SUB_A_R8(H); break;
-        case 0x95: m_cycles += SUB_A_R8(L); break;
-        case 0x97: m_cycles += SUB_A_R8(A); break;
-
-        // SUB A,[HL]
-        case 0x96: m_cycles += SUB_A_HL(mem); break;
-
-        // SBC A,R8
-        case 0x98: m_cycles += SBC_A_R8(B); break;
-        case 0x99: m_cycles += SBC_A_R8(C); break;
-        case 0x9A: m_cycles += SBC_A_R8(D); break;
-        case 0x9B: m_cycles += SBC_A_R8(E); break;
-        case 0x9C: m_cycles += SBC_A_R8(H); break;
-        case 0x9D: m_cycles += SBC_A_R8(L); break;
-        case 0x9F: m_cycles += SBC_A_R8(A); break;
+        case 0x30: instr_set.jr(!BIT(regs.F,4));             break;
+        case 0x31: instr_set.ld16(regs.SP);                  break;
+        case 0x32: instr_set.ld_from_A(regs.H, regs.L, LDD); break;
+        case 0x33: instr_set.inc_SP();                       break;
+        case 0x34: instr_set.inc_HL();                       break;
+        case 0x35: instr_set.dec_HL();                       break;
+        case 0x36: instr_set.ld_to_HL();                     break;
+        case 0x37: instr_set.scf();                          break;
+        case 0x38: instr_set.jr(BIT(regs.F,4));              break;
+        case 0x39: instr_set.add16();                        break;
+        case 0x3A: instr_set.ld_to_A(regs.H, regs.L, LDD);   break;
+        case 0x3B: instr_set.dec_SP();                       break;
+        case 0x3C: instr_set.inc(regs.A);                    break;
+        case 0x3D: instr_set.dec(regs.A);                    break;
+        case 0x3E: instr_set.ld(regs.A);                     break;
+        case 0x3F: instr_set.ccf();                          break;
         
-        // SBC A,[HL]
-        case 0x9E: m_cycles += SBC_A_HL(mem); break;
+        case 0x40: instr_set.ld(regs.B, regs.B); break;
+        case 0x41: instr_set.ld(regs.B, regs.C); break;
+        case 0x42: instr_set.ld(regs.B, regs.D); break;
+        case 0x43: instr_set.ld(regs.B, regs.E); break;
+        case 0x44: instr_set.ld(regs.B, regs.H); break;
+        case 0x45: instr_set.ld(regs.B, regs.L); break;
+        case 0x46: instr_set.ld_from_HL(regs.B); break;
+        case 0x47: instr_set.ld(regs.B, regs.A); break;
+        case 0x48: instr_set.ld(regs.C, regs.B); break;
+        case 0x49: instr_set.ld(regs.C, regs.C); break;
+        case 0x4A: instr_set.ld(regs.C, regs.D); break;
+        case 0x4B: instr_set.ld(regs.C, regs.E); break;
+        case 0x4C: instr_set.ld(regs.C, regs.H); break;
+        case 0x4D: instr_set.ld(regs.C, regs.L); break;
+        case 0x4E: instr_set.ld_from_HL(regs.C); break;
+        case 0x4F: instr_set.ld(regs.C, regs.A); break;
 
-        // AND A,R8
-        case 0xA0: m_cycles += AND_A_R8(B); break;
-        case 0xA1: m_cycles += AND_A_R8(C); break;
-        case 0xA2: m_cycles += AND_A_R8(D); break;
-        case 0xA3: m_cycles += AND_A_R8(E); break;
-        case 0xA4: m_cycles += AND_A_R8(H); break;
-        case 0xA5: m_cycles += AND_A_R8(L); break;
-        case 0xA7: m_cycles += AND_A_R8(A); break;
+        case 0x50: instr_set.ld(regs.D, regs.B); break;
+        case 0x51: instr_set.ld(regs.D, regs.C); break;
+        case 0x52: instr_set.ld(regs.D, regs.D); break;
+        case 0x53: instr_set.ld(regs.D, regs.E); break;
+        case 0x54: instr_set.ld(regs.D, regs.H); break;
+        case 0x55: instr_set.ld(regs.D, regs.L); break;
+        case 0x56: instr_set.ld_from_HL(regs.D); break;
+        case 0x57: instr_set.ld(regs.D, regs.A); break;
+        case 0x58: instr_set.ld(regs.E, regs.B); break;
+        case 0x59: instr_set.ld(regs.E, regs.C); break;
+        case 0x5A: instr_set.ld(regs.E, regs.D); break;
+        case 0x5B: instr_set.ld(regs.E, regs.E); break;
+        case 0x5C: instr_set.ld(regs.E, regs.H); break;
+        case 0x5D: instr_set.ld(regs.E, regs.L); break;
+        case 0x5E: instr_set.ld_from_HL(regs.E); break;
+        case 0x5F: instr_set.ld(regs.E, regs.A); break;
 
-        // AND A,[HL]
-        case 0xA6: m_cycles += AND_A_HL(mem); break;
-
-        // XOR A,R8
-        case 0xA8: m_cycles += XOR_A_R8(B); break;
-        case 0xA9: m_cycles += XOR_A_R8(C); break;
-        case 0xAA: m_cycles += XOR_A_R8(D); break;
-        case 0xAB: m_cycles += XOR_A_R8(E); break;
-        case 0xAC: m_cycles += XOR_A_R8(H); break;
-        case 0xAD: m_cycles += XOR_A_R8(L); break;
-        case 0xAF: m_cycles += XOR_A_R8(A); break;
+        case 0x60: instr_set.ld(regs.H, regs.B); break;
+        case 0x61: instr_set.ld(regs.H, regs.C); break;
+        case 0x62: instr_set.ld(regs.H, regs.D); break;
+        case 0x63: instr_set.ld(regs.H, regs.E); break;
+        case 0x64: instr_set.ld(regs.H, regs.H); break;
+        case 0x65: instr_set.ld(regs.H, regs.L); break;
+        case 0x66: instr_set.ld_from_HL(regs.H); break;
+        case 0x67: instr_set.ld(regs.H, regs.A); break;
+        case 0x68: instr_set.ld(regs.L, regs.B); break;
+        case 0x69: instr_set.ld(regs.L, regs.C); break;
+        case 0x6A: instr_set.ld(regs.L, regs.D); break;
+        case 0x6B: instr_set.ld(regs.L, regs.E); break;
+        case 0x6C: instr_set.ld(regs.L, regs.H); break;
+        case 0x6D: instr_set.ld(regs.L, regs.L); break;
+        case 0x6E: instr_set.ld_from_HL(regs.L); break;
+        case 0x6F: instr_set.ld(regs.L, regs.A); break;
         
-        // XOR A,[HL]
-        case 0xAE: m_cycles += XOR_A_HL(mem); break;
+        case 0x70: instr_set.ld_to_HL(regs.B); break;
+        case 0x71: instr_set.ld_to_HL(regs.C); break;
+        case 0x72: instr_set.ld_to_HL(regs.D); break;
+        case 0x73: instr_set.ld_to_HL(regs.E); break;
+        case 0x74: instr_set.ld_to_HL(regs.H); break;
+        case 0x75: instr_set.ld_to_HL(regs.L); break;
+        case 0x76: instr_set.halt();           break;
+        case 0x77: instr_set.ld_to_HL(regs.A); break;
+        case 0x78: instr_set.ld(regs.A, regs.B); break;
+        case 0x79: instr_set.ld(regs.A, regs.C); break;
+        case 0x7A: instr_set.ld(regs.A, regs.D); break;
+        case 0x7B: instr_set.ld(regs.A, regs.E); break;
+        case 0x7C: instr_set.ld(regs.A, regs.H); break;
+        case 0x7D: instr_set.ld(regs.A, regs.L); break;
+        case 0x7E: instr_set.ld_from_HL(regs.A); break;
+        case 0x7F: instr_set.ld(regs.A, regs.A); break;
 
-        // OR A,R8
-        case 0xB0: m_cycles += OR_A_R8(B); break;
-        case 0xB1: m_cycles += OR_A_R8(C); break;
-        case 0xB2: m_cycles += OR_A_R8(D); break;
-        case 0xB3: m_cycles += OR_A_R8(E); break;
-        case 0xB4: m_cycles += OR_A_R8(H); break;
-        case 0xB5: m_cycles += OR_A_R8(L); break;
-        case 0xB7: m_cycles += OR_A_R8(A); break;
+        case 0x80: instr_set.add(regs.B); break;
+        case 0x81: instr_set.add(regs.C); break;
+        case 0x82: instr_set.add(regs.D); break;
+        case 0x83: instr_set.add(regs.E); break;
+        case 0x84: instr_set.add(regs.H); break;
+        case 0x85: instr_set.add(regs.L); break;
+        case 0x86: instr_set.add_HL();    break;
+        case 0x87: instr_set.add(regs.A); break;
+        case 0x88: instr_set.adc(regs.B); break;
+        case 0x89: instr_set.adc(regs.C); break;
+        case 0x8A: instr_set.adc(regs.D); break;
+        case 0x8B: instr_set.adc(regs.E); break;
+        case 0x8C: instr_set.adc(regs.H); break;
+        case 0x8D: instr_set.adc(regs.L); break;
+        case 0x8E: instr_set.adc_HL();    break;
+        case 0x8F: instr_set.adc(regs.A); break;
 
-        // OR A,[HL]
-        case 0xB6: m_cycles += OR_A_HL(mem); break;
+        case 0x90: instr_set.sub(regs.B); break;
+        case 0x91: instr_set.sub(regs.C); break;
+        case 0x92: instr_set.sub(regs.D); break;
+        case 0x93: instr_set.sub(regs.E); break;
+        case 0x94: instr_set.sub(regs.H); break;
+        case 0x95: instr_set.sub(regs.L); break;
+        case 0x96: instr_set.sub_HL();    break;
+        case 0x97: instr_set.sub(regs.A); break;
+        case 0x98: instr_set.sbc(regs.B); break;
+        case 0x99: instr_set.sbc(regs.C); break;
+        case 0x9A: instr_set.sbc(regs.D); break;
+        case 0x9B: instr_set.sbc(regs.E); break;
+        case 0x9C: instr_set.sbc(regs.H); break;
+        case 0x9D: instr_set.sbc(regs.L); break;
+        case 0x9E: instr_set.sbc_HL();    break;
+        case 0x9F: instr_set.sbc(regs.A); break;
 
-        // CP A,R8
-        case 0xB8: m_cycles += CP_A_R8(B); break;
-        case 0xB9: m_cycles += CP_A_R8(C); break;
-        case 0xBA: m_cycles += CP_A_R8(D); break;
-        case 0xBB: m_cycles += CP_A_R8(E); break;
-        case 0xBC: m_cycles += CP_A_R8(H); break;
-        case 0xBD: m_cycles += CP_A_R8(L); break;
-        case 0xBF: m_cycles += CP_A_R8(A); break;
+        case 0xA0: instr_set.and_A(regs.B); break;
+        case 0xA1: instr_set.and_A(regs.C); break;
+        case 0xA2: instr_set.and_A(regs.D); break;
+        case 0xA3: instr_set.and_A(regs.E); break;
+        case 0xA4: instr_set.and_A(regs.H); break;
+        case 0xA5: instr_set.and_A(regs.L); break;
+        case 0xA6: instr_set.and_A_HL();    break;
+        case 0xA7: instr_set.and_A(regs.A); break;
+        case 0xA8: instr_set.xor_A(regs.B); break;
+        case 0xA9: instr_set.xor_A(regs.C); break;
+        case 0xAA: instr_set.xor_A(regs.D); break;
+        case 0xAB: instr_set.xor_A(regs.E); break;
+        case 0xAC: instr_set.xor_A(regs.H); break;
+        case 0xAD: instr_set.xor_A(regs.L); break;
+        case 0xAE: instr_set.xor_A_HL();    break;
+        case 0xAF: instr_set.xor_A(regs.A); break;
+
+        case 0xB0: instr_set.or_A(regs.B);  break;
+        case 0xB1: instr_set.or_A(regs.C);  break;
+        case 0xB2: instr_set.or_A(regs.D);  break;
+        case 0xB3: instr_set.or_A(regs.E);  break;
+        case 0xB4: instr_set.or_A(regs.H);  break;
+        case 0xB5: instr_set.or_A(regs.L);  break;
+        case 0xB6: instr_set.or_A_HL();     break;
+        case 0xB7: instr_set.or_A(regs.A);  break;
+        case 0xB8: instr_set.cp(regs.B);    break;
+        case 0xB9: instr_set.cp(regs.C);    break;
+        case 0xBA: instr_set.cp(regs.D);    break;
+        case 0xBB: instr_set.cp(regs.E);    break;
+        case 0xBC: instr_set.cp(regs.H);    break;
+        case 0xBD: instr_set.cp(regs.L);    break;
+        case 0xBE: instr_set.cp_HL();       break;
+        case 0xBF: instr_set.cp(regs.A);    break;
+
+        case 0xC0: instr_set.ret(!BIT(regs.F, 7), RET_CC); break;
+        case 0xC1: instr_set.pop(regs.B, regs.C);          break;
+        case 0xC2: instr_set.jp(!BIT(regs.F, 7));          break;
+        case 0xC3: instr_set.jp();                         break;
+        case 0xC4: instr_set.call(!BIT(regs.F, 7));        break;
+        case 0xC5: instr_set.push(regs.B, regs.C);         break;
+        case 0xC6: instr_set.add();                        break;
+        case 0xC7: instr_set.rst(0x00);                    break;
+        case 0xC8: instr_set.ret(BIT(regs.F, 7), RET_CC);  break;
+        case 0xC9: instr_set.ret();                        break;
+        case 0xCA: instr_set.jp(BIT(regs.F, 7));           break;
+        case 0xCC: instr_set.call(BIT(regs.F, 7));         break;
+        case 0xCD: instr_set.call();                       break;
+        case 0xCE: instr_set.adc();                        break;
+        case 0xCF: instr_set.rst(0x08);                    break;
+
+        case 0xD0: instr_set.ret(!BIT(regs.F, 4), RET_CC); break;
+        case 0xD1: instr_set.pop(regs.D, regs.E);          break;
+        case 0xD2: instr_set.jp(!BIT(regs.F, 4));          break;
+        case 0xD4: instr_set.call(!BIT(regs.F, 4));        break;
+        case 0xD5: instr_set.push(regs.D, regs.E);         break;
+        case 0xD6: instr_set.sub();                        break;
+        case 0xD7: instr_set.rst(0x10);                    break;
+        case 0xD8: instr_set.ret(BIT(regs.F, 4), RET_CC);  break;
+        case 0xD9: instr_set.reti();                       break;
+        case 0xDA: instr_set.jp(BIT(regs.F, 4));           break;
+        case 0xDC: instr_set.call(BIT(regs.F, 4));         break;
+        case 0xDE: instr_set.sbc();                        break;
+        case 0xDF: instr_set.rst(0x18);                    break;
+
+        case 0xE0: instr_set.ldh_from_A(LDH_A8);   break;
+        case 0xE1: instr_set.pop(regs.H, regs.L);  break;
+        case 0xE2: instr_set.ldh_from_A(LDH_C);    break;
+        case 0xE5: instr_set.push(regs.H, regs.L); break;
+        case 0xE6: instr_set.and_A();              break;
+        case 0xE7: instr_set.rst(0x20);            break;
+        case 0xE8: instr_set.add_to_SP();          break;
+        case 0xE9: instr_set.jp_HL();              break;
+        case 0xEA: instr_set.ld_from_A();          break;
+        case 0xEE: instr_set.xor_A();              break;
+        case 0xEF: instr_set.rst(0x28);            break;
+
+        case 0xF0: instr_set.ldh_to_A(LDH_A8);            break;
+        case 0xF1: instr_set.pop(regs.A, regs.F, POP_AF); break;
+        case 0xF2: instr_set.ldh_to_A(LDH_C);             break;
+        case 0xF3: instr_set.di();                        break;
+        case 0xF5: instr_set.push(regs.A, regs.F & 0xF0); break;
+        case 0xF6: instr_set.or_A();                      break;
+        case 0xF7: instr_set.rst(0x30);                   break;
+        case 0xF8: instr_set.ld_SP_signed();              break;
+        case 0xF9: instr_set.ld_SP_HL();                  break;
+        case 0xFA: instr_set.ld_to_A();                   break;
+        case 0xFB: instr_set.ei();                        break;
+        case 0xFE: instr_set.cp();                        break;
+        case 0xFF: instr_set.rst(0x38);                   break;
         
-        // CP A,[HL]
-        case 0xBE: m_cycles += CP_A_HL(mem); break;
-
-        // ADD A, n8
-        case 0xC6: m_cycles += ADD_A_n8(mem); break;
-
-        // ADC A, n8
-        case 0xCE: m_cycles += ADC_A_n8(mem); break;
-
-        // SUB A, n8
-        case 0xD6: m_cycles += SUB_A_n8(mem); break;
-
-        // SBC A, n8
-        case 0xDE: m_cycles += SBC_A_n8(mem); break;
-
-        // AND A, n8
-        case 0xE6: m_cycles += AND_A_n8(mem); break;
-
-        // XOR A, n8
-        case 0xEE: m_cycles += XOR_A_n8(mem); break;
-
-        // OR A, n8
-        case 0xF6: m_cycles += OR_A_n8(mem); break;
-
-        // CP A, n8
-        case 0xFE: m_cycles += CP_A_n8(mem); break;
-
-        // CALL n16
-        case 0xCD: m_cycles += CALL_n16(mem); break;
-
-        // CALL cc, n16
-        case 0xC4: m_cycles += CALL_cc_n16(!(F & 0x80), mem); break; // NZ
-        case 0xCC: m_cycles += CALL_cc_n16(F & 0x80, mem);    break; // Z
-        case 0xD4: m_cycles += CALL_cc_n16(!(F & 0x10), mem); break; // NC
-        case 0xDC: m_cycles += CALL_cc_n16(F & 0x10, mem);    break; // C
-
-        // JP HL
-        case 0xE9: m_cycles += JP_HL(); break;
-
-        // JP n16
-        case 0xC3: m_cycles += JP_n16(mem); break;
-
-        // JR e8
-        case 0x18: m_cycles += JR_e8(mem); break;
-
-        // JR cc, e8
-        case 0x20: m_cycles += JR_cc_e8(!(F & 0x80), mem); break; // NZ
-        case 0x28: m_cycles += JR_cc_e8(F & 0x80, mem);    break; // Z
-        case 0x30: m_cycles += JR_cc_e8(!(F & 0x10), mem); break; // NC
-        case 0x38: m_cycles += JR_cc_e8(F & 0x10, mem);    break; // C
-
-        // RET
-        case 0xC9: m_cycles += RET(mem); break;
-
-        // RETI
-        case 0xD9: m_cycles += RETI(mem); break;
-
-        // RET cc
-        case 0xC0: m_cycles += RET_cc(!(F & 0x80), mem); break; // NZ
-        case 0xC8: m_cycles += RET_cc(F & 0x80, mem);    break; // Z
-        case 0xD0: m_cycles += RET_cc(!(F & 0x10), mem); break; // NC
-        case 0xD8: m_cycles += RET_cc(F & 0x10, mem);    break; // C
-
-        // RST vec
-        case 0xC7: m_cycles += RST_vec(0x0000, mem); break;
-        case 0xCF: m_cycles += RST_vec(0x0008, mem); break;
-        case 0xD7: m_cycles += RST_vec(0x0010, mem); break;
-        case 0xDF: m_cycles += RST_vec(0x0018, mem); break;
-        case 0xE7: m_cycles += RST_vec(0x0020, mem); break;
-        case 0xEF: m_cycles += RST_vec(0x0028, mem); break;
-        case 0xF7: m_cycles += RST_vec(0x0030, mem); break;
-        case 0xFF: m_cycles += RST_vec(0x0038, mem); break;
-
-        // ADD SP,e8
-        case 0xE8: m_cycles += ADD_SP_e8(mem); break;
-
-        // POP R16
-        case 0xC1: m_cycles += POP_R16(BC, mem); break;
-        case 0xD1: m_cycles += POP_R16(DE, mem); break;
-        case 0xE1: m_cycles += POP_R16(HL, mem); break;
-        case 0xF1: m_cycles += POP_R16(AF, mem); break;
-
-        // PUSH R16
-        case 0xC5: m_cycles += PUSH_R16(BC, mem); break;
-        case 0xD5: m_cycles += PUSH_R16(DE, mem); break;
-        case 0xE5: m_cycles += PUSH_R16(HL, mem); break;
-        case 0xF5: m_cycles += PUSH_R16(AF, mem); break;
-
-        // CCF
-        case 0x3F: m_cycles += CCF(); break;
-        
-        // CPL
-        case 0x2F: m_cycles += CPL(); break;
-        
-        // DI
-        case 0xF3: m_cycles += DI(); break;
-
-        // EI
-        case 0xFB: m_cycles += EI(); break;
-
-        // SCF
-        case 0x37: m_cycles += SCF(); break;
-
-        // TODO: STOP n8
-        case 0x10:
-            break;
-
-        
-        // Prefixed 0xCB instructions
         case 0xCB:
-            opcode = mem.read(PC++);
+            opcode = bus.read(regs.PC++);
+            bus.emulate_cycles(1);
+            std::cout << "Encountered prefixed 0xCB code: 0x" 
+                << std::hex << +opcode << std::endl;
+
             switch (opcode) {
+                case 0x00: instr_set.shift(RLC, regs.B); break;
+                case 0x01: instr_set.shift(RLC, regs.C); break;
+                case 0x02: instr_set.shift(RLC, regs.D); break;
+                case 0x03: instr_set.shift(RLC, regs.E); break;
+                case 0x04: instr_set.shift(RLC, regs.H); break;
+                case 0x05: instr_set.shift(RLC, regs.L); break;
+                case 0x06: instr_set.shift_HL(RLC);      break;
+                case 0x07: instr_set.shift(RLC, regs.A); break;
+                case 0x08: instr_set.shift(RRC, regs.B); break;
+                case 0x09: instr_set.shift(RRC, regs.C); break;
+                case 0x0A: instr_set.shift(RRC, regs.D); break;
+                case 0x0B: instr_set.shift(RRC, regs.E); break;
+                case 0x0C: instr_set.shift(RRC, regs.H); break;
+                case 0x0D: instr_set.shift(RRC, regs.L); break;
+                case 0x0E: instr_set.shift_HL(RRC);      break;
+                case 0x0F: instr_set.shift(RRC, regs.A); break;
+
+                case 0x10: instr_set.shift(RL, regs.B); break;
+                case 0x11: instr_set.shift(RL, regs.C); break;
+                case 0x12: instr_set.shift(RL, regs.D); break;
+                case 0x13: instr_set.shift(RL, regs.E); break;
+                case 0x14: instr_set.shift(RL, regs.H); break;
+                case 0x15: instr_set.shift(RL, regs.L); break;
+                case 0x16: instr_set.shift_HL(RL);      break;
+                case 0x17: instr_set.shift(RL, regs.A); break;
+                case 0x18: instr_set.shift(RR, regs.B); break;
+                case 0x19: instr_set.shift(RR, regs.C); break;
+                case 0x1A: instr_set.shift(RR, regs.D); break;
+                case 0x1B: instr_set.shift(RR, regs.E); break;
+                case 0x1C: instr_set.shift(RR, regs.H); break;
+                case 0x1D: instr_set.shift(RR, regs.L); break;
+                case 0x1E: instr_set.shift_HL(RR);      break;
+                case 0x1F: instr_set.shift(RR, regs.A); break;
+
+                case 0x20: instr_set.shift(SLA, regs.B); break;
+                case 0x21: instr_set.shift(SLA, regs.C); break;
+                case 0x22: instr_set.shift(SLA, regs.D); break;
+                case 0x23: instr_set.shift(SLA, regs.E); break;
+                case 0x24: instr_set.shift(SLA, regs.H); break;
+                case 0x25: instr_set.shift(SLA, regs.L); break;
+                case 0x26: instr_set.shift_HL(SLA);      break;
+                case 0x27: instr_set.shift(SLA, regs.A); break;
+                case 0x28: instr_set.shift(SRA, regs.B); break;
+                case 0x29: instr_set.shift(SRA, regs.C); break;
+                case 0x2A: instr_set.shift(SRA, regs.D); break;
+                case 0x2B: instr_set.shift(SRA, regs.E); break;
+                case 0x2C: instr_set.shift(SRA, regs.H); break;
+                case 0x2D: instr_set.shift(SRA, regs.L); break;
+                case 0x2E: instr_set.shift_HL(SRA);      break;
+                case 0x2F: instr_set.shift(SRA, regs.A); break;
+
+                case 0x30: instr_set.shift(SWAP, regs.B); break;
+                case 0x31: instr_set.shift(SWAP, regs.C); break;
+                case 0x32: instr_set.shift(SWAP, regs.D); break;
+                case 0x33: instr_set.shift(SWAP, regs.E); break;
+                case 0x34: instr_set.shift(SWAP, regs.H); break;
+                case 0x35: instr_set.shift(SWAP, regs.L); break;
+                case 0x36: instr_set.shift_HL(SWAP);      break;
+                case 0x37: instr_set.shift(SWAP, regs.A); break;
+                case 0x38: instr_set.shift(SRL, regs.B); break;
+                case 0x39: instr_set.shift(SRL, regs.C); break;
+                case 0x3A: instr_set.shift(SRL, regs.D); break;
+                case 0x3B: instr_set.shift(SRL, regs.E); break;
+                case 0x3C: instr_set.shift(SRL, regs.H); break;
+                case 0x3D: instr_set.shift(SRL, regs.L); break;
+                case 0x3E: instr_set.shift_HL(SRL);      break;
+                case 0x3F: instr_set.shift(SRL, regs.A); break;
+
+                case 0x40: instr_set.bit_flag(BIT, 0, regs.B); break;
+                case 0x41: instr_set.bit_flag(BIT, 0, regs.C); break;
+                case 0x42: instr_set.bit_flag(BIT, 0, regs.D); break;
+                case 0x43: instr_set.bit_flag(BIT, 0, regs.E); break;
+                case 0x44: instr_set.bit_flag(BIT, 0, regs.H); break;
+                case 0x45: instr_set.bit_flag(BIT, 0, regs.L); break;
+                case 0x46: instr_set.bit_flag_HL(BIT, 0);      break;
+                case 0x47: instr_set.bit_flag(BIT, 0, regs.A); break;
+                case 0x48: instr_set.bit_flag(BIT, 1, regs.B); break;
+                case 0x49: instr_set.bit_flag(BIT, 1, regs.C); break;
+                case 0x4A: instr_set.bit_flag(BIT, 1, regs.D); break;
+                case 0x4B: instr_set.bit_flag(BIT, 1, regs.E); break;
+                case 0x4C: instr_set.bit_flag(BIT, 1, regs.H); break;
+                case 0x4D: instr_set.bit_flag(BIT, 1, regs.L); break;
+                case 0x4E: instr_set.bit_flag_HL(BIT, 1);      break;
+                case 0x4F: instr_set.bit_flag(BIT, 1, regs.A); break;
+
+                case 0x50: instr_set.bit_flag(BIT, 2, regs.B); break;
+                case 0x51: instr_set.bit_flag(BIT, 2, regs.C); break;
+                case 0x52: instr_set.bit_flag(BIT, 2, regs.D); break;
+                case 0x53: instr_set.bit_flag(BIT, 2, regs.E); break;
+                case 0x54: instr_set.bit_flag(BIT, 2, regs.H); break;
+                case 0x55: instr_set.bit_flag(BIT, 2, regs.L); break;
+                case 0x56: instr_set.bit_flag_HL(BIT, 2);      break;
+                case 0x57: instr_set.bit_flag(BIT, 2, regs.A); break;
+                case 0x58: instr_set.bit_flag(BIT, 3, regs.B); break;
+                case 0x59: instr_set.bit_flag(BIT, 3, regs.C); break;
+                case 0x5A: instr_set.bit_flag(BIT, 3, regs.D); break;
+                case 0x5B: instr_set.bit_flag(BIT, 3, regs.E); break;
+                case 0x5C: instr_set.bit_flag(BIT, 3, regs.H); break;
+                case 0x5D: instr_set.bit_flag(BIT, 3, regs.L); break;
+                case 0x5E: instr_set.bit_flag_HL(BIT, 3);      break;
+                case 0x5F: instr_set.bit_flag(BIT, 3, regs.A); break;
+
+                case 0x60: instr_set.bit_flag(BIT, 4, regs.B); break;
+                case 0x61: instr_set.bit_flag(BIT, 4, regs.C); break;
+                case 0x62: instr_set.bit_flag(BIT, 4, regs.D); break;
+                case 0x63: instr_set.bit_flag(BIT, 4, regs.E); break;
+                case 0x64: instr_set.bit_flag(BIT, 4, regs.H); break;
+                case 0x65: instr_set.bit_flag(BIT, 4, regs.L); break;
+                case 0x66: instr_set.bit_flag_HL(BIT, 4);      break;
+                case 0x67: instr_set.bit_flag(BIT, 4, regs.A); break;
+                case 0x68: instr_set.bit_flag(BIT, 5, regs.B); break;
+                case 0x69: instr_set.bit_flag(BIT, 5, regs.C); break;
+                case 0x6A: instr_set.bit_flag(BIT, 5, regs.D); break;
+                case 0x6B: instr_set.bit_flag(BIT, 5, regs.E); break;
+                case 0x6C: instr_set.bit_flag(BIT, 5, regs.H); break;
+                case 0x6D: instr_set.bit_flag(BIT, 5, regs.L); break;
+                case 0x6E: instr_set.bit_flag_HL(BIT, 5);      break;
+                case 0x6F: instr_set.bit_flag(BIT, 5, regs.A); break;
+
+                case 0x70: instr_set.bit_flag(BIT, 6, regs.B); break;
+                case 0x71: instr_set.bit_flag(BIT, 6, regs.C); break;
+                case 0x72: instr_set.bit_flag(BIT, 6, regs.D); break;
+                case 0x73: instr_set.bit_flag(BIT, 6, regs.E); break;
+                case 0x74: instr_set.bit_flag(BIT, 6, regs.H); break;
+                case 0x75: instr_set.bit_flag(BIT, 6, regs.L); break;
+                case 0x76: instr_set.bit_flag_HL(BIT, 6);      break;
+                case 0x77: instr_set.bit_flag(BIT, 6, regs.A); break;
+                case 0x78: instr_set.bit_flag(BIT, 7, regs.B); break;
+                case 0x79: instr_set.bit_flag(BIT, 7, regs.C); break;
+                case 0x7A: instr_set.bit_flag(BIT, 7, regs.D); break;
+                case 0x7B: instr_set.bit_flag(BIT, 7, regs.E); break;
+                case 0x7C: instr_set.bit_flag(BIT, 7, regs.H); break;
+                case 0x7D: instr_set.bit_flag(BIT, 7, regs.L); break;
+                case 0x7E: instr_set.bit_flag_HL(BIT, 7);      break;
+                case 0x7F: instr_set.bit_flag(BIT, 7, regs.A); break;
+
+                case 0x80: instr_set.bit_flag(RES, 0, regs.B); break;
+                case 0x81: instr_set.bit_flag(RES, 0, regs.C); break;
+                case 0x82: instr_set.bit_flag(RES, 0, regs.D); break;
+                case 0x83: instr_set.bit_flag(RES, 0, regs.E); break;
+                case 0x84: instr_set.bit_flag(RES, 0, regs.H); break;
+                case 0x85: instr_set.bit_flag(RES, 0, regs.L); break;
+                case 0x86: instr_set.bit_flag_HL(RES, 0);      break;
+                case 0x87: instr_set.bit_flag(RES, 0, regs.A); break;
+                case 0x88: instr_set.bit_flag(RES, 1, regs.B); break;
+                case 0x89: instr_set.bit_flag(RES, 1, regs.C); break;
+                case 0x8A: instr_set.bit_flag(RES, 1, regs.D); break;
+                case 0x8B: instr_set.bit_flag(RES, 1, regs.E); break;
+                case 0x8C: instr_set.bit_flag(RES, 1, regs.H); break;
+                case 0x8D: instr_set.bit_flag(RES, 1, regs.L); break;
+                case 0x8E: instr_set.bit_flag_HL(RES, 1);      break;
+                case 0x8F: instr_set.bit_flag(RES, 1, regs.A); break;
+
+                case 0x90: instr_set.bit_flag(RES, 2, regs.B); break;
+                case 0x91: instr_set.bit_flag(RES, 2, regs.C); break;
+                case 0x92: instr_set.bit_flag(RES, 2, regs.D); break;
+                case 0x93: instr_set.bit_flag(RES, 2, regs.E); break;
+                case 0x94: instr_set.bit_flag(RES, 2, regs.H); break;
+                case 0x95: instr_set.bit_flag(RES, 2, regs.L); break;
+                case 0x96: instr_set.bit_flag_HL(RES, 2);      break;
+                case 0x97: instr_set.bit_flag(RES, 2, regs.A); break;
+                case 0x98: instr_set.bit_flag(RES, 3, regs.B); break;
+                case 0x99: instr_set.bit_flag(RES, 3, regs.C); break;
+                case 0x9A: instr_set.bit_flag(RES, 3, regs.D); break;
+                case 0x9B: instr_set.bit_flag(RES, 3, regs.E); break;
+                case 0x9C: instr_set.bit_flag(RES, 3, regs.H); break;
+                case 0x9D: instr_set.bit_flag(RES, 3, regs.L); break;
+                case 0x9E: instr_set.bit_flag_HL(RES, 3);      break;
+                case 0x9F: instr_set.bit_flag(RES, 3, regs.A); break;
+
+                case 0xA0: instr_set.bit_flag(RES, 4, regs.B); break;
+                case 0xA1: instr_set.bit_flag(RES, 4, regs.C); break;
+                case 0xA2: instr_set.bit_flag(RES, 4, regs.D); break;
+                case 0xA3: instr_set.bit_flag(RES, 4, regs.E); break;
+                case 0xA4: instr_set.bit_flag(RES, 4, regs.H); break;
+                case 0xA5: instr_set.bit_flag(RES, 4, regs.L); break;
+                case 0xA6: instr_set.bit_flag_HL(RES, 4);      break;
+                case 0xA7: instr_set.bit_flag(RES, 4, regs.A); break;
+                case 0xA8: instr_set.bit_flag(RES, 5, regs.B); break;
+                case 0xA9: instr_set.bit_flag(RES, 5, regs.C); break;
+                case 0xAA: instr_set.bit_flag(RES, 5, regs.D); break;
+                case 0xAB: instr_set.bit_flag(RES, 5, regs.E); break;
+                case 0xAC: instr_set.bit_flag(RES, 5, regs.H); break;
+                case 0xAD: instr_set.bit_flag(RES, 5, regs.L); break;
+                case 0xAE: instr_set.bit_flag_HL(RES, 5);      break;
+                case 0xAF: instr_set.bit_flag(RES, 5, regs.A); break;
+
+                case 0xB0: instr_set.bit_flag(RES, 6, regs.B); break;
+                case 0xB1: instr_set.bit_flag(RES, 6, regs.C); break;
+                case 0xB2: instr_set.bit_flag(RES, 6, regs.D); break;
+                case 0xB3: instr_set.bit_flag(RES, 6, regs.E); break;
+                case 0xB4: instr_set.bit_flag(RES, 6, regs.H); break;
+                case 0xB5: instr_set.bit_flag(RES, 6, regs.L); break;
+                case 0xB6: instr_set.bit_flag_HL(RES, 6);      break;
+                case 0xB7: instr_set.bit_flag(RES, 6, regs.A); break;
+                case 0xB8: instr_set.bit_flag(RES, 7, regs.B); break;
+                case 0xB9: instr_set.bit_flag(RES, 7, regs.C); break;
+                case 0xBA: instr_set.bit_flag(RES, 7, regs.D); break;
+                case 0xBB: instr_set.bit_flag(RES, 7, regs.E); break;
+                case 0xBC: instr_set.bit_flag(RES, 7, regs.H); break;
+                case 0xBD: instr_set.bit_flag(RES, 7, regs.L); break;
+                case 0xBE: instr_set.bit_flag_HL(RES, 7);      break;
+                case 0xBF: instr_set.bit_flag(RES, 7, regs.A); break;
+
+                case 0xC0: instr_set.bit_flag(SET, 0, regs.B); break;
+                case 0xC1: instr_set.bit_flag(SET, 0, regs.C); break;
+                case 0xC2: instr_set.bit_flag(SET, 0, regs.D); break;
+                case 0xC3: instr_set.bit_flag(SET, 0, regs.E); break;
+                case 0xC4: instr_set.bit_flag(SET, 0, regs.H); break;
+                case 0xC5: instr_set.bit_flag(SET, 0, regs.L); break;
+                case 0xC6: instr_set.bit_flag_HL(SET, 0);      break;
+                case 0xC7: instr_set.bit_flag(SET, 0, regs.A); break;
+                case 0xC8: instr_set.bit_flag(SET, 1, regs.B); break;
+                case 0xC9: instr_set.bit_flag(SET, 1, regs.C); break;
+                case 0xCA: instr_set.bit_flag(SET, 1, regs.D); break;
+                case 0xCB: instr_set.bit_flag(SET, 1, regs.E); break;
+                case 0xCC: instr_set.bit_flag(SET, 1, regs.H); break;
+                case 0xCD: instr_set.bit_flag(SET, 1, regs.L); break;
+                case 0xCE: instr_set.bit_flag_HL(SET, 1);      break;
+                case 0xCF: instr_set.bit_flag(SET, 1, regs.A); break;
+
+                case 0xD0: instr_set.bit_flag(SET, 2, regs.B); break;
+                case 0xD1: instr_set.bit_flag(SET, 2, regs.C); break;
+                case 0xD2: instr_set.bit_flag(SET, 2, regs.D); break;
+                case 0xD3: instr_set.bit_flag(SET, 2, regs.E); break;
+                case 0xD4: instr_set.bit_flag(SET, 2, regs.H); break;
+                case 0xD5: instr_set.bit_flag(SET, 2, regs.L); break;
+                case 0xD6: instr_set.bit_flag_HL(SET, 2);      break;
+                case 0xD7: instr_set.bit_flag(SET, 2, regs.A); break;
+                case 0xD8: instr_set.bit_flag(SET, 3, regs.B); break;
+                case 0xD9: instr_set.bit_flag(SET, 3, regs.C); break;
+                case 0xDA: instr_set.bit_flag(SET, 3, regs.D); break;
+                case 0xDB: instr_set.bit_flag(SET, 3, regs.E); break;
+                case 0xDC: instr_set.bit_flag(SET, 3, regs.H); break;
+                case 0xDD: instr_set.bit_flag(SET, 3, regs.L); break;
+                case 0xDE: instr_set.bit_flag_HL(SET, 3);      break;
+                case 0xDF: instr_set.bit_flag(SET, 3, regs.A); break;
+
+                case 0xE0: instr_set.bit_flag(SET, 4, regs.B); break;
+                case 0xE1: instr_set.bit_flag(SET, 4, regs.C); break;
+                case 0xE2: instr_set.bit_flag(SET, 4, regs.D); break;
+                case 0xE3: instr_set.bit_flag(SET, 4, regs.E); break;
+                case 0xE4: instr_set.bit_flag(SET, 4, regs.H); break;
+                case 0xE5: instr_set.bit_flag(SET, 4, regs.L); break;
+                case 0xE6: instr_set.bit_flag_HL(SET, 4);      break;
+                case 0xE7: instr_set.bit_flag(SET, 4, regs.A); break;
+                case 0xE8: instr_set.bit_flag(SET, 5, regs.B); break;
+                case 0xE9: instr_set.bit_flag(SET, 5, regs.C); break;
+                case 0xEA: instr_set.bit_flag(SET, 5, regs.D); break;
+                case 0xEB: instr_set.bit_flag(SET, 5, regs.E); break;
+                case 0xEC: instr_set.bit_flag(SET, 5, regs.H); break;
+                case 0xED: instr_set.bit_flag(SET, 5, regs.L); break;
+                case 0xEE: instr_set.bit_flag_HL(SET, 5);      break;
+                case 0xEF: instr_set.bit_flag(SET, 5, regs.A); break;
+
+                case 0xF0: instr_set.bit_flag(SET, 6, regs.B); break;
+                case 0xF1: instr_set.bit_flag(SET, 6, regs.C); break;
+                case 0xF2: instr_set.bit_flag(SET, 6, regs.D); break;
+                case 0xF3: instr_set.bit_flag(SET, 6, regs.E); break;
+                case 0xF4: instr_set.bit_flag(SET, 6, regs.H); break;
+                case 0xF5: instr_set.bit_flag(SET, 6, regs.L); break;
+                case 0xF6: instr_set.bit_flag_HL(SET, 6);      break;
+                case 0xF7: instr_set.bit_flag(SET, 6, regs.A); break;
+                case 0xF8: instr_set.bit_flag(SET, 7, regs.B); break;
+                case 0xF9: instr_set.bit_flag(SET, 7, regs.C); break;
+                case 0xFA: instr_set.bit_flag(SET, 7, regs.D); break;
+                case 0xFB: instr_set.bit_flag(SET, 7, regs.E); break;
+                case 0xFC: instr_set.bit_flag(SET, 7, regs.H); break;
+                case 0xFD: instr_set.bit_flag(SET, 7, regs.L); break;
+                case 0xFE: instr_set.bit_flag_HL(SET, 7);      break;
+                case 0xFF: instr_set.bit_flag(SET, 7, regs.A); break;
                 
-                // RLC r8
-                case 0x00: m_cycles += RLC_R8(B); break;
-                case 0x01: m_cycles += RLC_R8(C); break;
-                case 0x02: m_cycles += RLC_R8(D); break;
-                case 0x03: m_cycles += RLC_R8(E); break;
-                case 0x04: m_cycles += RLC_R8(H); break;
-                case 0x05: m_cycles += RLC_R8(L); break;
-                case 0x07: m_cycles += RLC_R8(A); break;
-
-                // RLC [HL]
-                case 0x06: m_cycles += RLC_HL(mem); break;
-
-                // RL R8
-                case 0x10: m_cycles += RL_R8(B); break;
-                case 0x11: m_cycles += RL_R8(C); break;
-                case 0x12: m_cycles += RL_R8(D); break;
-                case 0x13: m_cycles += RL_R8(E); break;
-                case 0x14: m_cycles += RL_R8(H); break;
-                case 0x15: m_cycles += RL_R8(L); break;
-                case 0x17: m_cycles += RL_R8(A); break;
-
-                // RL [HL]
-                case 0x16: m_cycles += RL_HL(mem); break;
-
-                // RRC R8
-                case 0x08: m_cycles += RRC_R8(B); break;
-                case 0x09: m_cycles += RRC_R8(C); break;
-                case 0x0A: m_cycles += RRC_R8(D); break;
-                case 0x0B: m_cycles += RRC_R8(E); break;
-                case 0x0C: m_cycles += RRC_R8(H); break;
-                case 0x0D: m_cycles += RRC_R8(L); break;
-                case 0x0F: m_cycles += RRC_R8(A); break;
-
-                // RRC [HL]
-                case 0x0E: m_cycles += RRC_HL(mem); break;
-                
-                // RR R8
-                case 0x18: m_cycles += RR_R8(B); break;
-                case 0x19: m_cycles += RR_R8(C); break;
-                case 0x1A: m_cycles += RR_R8(D); break;
-                case 0x1B: m_cycles += RR_R8(E); break;
-                case 0x1C: m_cycles += RR_R8(H); break;
-                case 0x1D: m_cycles += RR_R8(L); break;
-                case 0x1F: m_cycles += RR_R8(A); break;
-
-                // RR [HL]
-                case 0x1E: m_cycles += RR_HL(mem); break;
-
-                // SLA R8
-                case 0x20: m_cycles += SLA_R8(B); break;
-                case 0x21: m_cycles += SLA_R8(C); break;
-                case 0x22: m_cycles += SLA_R8(D); break;
-                case 0x23: m_cycles += SLA_R8(E); break;
-                case 0x24: m_cycles += SLA_R8(H); break;
-                case 0x25: m_cycles += SLA_R8(L); break;
-                case 0x27: m_cycles += SLA_R8(A); break;
-
-                // SLA [HL]
-                case 0x26: m_cycles += SLA_HL(mem); break;
-
-                // SRA R8
-                case 0x28: m_cycles += SRA_R8(B); break;
-                case 0x29: m_cycles += SRA_R8(C); break;
-                case 0x2A: m_cycles += SRA_R8(D); break;
-                case 0x2B: m_cycles += SRA_R8(E); break;
-                case 0x2C: m_cycles += SRA_R8(H); break;
-                case 0x2D: m_cycles += SRA_R8(L); break;
-                case 0x2F: m_cycles += SRA_R8(A); break;
-
-                // SRA [HL]
-                case 0x2E: m_cycles += SRA_HL(mem); break;
-
-                // SRL R8
-                case 0x38: m_cycles += SRL_R8(B); break;
-                case 0x39: m_cycles += SRL_R8(C); break;
-                case 0x3A: m_cycles += SRL_R8(D); break;
-                case 0x3B: m_cycles += SRL_R8(E); break;
-                case 0x3C: m_cycles += SRL_R8(H); break;
-                case 0x3D: m_cycles += SRL_R8(L); break;
-                case 0x3F: m_cycles += SRL_R8(A); break;
-
-                // SRL [HL]
-                case 0x3E: m_cycles += SRL_HL(mem); break;
-
-                // SWAP R8
-                case 0x30: m_cycles += SWAP_R8(B); break;
-                case 0x31: m_cycles += SWAP_R8(C); break;
-                case 0x32: m_cycles += SWAP_R8(D); break;
-                case 0x33: m_cycles += SWAP_R8(E); break;
-                case 0x34: m_cycles += SWAP_R8(H); break;
-                case 0x35: m_cycles += SWAP_R8(L); break;
-                case 0x37: m_cycles += SWAP_R8(A); break;
-
-                // SWAP [HL]
-                case 0x36: m_cycles += SWAP_HL(mem); break;
-
-                // BIT b3,R8
-                case 0x40: m_cycles += BIT_b3_R8(0, B); break;
-                case 0x41: m_cycles += BIT_b3_R8(0, C); break;
-                case 0x42: m_cycles += BIT_b3_R8(0, D); break;
-                case 0x43: m_cycles += BIT_b3_R8(0, E); break;
-                case 0x44: m_cycles += BIT_b3_R8(0, H); break;
-                case 0x45: m_cycles += BIT_b3_R8(0, L); break;
-                case 0x47: m_cycles += BIT_b3_R8(0, A); break;
-                case 0x48: m_cycles += BIT_b3_R8(1, B); break;
-                case 0x49: m_cycles += BIT_b3_R8(1, C); break;
-                case 0x4A: m_cycles += BIT_b3_R8(1, D); break;
-                case 0x4B: m_cycles += BIT_b3_R8(1, E); break;
-                case 0x4C: m_cycles += BIT_b3_R8(1, H); break;
-                case 0x4D: m_cycles += BIT_b3_R8(1, L); break;
-                case 0x4F: m_cycles += BIT_b3_R8(1, A); break;
-                case 0x50: m_cycles += BIT_b3_R8(2, B); break;
-                case 0x51: m_cycles += BIT_b3_R8(2, C); break;
-                case 0x52: m_cycles += BIT_b3_R8(2, D); break;
-                case 0x53: m_cycles += BIT_b3_R8(2, E); break;
-                case 0x54: m_cycles += BIT_b3_R8(2, H); break;
-                case 0x55: m_cycles += BIT_b3_R8(2, L); break;
-                case 0x57: m_cycles += BIT_b3_R8(2, A); break;
-                case 0x58: m_cycles += BIT_b3_R8(3, B); break;
-                case 0x59: m_cycles += BIT_b3_R8(3, C); break;
-                case 0x5A: m_cycles += BIT_b3_R8(3, D); break;
-                case 0x5B: m_cycles += BIT_b3_R8(3, E); break;
-                case 0x5C: m_cycles += BIT_b3_R8(3, H); break;
-                case 0x5D: m_cycles += BIT_b3_R8(3, L); break;
-                case 0x5F: m_cycles += BIT_b3_R8(3, A); break;
-                case 0x60: m_cycles += BIT_b3_R8(4, B); break;
-                case 0x61: m_cycles += BIT_b3_R8(4, C); break;
-                case 0x62: m_cycles += BIT_b3_R8(4, D); break;
-                case 0x63: m_cycles += BIT_b3_R8(4, E); break;
-                case 0x64: m_cycles += BIT_b3_R8(4, H); break;
-                case 0x65: m_cycles += BIT_b3_R8(4, L); break;
-                case 0x67: m_cycles += BIT_b3_R8(4, A); break;   
-                case 0x68: m_cycles += BIT_b3_R8(5, B); break;
-                case 0x69: m_cycles += BIT_b3_R8(5, C); break;
-                case 0x6A: m_cycles += BIT_b3_R8(5, D); break;
-                case 0x6B: m_cycles += BIT_b3_R8(5, E); break;
-                case 0x6C: m_cycles += BIT_b3_R8(5, H); break;
-                case 0x6D: m_cycles += BIT_b3_R8(5, L); break;
-                case 0x6F: m_cycles += BIT_b3_R8(5, A); break;
-                case 0x70: m_cycles += BIT_b3_R8(6, B); break;
-                case 0x71: m_cycles += BIT_b3_R8(6, C); break;
-                case 0x72: m_cycles += BIT_b3_R8(6, D); break;
-                case 0x73: m_cycles += BIT_b3_R8(6, E); break;
-                case 0x74: m_cycles += BIT_b3_R8(6, H); break;
-                case 0x75: m_cycles += BIT_b3_R8(6, L); break;
-                case 0x77: m_cycles += BIT_b3_R8(6, A); break;
-                case 0x78: m_cycles += BIT_b3_R8(7, B); break;
-                case 0x79: m_cycles += BIT_b3_R8(7, C); break;
-                case 0x7A: m_cycles += BIT_b3_R8(7, D); break;
-                case 0x7B: m_cycles += BIT_b3_R8(7, E); break;
-                case 0x7C: m_cycles += BIT_b3_R8(7, H); break;
-                case 0x7D: m_cycles += BIT_b3_R8(7, L); break;
-                case 0x7F: m_cycles += BIT_b3_R8(7, A); break;
-
-                // BIT b3,[HL]
-                case 0x46: m_cycles += BIT_b3_HL(0, mem); break;
-                case 0x4E: m_cycles += BIT_b3_HL(1, mem); break;
-                case 0x56: m_cycles += BIT_b3_HL(2, mem); break;
-                case 0x5E: m_cycles += BIT_b3_HL(3, mem); break;
-                case 0x66: m_cycles += BIT_b3_HL(4, mem); break;
-                case 0x6E: m_cycles += BIT_b3_HL(5, mem); break;
-                case 0x76: m_cycles += BIT_b3_HL(6, mem); break;
-                case 0x7E: m_cycles += BIT_b3_HL(7, mem); break;
-
-                // RES b3,R8
-                case 0x80: m_cycles += RES_b3_R8(0, B); break;
-                case 0x81: m_cycles += RES_b3_R8(0, C); break;
-                case 0x82: m_cycles += RES_b3_R8(0, D); break;
-                case 0x83: m_cycles += RES_b3_R8(0, E); break;
-                case 0x84: m_cycles += RES_b3_R8(0, H); break;
-                case 0x85: m_cycles += RES_b3_R8(0, L); break;
-                case 0x87: m_cycles += RES_b3_R8(0, A); break;
-                case 0x88: m_cycles += RES_b3_R8(1, B); break;
-                case 0x89: m_cycles += RES_b3_R8(1, C); break;
-                case 0x8A: m_cycles += RES_b3_R8(1, D); break;
-                case 0x8B: m_cycles += RES_b3_R8(1, E); break;
-                case 0x8C: m_cycles += RES_b3_R8(1, H); break;
-                case 0x8D: m_cycles += RES_b3_R8(1, L); break;
-                case 0x8F: m_cycles += RES_b3_R8(1, A); break;
-                case 0x90: m_cycles += RES_b3_R8(2, B); break;
-                case 0x91: m_cycles += RES_b3_R8(2, C); break;
-                case 0x92: m_cycles += RES_b3_R8(2, D); break;
-                case 0x93: m_cycles += RES_b3_R8(2, E); break;
-                case 0x94: m_cycles += RES_b3_R8(2, H); break;
-                case 0x95: m_cycles += RES_b3_R8(2, L); break;
-                case 0x97: m_cycles += RES_b3_R8(2, A); break;
-                case 0x98: m_cycles += RES_b3_R8(3, B); break;
-                case 0x99: m_cycles += RES_b3_R8(3, C); break;
-                case 0x9A: m_cycles += RES_b3_R8(3, D); break;
-                case 0x9B: m_cycles += RES_b3_R8(3, E); break;
-                case 0x9C: m_cycles += RES_b3_R8(3, H); break;
-                case 0x9D: m_cycles += RES_b3_R8(3, L); break;
-                case 0x9F: m_cycles += RES_b3_R8(3, A); break;
-                case 0xA0: m_cycles += RES_b3_R8(4, B); break;
-                case 0xA1: m_cycles += RES_b3_R8(4, C); break;
-                case 0xA2: m_cycles += RES_b3_R8(4, D); break;
-                case 0xA3: m_cycles += RES_b3_R8(4, E); break;
-                case 0xA4: m_cycles += RES_b3_R8(4, H); break;
-                case 0xA5: m_cycles += RES_b3_R8(4, L); break;
-                case 0xA7: m_cycles += RES_b3_R8(4, A); break;   
-                case 0xA8: m_cycles += RES_b3_R8(5, B); break;
-                case 0xA9: m_cycles += RES_b3_R8(5, C); break;
-                case 0xAA: m_cycles += RES_b3_R8(5, D); break;
-                case 0xAB: m_cycles += RES_b3_R8(5, E); break;
-                case 0xAC: m_cycles += RES_b3_R8(5, H); break;
-                case 0xAD: m_cycles += RES_b3_R8(5, L); break;
-                case 0xAF: m_cycles += RES_b3_R8(5, A); break;
-                case 0xB0: m_cycles += RES_b3_R8(6, B); break;
-                case 0xB1: m_cycles += RES_b3_R8(6, C); break;
-                case 0xB2: m_cycles += RES_b3_R8(6, D); break;
-                case 0xB3: m_cycles += RES_b3_R8(6, E); break;
-                case 0xB4: m_cycles += RES_b3_R8(6, H); break;
-                case 0xB5: m_cycles += RES_b3_R8(6, L); break;
-                case 0xB7: m_cycles += RES_b3_R8(6, A); break;
-                case 0xB8: m_cycles += RES_b3_R8(7, B); break;
-                case 0xB9: m_cycles += RES_b3_R8(7, C); break;
-                case 0xBA: m_cycles += RES_b3_R8(7, D); break;
-                case 0xBB: m_cycles += RES_b3_R8(7, E); break;
-                case 0xBC: m_cycles += RES_b3_R8(7, H); break;
-                case 0xBD: m_cycles += RES_b3_R8(7, L); break;
-                case 0xBF: m_cycles += RES_b3_R8(7, A); break;
-
-                // RES b3,[HL]
-                case 0x86: m_cycles += RES_b3_HL(0, mem); break;
-                case 0x8E: m_cycles += RES_b3_HL(1, mem); break;
-                case 0x96: m_cycles += RES_b3_HL(2, mem); break;
-                case 0x9E: m_cycles += RES_b3_HL(3, mem); break;
-                case 0xA6: m_cycles += RES_b3_HL(4, mem); break;
-                case 0xAE: m_cycles += RES_b3_HL(5, mem); break;
-                case 0xB6: m_cycles += RES_b3_HL(6, mem); break;
-                case 0xBE: m_cycles += RES_b3_HL(7, mem); break;
-
-                // SET b3,R8
-                case 0xC0: m_cycles += SET_b3_R8(0, B); break;
-                case 0xC1: m_cycles += SET_b3_R8(0, C); break;
-                case 0xC2: m_cycles += SET_b3_R8(0, D); break;
-                case 0xC3: m_cycles += SET_b3_R8(0, E); break;
-                case 0xC4: m_cycles += SET_b3_R8(0, H); break;
-                case 0xC5: m_cycles += SET_b3_R8(0, L); break;
-                case 0xC7: m_cycles += SET_b3_R8(0, A); break;
-                case 0xC8: m_cycles += SET_b3_R8(1, B); break;
-                case 0xC9: m_cycles += SET_b3_R8(1, C); break;
-                case 0xCA: m_cycles += SET_b3_R8(1, D); break;
-                case 0xCB: m_cycles += SET_b3_R8(1, E); break;
-                case 0xCC: m_cycles += SET_b3_R8(1, H); break;
-                case 0xCD: m_cycles += SET_b3_R8(1, L); break;
-                case 0xCF: m_cycles += SET_b3_R8(1, A); break;
-                case 0xD0: m_cycles += SET_b3_R8(2, B); break;
-                case 0xD1: m_cycles += SET_b3_R8(2, C); break;
-                case 0xD2: m_cycles += SET_b3_R8(2, D); break;
-                case 0xD3: m_cycles += SET_b3_R8(2, E); break;
-                case 0xD4: m_cycles += SET_b3_R8(2, H); break;
-                case 0xD5: m_cycles += SET_b3_R8(2, L); break;
-                case 0xD7: m_cycles += SET_b3_R8(2, A); break;
-                case 0xD8: m_cycles += SET_b3_R8(3, B); break;
-                case 0xD9: m_cycles += SET_b3_R8(3, C); break;
-                case 0xDA: m_cycles += SET_b3_R8(3, D); break;
-                case 0xDB: m_cycles += SET_b3_R8(3, E); break;
-                case 0xDC: m_cycles += SET_b3_R8(3, H); break;
-                case 0xDD: m_cycles += SET_b3_R8(3, L); break;
-                case 0xDF: m_cycles += SET_b3_R8(3, A); break;
-                case 0xE0: m_cycles += SET_b3_R8(4, B); break;
-                case 0xE1: m_cycles += SET_b3_R8(4, C); break;
-                case 0xE2: m_cycles += SET_b3_R8(4, D); break;
-                case 0xE3: m_cycles += SET_b3_R8(4, E); break;
-                case 0xE4: m_cycles += SET_b3_R8(4, H); break;
-                case 0xE5: m_cycles += SET_b3_R8(4, L); break;
-                case 0xE7: m_cycles += SET_b3_R8(4, A); break;   
-                case 0xE8: m_cycles += SET_b3_R8(5, B); break;
-                case 0xE9: m_cycles += SET_b3_R8(5, C); break;
-                case 0xEA: m_cycles += SET_b3_R8(5, D); break;
-                case 0xEB: m_cycles += SET_b3_R8(5, E); break;
-                case 0xEC: m_cycles += SET_b3_R8(5, H); break;
-                case 0xED: m_cycles += SET_b3_R8(5, L); break;
-                case 0xEF: m_cycles += SET_b3_R8(5, A); break;
-                case 0xF0: m_cycles += SET_b3_R8(6, B); break;
-                case 0xF1: m_cycles += SET_b3_R8(6, C); break;
-                case 0xF2: m_cycles += SET_b3_R8(6, D); break;
-                case 0xF3: m_cycles += SET_b3_R8(6, E); break;
-                case 0xF4: m_cycles += SET_b3_R8(6, H); break;
-                case 0xF5: m_cycles += SET_b3_R8(6, L); break;
-                case 0xF7: m_cycles += SET_b3_R8(6, A); break;
-                case 0xF8: m_cycles += SET_b3_R8(7, B); break;
-                case 0xF9: m_cycles += SET_b3_R8(7, C); break;
-                case 0xFA: m_cycles += SET_b3_R8(7, D); break;
-                case 0xFB: m_cycles += SET_b3_R8(7, E); break;
-                case 0xFC: m_cycles += SET_b3_R8(7, H); break;
-                case 0xFD: m_cycles += SET_b3_R8(7, L); break;
-                case 0xFF: m_cycles += SET_b3_R8(7, A); break;
-
-                // SET b3,[HL]
-                case 0xC6: m_cycles += SET_b3_HL(0, mem); break;
-                case 0xCE: m_cycles += SET_b3_HL(1, mem); break;
-                case 0xD6: m_cycles += SET_b3_HL(2, mem); break;
-                case 0xDE: m_cycles += SET_b3_HL(3, mem); break;
-                case 0xE6: m_cycles += SET_b3_HL(4, mem); break;
-                case 0xEE: m_cycles += SET_b3_HL(5, mem); break;
-                case 0xF6: m_cycles += SET_b3_HL(6, mem); break;
-                case 0xFE: m_cycles += SET_b3_HL(7, mem); break;
+                default:
+                    std::cout << "Unknown 0xCB opcode: 0x" << +opcode << std::endl;
+                    return false;
             }
             break;
+
+        case 0xD3: case 0xE3: case 0xE4: case 0xF4: case 0xDB: 
+        case 0xEB: case 0xEC: case 0xFC: case 0xDD: case 0xED: case 0xFD:
+            std::cout << "Invalid opcode!\n";
+            return false;
+
+        default: 
+            std::cout << "Unknown opcode: 0x" << +opcode << std::endl;
+            return false;
     }
 
-    if (IME_next) { 
-        // EI was called before opcode that just executed
+    return true;
 
-        // Enable interrupts
-        IME = 1; 
-        IME_next = 0;
-    }
-
-    return m_cycles;
 }
