@@ -24,16 +24,16 @@ void InterruptHandler::service_interrupt(interrupt_type type) {
 
     // Call interrupt handler
     bus.write(--regs.SP, (regs.PC >> 8) & 0xFF);
-    // emulate_cycles(1);
+    bus.emulate_cycles(1);
     bus.write(--regs.SP, regs.PC & 0xFF);
-    // emulate_cycles(1);
+    bus.emulate_cycles(1);
 
     regs.PC = int_handler_addr;
-    // emulate_cycles(1);
+    bus.emulate_cycles(1);
 } 
 
 void InterruptHandler::handle_interrupts() {
-    // emulate_cycles(2);
+    bus.emulate_cycles(2);
     u8 IF = bus.get_IF();
     u8 IE = bus.get_IE();
 
@@ -50,18 +50,23 @@ void InterruptHandler::handle_interrupts() {
 
     // Highest priority is VBlank while lowest is Joypad
     if (VBlank_enabled && VBlank_requested) {
+        std::cout << "Servicing VBlank interrupt\n";
         service_interrupt(VBlank);
     } 
     else if (LCD_enabled && LCD_requested) {
+        std::cout << "Servicing LCD_STAT interrupt\n";
         service_interrupt(LCD_STAT);
     }
     else if (timer_enabled && timer_requested) {
+        std::cout << "Servicing Timer interrupt\n";
         service_interrupt(Timer);
     }
     else if (serial_enabled && serial_requested) {
+        std::cout << "Servicing Serial interrupt\n";
         service_interrupt(Serial);
     }
     else if (joypad_enabled && joypad_requested) {
+        std::cout << "Servicing Joypad interrupt\n";
         service_interrupt(Joypad);
     }
 }

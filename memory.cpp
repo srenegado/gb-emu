@@ -107,6 +107,20 @@ u8 MemoryBus::get_IE() {
     return IE;
 }
 
+void MemoryBus::emulate_cycles(int cpu_cycles) {
+
+    // There are 4 "T-cycles" in each "M-cycle"
+    int system_clock_ticks = 4 * cpu_cycles; 
+
+    for (int i = 0; i < system_clock_ticks; i++ ) {
+
+        if (io.timer_tick()) { // Timer requested an interrupt
+            io.set_IF(io.get_IF() | 0b100); 
+        }
+
+    }
+}
+
 RAM::RAM() {}
 RAM::~RAM() {}
 
@@ -148,6 +162,7 @@ u8 IO::read(u16 addr) {
 
     } else if (0xFF04 <= addr && addr <= 0xFF07) {
         // Reading timers
+        return timer.read(addr);
 
     } else if (addr == 0xFF0F) {
         // Reading Interrupt flags (IF)
@@ -172,7 +187,7 @@ void IO::write(u16 addr, u8 val) {
 
     } else if (0xFF04 <= addr && addr <= 0xFF07) {
         // Writing to timers
-        std::cout << "Unsupported bus write at: 0x" << addr << std::endl;
+        timer.write(addr, val);
 
     } else if (addr == 0xFF0F) {
         // Writing to Interrupt flags (IF)
@@ -188,5 +203,10 @@ u8 IO::get_IF() {
 }
 
 void IO::set_IF(u8 val) {
+    std::cout << "Setting IF to: 0x" << std::hex << +val << std::endl;
     IF = val;
+}
+
+bool IO::timer_tick() {
+    return timer.tick();
 }

@@ -3,11 +3,13 @@
 
 #include "common.h"
 #include "cart.h"
+#include "timer.h"
 
 class IO {
     private:
         char serial_data[2];
         u8 IF = 0xE1; // Interrupt flag register
+        Timer timer;
     public:
         IO();
         ~IO();
@@ -15,6 +17,7 @@ class IO {
         void write(u16 addr, u8 val);
         u8 get_IF();
         void set_IF(u8 val);
+        bool timer_tick();
 };
 
 class RAM {
@@ -44,6 +47,8 @@ class MemoryBus {
         u8 get_IF();
         void set_IF(u8 val);
         u8 get_IE();
+
+        void emulate_cycles(int cpu_cycles); // For cycle timing
 };
 
 #endif

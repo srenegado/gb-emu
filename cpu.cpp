@@ -11,7 +11,7 @@ bool CPU::step() {
 
         // Fetch opcode
         u8 opcode = bus.read(regs.PC++); 
-        instr_set.emulate_cycles(1);
+        bus.emulate_cycles(1);
         std::cout << " Opcode: 0x" << std::hex << std::setw(2) << std::setfill('0') << +opcode;
 
         // Debugging flags and registers
@@ -54,6 +54,17 @@ bool CPU::step() {
         if (debug_msg[0]) {
             std::cout << "Serial port: " << debug_msg << std::endl;
         }
+    } else { 
+        // CPU is halted
+
+        // Let the timer run
+        bus.emulate_cycles(1); 
+
+        if (bus.get_IF() && bus.get_IE()) { // An interrupt is pending
+            std::cout << "Waking up the CPU\n";
+            ctx.halted = false;
+        } 
+
     }
 
     if (ctx.IME) {
@@ -64,7 +75,7 @@ bool CPU::step() {
         ctx.IME = true;
         ctx.IME_next = false;
     }
-    
+
     return true;
 }
 
@@ -89,7 +100,7 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0x0E: instr_set.ld(regs.C);                break;
         case 0x0F: instr_set.rrca();                    break;
 
-        // case 0x10: instr_set.stop();                    break;
+        case 0x10: instr_set.stop();                    break;
         case 0x11: instr_set.ld16(regs.D, regs.E);      break;
         case 0x12: instr_set.ld_from_A(regs.D, regs.E); break;
         case 0x13: instr_set.inc(regs.D, regs.E);       break;
@@ -197,7 +208,7 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0x73: instr_set.ld_to_HL(regs.E); break;
         case 0x74: instr_set.ld_to_HL(regs.H); break;
         case 0x75: instr_set.ld_to_HL(regs.L); break;
-        // case 0x76: instr_set.halt();           break;
+        case 0x76: instr_set.halt();           break;
         case 0x77: instr_set.ld_to_HL(regs.A); break;
         case 0x78: instr_set.ld(regs.A, regs.B); break;
         case 0x79: instr_set.ld(regs.A, regs.C); break;
@@ -328,12 +339,13 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0xF8: instr_set.ld_SP_signed();              break;
         case 0xF9: instr_set.ld_SP_HL();                  break;
         case 0xFA: instr_set.ld_to_A();                   break;
-        // case 0xFB: instr_set.ei();                        break;
+        case 0xFB: instr_set.ei();                        break;
         case 0xFE: instr_set.cp();                        break;
         case 0xFF: instr_set.rst(0x38);                   break;
         
         case 0xCB:
             opcode = bus.read(regs.PC++);
+            bus.emulate_cycles(1);
             std::cout << "Encountered prefixed 0xCB code: 0x" 
                 << std::hex << +opcode << std::endl;
 

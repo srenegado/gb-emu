@@ -5,13 +5,11 @@ InstructionSet::InstructionSet(
 ) : regs(regs_), ctx(ctx_), bus(bus_) {}
 InstructionSet::~InstructionSet() {}
 
-void InstructionSet::emulate_cycles(int cpu_cycles) {}
-
 u8 InstructionSet::get_n8() {
 
     // Data is immediately after opcode
     u8 n8 = bus.read(regs.PC++); 
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 
     return n8;
 }
@@ -20,9 +18,9 @@ u16 InstructionSet::get_n16() {
     
     // Data is immediately after opcode
     u16 lo = bus.read(regs.PC++);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
     u16 hi = bus.read(regs.PC++);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 
     u16 n16 = (hi << 8) | lo;
     return n16;
@@ -80,7 +78,7 @@ void InstructionSet::ld_to_HL(u8 reg) {
     u16 addr = ((u16)regs.H << 8) | (u16)regs.L;
 
     bus.write(addr, reg);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 }
 
 void InstructionSet::ld_to_HL() {
@@ -89,14 +87,14 @@ void InstructionSet::ld_to_HL() {
     u16 addr = ((u16)regs.H << 8) | (u16)regs.L;
 
     bus.write(addr, n8);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 }
 
 void InstructionSet::ld_to_A(u8 hi_reg, u8 lo_reg, addr_mode mode) {
     u16 addr = ((u16)hi_reg << 8) | (u16)lo_reg;
 
     regs.A = bus.read(addr);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 
     // Register HL is either incremented or decremented
     if (mode == LDI) {
@@ -116,21 +114,21 @@ void InstructionSet::ld_to_A() {
     u16 n16 = get_n16();
 
     regs.A = bus.read(n16);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 }
 
 void InstructionSet::ld_from_HL(u8 &reg) {
     u16 addr = ((u16)regs.H << 8) | (u16)regs.L;
 
     reg = bus.read(addr);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 }
 
 void InstructionSet::ld_from_A(u8 hi_reg, u8 lo_reg, addr_mode mode) {
     u16 addr = ((u16)hi_reg << 8) | (u16)lo_reg;
 
     bus.write(addr, regs.A);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 
     // Register HL is either incremented or decremented
     if (mode == LDI) {
@@ -150,16 +148,16 @@ void InstructionSet::ld_from_A() {
     u16 n16 = get_n16();
 
     bus.write(n16, regs.A);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 }
 
 void InstructionSet::ld_from_SP() {
     u16 n16 = get_n16();
 
     bus.write(n16, regs.SP & 0xFF);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
     bus.write(n16 + 1, (regs.SP >> 8) & 0xFF);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 }
 
 void InstructionSet::ldh_to_A(addr_mode mode) {
@@ -168,7 +166,7 @@ void InstructionSet::ldh_to_A(addr_mode mode) {
     } else if (mode == LDH_C) {
         regs.A = bus.read(0xFF00 + regs.C);
     }
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 }
 
 void InstructionSet::ldh_from_A(addr_mode mode) {
@@ -177,11 +175,11 @@ void InstructionSet::ldh_from_A(addr_mode mode) {
     } else if (mode == LDH_C) {
         bus.write(0xFF00 + regs.C, regs.A);
     }
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 }
 
 void InstructionSet::ld_SP_signed() {
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 
     char e8 = (char)get_n8();
 
@@ -197,7 +195,7 @@ void InstructionSet::ld_SP_signed() {
 }
 
 void InstructionSet::ld_SP_HL() {
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
     regs.SP = ((u16)regs.H << 8) | (u16)regs.L;
 }
 
@@ -208,11 +206,11 @@ void InstructionSet::push(u8 hi_reg, u8 lo_reg) {
 
     // Higher byte pushed first
     bus.write(--regs.SP, hi_reg);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
     bus.write(--regs.SP, lo_reg);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 }
 
 void InstructionSet::pop(u8 &hi_reg, u8 &lo_reg, addr_mode mode) {
@@ -224,16 +222,16 @@ void InstructionSet::pop(u8 &hi_reg, u8 &lo_reg, addr_mode mode) {
         // Only want the top nibble when loading into F register
         lo_reg = bus.read(regs.SP++) & 0xF0;
     }  
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
     hi_reg = bus.read(regs.SP++);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 }
 
 void InstructionSet::jp(bool cond_code) {
     u16 n16 = get_n16();
     if (cond_code) {
         regs.PC = n16;
-        emulate_cycles(1);
+        bus.emulate_cycles(1);
     }
 }
 
@@ -246,7 +244,7 @@ void InstructionSet::jr(bool cond_code) {
     u16 addr = regs.PC + e8;
     if (cond_code) {
         regs.PC = addr;
-        emulate_cycles(1);
+        bus.emulate_cycles(1);
     }
 }
 
@@ -259,29 +257,29 @@ void InstructionSet::call(bool cond_code) {
     if (cond_code) {
         // After getting n16, PC is now pointing to the next instruction
         bus.write(--regs.SP, (regs.PC >> 8) & 0xFF);
-        emulate_cycles(1);
+        bus.emulate_cycles(1);
         bus.write(--regs.SP, regs.PC & 0xFF);
-        emulate_cycles(1);
+        bus.emulate_cycles(1);
 
         regs.PC = n16;
-        emulate_cycles(1);
+        bus.emulate_cycles(1);
     }
 }
 
 void InstructionSet::ret(bool cond_code, addr_mode mode) {
     if (mode == RET_CC) {
-        emulate_cycles(1);
+        bus.emulate_cycles(1);
     }
 
     if (cond_code) {
         u16 lo = bus.read(regs.SP++);
-        emulate_cycles(1);
+        bus.emulate_cycles(1);
         u16 hi = bus.read(regs.SP++);
-        emulate_cycles(1);
+        bus.emulate_cycles(1);
 
         u16 addr = (hi << 8) | lo;
         regs.PC = addr;
-        emulate_cycles(1); 
+        bus.emulate_cycles(1); 
     }
 }
 
@@ -292,12 +290,12 @@ void InstructionSet::reti() {
 
 void InstructionSet::rst(u16 addr) {
     bus.write(--regs.SP, (regs.PC >> 8) & 0xFF);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
     bus.write(--regs.SP, regs.PC & 0xFF);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 
     regs.PC = addr;
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 }
 
 void InstructionSet::inc(u8 &reg) {
@@ -313,7 +311,7 @@ void InstructionSet::inc(u8 &reg) {
 }
 
 void InstructionSet::inc(u8 &hi_reg, u8 &lo_reg) {
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 
     if (lo_reg == 0xFF) {
         hi_reg++;
@@ -322,7 +320,7 @@ void InstructionSet::inc(u8 &hi_reg, u8 &lo_reg) {
 }
 
 void InstructionSet::inc_SP() {
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
     regs.SP++;
 }
 
@@ -330,10 +328,10 @@ void InstructionSet::inc_HL() {
     u16 addr = ((u16)regs.H << 8) | (u16)regs.L;
 
     u8 val = bus.read(addr) + 1;
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 
     bus.write(addr, val);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 
     // flag calculations
     if (val == 0) { BIT_SET(regs.F, 7); }
@@ -356,7 +354,7 @@ void InstructionSet::dec(u8 &reg) {
 }
 
 void InstructionSet::dec(u8 &hi_reg, u8 &lo_reg) {
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 
     if (lo_reg == 0x00) {
         hi_reg--;
@@ -365,7 +363,7 @@ void InstructionSet::dec(u8 &hi_reg, u8 &lo_reg) {
 }
 
 void InstructionSet::dec_SP() {
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
     regs.SP--;
 }
 
@@ -373,10 +371,10 @@ void InstructionSet::dec_HL() {
     u16 addr = ((u16)regs.H << 8) | (u16)regs.L;
 
     u8 val = bus.read(addr) - 1;
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 
     bus.write(addr, val);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 
     // flag calculations
     if (val == 0) { BIT_SET(regs.F, 7); }  
@@ -407,12 +405,12 @@ void InstructionSet::add() {
 
 void InstructionSet::add_HL() {
     u8 byte = bus.read(((u16)regs.H << 8) | (u16)regs.L);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
     add(byte);
 }
 
 void InstructionSet::add16(u8 hi_reg, u8 lo_reg) {
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 
     // Let the compiler do the carrying
     u16 reg = ((u16)hi_reg << 8) | (u16)lo_reg;
@@ -431,7 +429,7 @@ void InstructionSet::add16(u8 hi_reg, u8 lo_reg) {
 }      
 
 void InstructionSet::add16() {
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 
     // Let the compiler do the carrying
     u16 HL = ((u16)regs.H << 8) | (u16)regs.L;
@@ -480,7 +478,7 @@ void InstructionSet::sub() {
 
 void InstructionSet::sub_HL() {
     u8 byte = bus.read(((u16)regs.H << 8) | (u16)regs.L);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
     sub(byte);
 } 
 
@@ -507,7 +505,7 @@ void InstructionSet::adc() {
 
 void InstructionSet::adc_HL() {
     u8 byte = bus.read(((u16)regs.H << 8) | (u16)regs.L);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
     adc(byte);
 }
 
@@ -532,7 +530,7 @@ void InstructionSet::sbc() {
 
 void InstructionSet::sbc_HL() {
     u8 byte = bus.read(((u16)regs.H << 8) | (u16)regs.L);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
     sbc(byte);
 }
 
@@ -656,6 +654,7 @@ void InstructionSet::ei() {
 }
 
 void InstructionSet::halt() {
+    std::cout << "called HALT\n";
     ctx.halted = true;
 }
 
@@ -715,7 +714,7 @@ void InstructionSet::shift(addr_mode mode, u8 &reg) {
 void InstructionSet::shift_HL(addr_mode mode) {
     u16 addr = ((u16)regs.H << 8) | (u16)regs.L;
     u8 byte = bus.read(addr);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 
     u8 bit7 = (byte >> 7) & 0x1;
     u8 bit0 = byte & 0x1;
@@ -725,7 +724,7 @@ void InstructionSet::shift_HL(addr_mode mode) {
         case RLC:
             byte = (byte << 1) | bit7;
             bus.write(addr, byte);
-            emulate_cycles(1);
+            bus.emulate_cycles(1);
 
             if (bit7) { BIT_SET(regs.F, 4); }
             else { BIT_RESET(regs.F, 4); }
@@ -733,7 +732,7 @@ void InstructionSet::shift_HL(addr_mode mode) {
         case RRC:
             byte = (byte >> 1) | (bit0 << 7);
             bus.write(addr, byte);
-            emulate_cycles(1);
+            bus.emulate_cycles(1);
 
             if (bit0) { BIT_SET(regs.F, 4); }
             else { BIT_RESET(regs.F, 4); }
@@ -741,7 +740,7 @@ void InstructionSet::shift_HL(addr_mode mode) {
         case RL:
             byte = (byte << 1) | c;
             bus.write(addr, byte);
-            emulate_cycles(1);
+            bus.emulate_cycles(1);
 
             if (bit7) { BIT_SET(regs.F, 4); }
             else { BIT_RESET(regs.F, 4); }
@@ -749,7 +748,7 @@ void InstructionSet::shift_HL(addr_mode mode) {
         case RR:
             byte = (byte >> 1) | (c << 7);
             bus.write(addr, byte);
-            emulate_cycles(1);
+            bus.emulate_cycles(1);
 
             if (bit0) { BIT_SET(regs.F, 4); }
             else { BIT_RESET(regs.F, 4); }
@@ -757,7 +756,7 @@ void InstructionSet::shift_HL(addr_mode mode) {
         case SLA:
             byte <<= 1;
             bus.write(addr, byte);
-            emulate_cycles(1);
+            bus.emulate_cycles(1);
 
             if (bit7) { BIT_SET(regs.F, 4); }
             else { BIT_RESET(regs.F, 4); }
@@ -765,7 +764,7 @@ void InstructionSet::shift_HL(addr_mode mode) {
         case SRA:
             byte = (byte >> 1) | (bit7 << 7);
             bus.write(addr, byte);
-            emulate_cycles(1);
+            bus.emulate_cycles(1);
 
             if (bit0) { BIT_SET(regs.F, 4); }
             else { BIT_RESET(regs.F, 4); }
@@ -773,14 +772,14 @@ void InstructionSet::shift_HL(addr_mode mode) {
         case SWAP:
             byte = (byte & 0x0F) << 4 | (byte & 0xF0) >> 4;
             bus.write(addr, byte);
-            emulate_cycles(1);
+            bus.emulate_cycles(1);
 
             BIT_RESET(regs.F, 4);
             break;
         case SRL:
             byte = (byte >> 1);
             bus.write(addr, byte);
-            emulate_cycles(1);
+            bus.emulate_cycles(1);
 
             if (bit0) { BIT_SET(regs.F, 4); }
             else { BIT_RESET(regs.F, 4); }
@@ -813,7 +812,7 @@ void InstructionSet::bit_flag(addr_mode mode, u8 bit, u8 &reg) {
 void InstructionSet::bit_flag_HL(addr_mode mode, u8 bit) {
     u16 addr = ((u16)regs.H << 8) | (u16)regs.L;
     u8 byte = bus.read(addr);
-    emulate_cycles(1);
+    bus.emulate_cycles(1);
 
     switch (mode) {
         case BIT:
@@ -825,12 +824,12 @@ void InstructionSet::bit_flag_HL(addr_mode mode, u8 bit) {
         case RES:
             BIT_RESET(byte, bit);
             bus.write(addr, byte);
-            emulate_cycles(1);
+            bus.emulate_cycles(1);
             break;
         case SET:
             BIT_SET(byte, bit);
             bus.write(addr, byte);
-            emulate_cycles(1);
+            bus.emulate_cycles(1);
             break;
     }
 }

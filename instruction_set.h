@@ -41,9 +41,6 @@ class InstructionSet {
         InstructionSet(Registers &regs_, CpuContext &ctx_, MemoryBus &bus_);
         ~InstructionSet();
 
-        // For cycle timing
-        void emulate_cycles(int cpu_cycles);
-
         /** 
          * CPU Instruction Set
          */
