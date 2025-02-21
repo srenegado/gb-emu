@@ -4,6 +4,15 @@ CPU::CPU(MemoryBus &bus_) : bus(bus_), instr_set(regs, ctx, bus), int_handler(re
 CPU::~CPU() {}
 
 bool CPU::step() {
+
+    if (ctx.IME_next) { // Enable interrupts
+        ctx.IME = true;
+        ctx.IME_next = false;
+    }
+
+    if (ctx.IME) {
+        int_handler.handle_interrupts();
+    }
     
     if (!ctx.halted) {
 
@@ -65,15 +74,6 @@ bool CPU::step() {
             ctx.halted = false;
         } 
 
-    }
-
-    if (ctx.IME) {
-        int_handler.handle_interrupts();
-    }
-
-    if (ctx.IME_next) { // Enable interrupts
-        ctx.IME = true;
-        ctx.IME_next = false;
     }
 
     return true;

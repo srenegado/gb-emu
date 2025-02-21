@@ -661,7 +661,6 @@ void InstructionSet::ei() {
 }
 
 void InstructionSet::halt() {
-    std::cout << "called HALT\n";
     ctx.halted = true;
 }
 
