@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "cart.h"
+#include "ppu.h"
 #include "timer.h"
 
 class IO {
@@ -36,11 +37,12 @@ class RAM {
 class MemoryBus {
     private:
         Cartridge &cart;
+        PPU &ppu;
         IO io;
         RAM ram;
         u8 IE = 0x00; // Interrupt enable register
     public:
-        MemoryBus(Cartridge &cart_);
+        MemoryBus(Cartridge &cart_, PPU &ppu_);
         ~MemoryBus();
         u8 read(u16 addr);
         void write(u16 addr, u8 val);

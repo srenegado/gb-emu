@@ -1,6 +1,6 @@
 #include "memory.h"
 
-MemoryBus::MemoryBus(Cartridge &cart_) : cart(cart_) {}
+MemoryBus::MemoryBus(Cartridge &cart_, PPU &ppu_) : cart(cart_), ppu(ppu_) {}
 MemoryBus::~MemoryBus() {}
 
 u8 MemoryBus::read(u16 addr) {
@@ -10,7 +10,7 @@ u8 MemoryBus::read(u16 addr) {
 
     } else if (addr < 0xA000) {
         // Reading from VRAM
-        std::cout << "Unsupported bus read at: 0x" << addr << std::endl;
+        ppu.vram_read(addr);
         return 0;
 
     } else if (addr < 0xC000) {
@@ -57,7 +57,7 @@ void MemoryBus::write(u16 addr, u8 val) {
 
     } else if (addr < 0xA000) {
         // Writing to VRAM
-        std::cout << "Unsupported bus write at: 0x" << addr << std::endl;
+        ppu.vram_write(addr, val);
 
     } else if (addr < 0xC000) {
         // Writing to Cartridge RAM
@@ -117,6 +117,8 @@ void MemoryBus::emulate_cycles(int cpu_cycles) {
         if (io.timer_tick()) { // Timer requested an interrupt
             io.set_IF(io.get_IF() | 0b100); 
         }
+
+        ppu.tick();
 
     }
 }

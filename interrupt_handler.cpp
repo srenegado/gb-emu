@@ -6,6 +6,7 @@ InterruptHandler::InterruptHandler(
 InterruptHandler::~InterruptHandler() {}
 
 void InterruptHandler::service_interrupt(interrupt_type type) {
+    bus.emulate_cycles(2);
 
     // Choose the right interrupt
     u16 int_handler_addr = 0x00;
@@ -24,16 +25,15 @@ void InterruptHandler::service_interrupt(interrupt_type type) {
 
     // Call interrupt handler
     bus.write(--regs.SP, (regs.PC >> 8) & 0xFF);
-    // bus.emulate_cycles(1);
+    bus.emulate_cycles(1);
     bus.write(--regs.SP, regs.PC & 0xFF);
-    // bus.emulate_cycles(1);
+    bus.emulate_cycles(1);
 
     regs.PC = int_handler_addr;
-    // bus.emulate_cycles(1);
+    bus.emulate_cycles(1);
 } 
 
 void InterruptHandler::handle_interrupts() {
-    // bus.emulate_cycles(2);
     u8 IF = bus.get_IF();
     u8 IE = bus.get_IE();
 

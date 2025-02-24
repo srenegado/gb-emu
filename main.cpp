@@ -1,6 +1,7 @@
-#include "cpu.h"
 #include "cart.h"
+#include "ppu.h"
 #include "memory.h"
+#include "cpu.h"
 
 int main(int argc, char** argv) {
     
@@ -8,7 +9,8 @@ int main(int argc, char** argv) {
 
     // Setup Game Boy components
     Cartridge cart;
-    MemoryBus bus(cart);
+    PPU ppu;
+    MemoryBus bus(cart, ppu);
     CPU cpu(bus);
 
     // Load game ROM
@@ -19,14 +21,27 @@ int main(int argc, char** argv) {
     } 
 
     // Main emulation loop
-    int running = 1;
+    bool running = true;
     while (running) {
         
+        // Handle input events (so far, quit emulator if user pressed esc)
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            switch (event.type) {
+                case (SDL_KEYDOWN):
+                    if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
+                        running = false;
+                    }
+                    break;
+            }
+        }
+
         // Fetch, decode, and execute an instruction
         if (!cpu.step()) {
             std::cout << "CPU could not step\n";
             return -2;
         }
+        
     }
     
     return 0;
