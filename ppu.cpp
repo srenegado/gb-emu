@@ -1,6 +1,6 @@
 #include "ppu.h"
 
-PPU::PPU() {
+PPU::PPU(IO &io_) : io(io_) {
     SDL_Init(SDL_INIT_VIDEO);
 
     // Set up display
@@ -19,7 +19,10 @@ PPU::~PPU() {
     SDL_Quit();
 }
 
-void PPU::tick() {}
+void PPU::tick() {
+    dots++;
+    
+}
 
 u8 PPU::vram_read(u16 addr) {
     u16 offset = 0x8000;

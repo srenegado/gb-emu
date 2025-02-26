@@ -69,7 +69,8 @@ bool CPU::step() {
         // Let the timer run
         bus.emulate_cycles(1); 
 
-        if (bus.get_IF() && bus.get_IE()) { // An interrupt is pending
+        // CPU resumes execution if an interrupt is pending
+        if (bus.get_IF() && bus.get_IE()) { 
             std::cout << "Waking up the CPU\n";
             ctx.halted = false;
         } 

@@ -1,4 +1,3 @@
-#include "cart.h"
 #include "ppu.h"
 #include "memory.h"
 #include "cpu.h"
@@ -9,8 +8,9 @@ int main(int argc, char** argv) {
 
     // Setup Game Boy components
     Cartridge cart;
-    PPU ppu;
-    MemoryBus bus(cart, ppu);
+    IO io;
+    PPU ppu(io);
+    MemoryBus bus(cart, io, ppu);
     CPU cpu(bus);
 
     // Load game ROM
