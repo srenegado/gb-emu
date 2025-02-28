@@ -10,7 +10,7 @@ typedef enum {
     Mode_VBlank,
     Mode_OAM_Scan,
     Mode_Drawing
-} lcd_mode;
+} ppu_mode;
 
 class PPU {
     private:

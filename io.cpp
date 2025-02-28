@@ -105,6 +105,30 @@ void IO::set_LCDC(u8 val) {
     LCDC = val;
 }
 
+u8 IO::get_STAT() {
+    return STAT;
+}
+
+void IO::set_STAT(u8 val) {
+    STAT = val;
+}
+
+u8 IO::get_LY() {
+    return LY;
+}
+
+void IO::set_LY(u8 val) {
+    LY = val;
+}
+
+u8 IO::get_LYC() {
+    return LYC;
+}
+
+void IO::set_LYC(u8 val) {
+    LYC = val;
+}
+
 bool IO::timer_tick() {
     return timer.tick();
 }

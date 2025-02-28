@@ -25,6 +25,12 @@ class IO {
         void set_IE(u8 val);
         u8 get_LCDC();
         void set_LCDC(u8 val);
+        u8 get_STAT();
+        void set_STAT(u8 val);
+        u8 get_LY();
+        void set_LY(u8 val);
+        u8 get_LYC();
+        void set_LYC(u8 val);
         bool timer_tick();
 };
 
