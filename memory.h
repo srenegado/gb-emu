@@ -36,7 +36,7 @@ class MemoryBus {
         IO &io;
         PPU &ppu;
         RAM ram;
-        u8 IE = 0x00; // Interrupt enable register
+
     public:
         MemoryBus(Cartridge &cart_, IO &io_, PPU &ppu_);
         ~MemoryBus();

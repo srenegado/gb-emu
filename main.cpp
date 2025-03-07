@@ -41,8 +41,10 @@ int main(int argc, char** argv) {
             std::cout << "CPU could not step\n";
             return -2;
         }
-        
+
     }
+
+    // ppu.print_vram();
     
     return 0;
 }

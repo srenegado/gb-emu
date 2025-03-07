@@ -10,8 +10,7 @@ u8 MemoryBus::read(u16 addr) {
 
     } else if (addr < 0xA000) {
         // Reading from VRAM
-        ppu.vram_read(addr);
-        return 0;
+        return ppu.vram_read(addr);
 
     } else if (addr < 0xC000) {
         // Reading from Cartridge RAM
@@ -118,7 +117,7 @@ void MemoryBus::emulate_cycles(int cpu_cycles) {
             io.set_IF(io.get_IF() | 0b100); 
         }
 
-        ppu.tick();
+        ppu.step();
 
     }
 }

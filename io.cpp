@@ -21,6 +21,7 @@ u8 IO::read(u16 addr) {
         return IF;
 
     } 
+
     // LCD-related registers
     else if (addr == 0xFF40) {
         // Reading LCD control
@@ -30,6 +31,14 @@ u8 IO::read(u16 addr) {
         // Reading LCD status
         return STAT;
 
+    } else if (addr == 0xFF42) {
+        // Reading Background viewport Y
+        return SCY;
+
+    } else if (addr == 0xFF43) {
+        // Reading Background viewport X
+        return SCX;
+
     } else if (addr == 0xFF44) {
         // Reading LCD Y coordinate
         return LY;
@@ -38,7 +47,13 @@ u8 IO::read(u16 addr) {
         // Reading LY compare
         return LYC;
 
-    } else {
+    } else if (addr == 0xFF47) {
+        // Reading Background palette
+        return BGP;
+    
+    } 
+    
+    else {
         std::cout << "Unsupported bus read at: 0x" << addr << std::endl;
 
     }
@@ -63,7 +78,9 @@ void IO::write(u16 addr, u8 val) {
         // Writing to Interrupt flags (IF)
         IF = val;
         
-    } // LCD-related registers
+    } 
+    
+    // LCD-related registers
     else if (addr == 0xFF40) {
         // Writing to LCD control
         LCDC = val;
@@ -72,11 +89,25 @@ void IO::write(u16 addr, u8 val) {
         // Writing to LCD status
         STAT = val;
         
+    } else if (addr == 0xFF42) {
+        // Writing to Background viewport Y
+        SCY = val;
+        
+    } else if (addr == 0xFF43) {
+        // Writing to Background viewport X
+        SCX = val;
+        
     } else if (addr == 0xFF45) {
         // Writing to LY compare
         LYC = val;
 
-    } else {
+    } else if (addr == 0xFF47) {
+        // Writing to Background palette
+        BGP = val;
+
+    }
+    
+    else {
         std::cout << "Unsupported bus write at: 0x" << addr << std::endl;
     }
 }
@@ -113,6 +144,23 @@ void IO::set_STAT(u8 val) {
     STAT = val;
 }
 
+u8 IO::get_SCY() {
+    return SCY;
+}
+
+void IO::set_SCY(u8 val) {
+    SCY = val;
+}
+
+u8 IO::get_SCX() {
+    return SCX;
+}
+
+void IO::set_SCX(u8 val) {
+    SCX = val;
+}
+
+
 u8 IO::get_LY() {
     return LY;
 }
@@ -127,6 +175,14 @@ u8 IO::get_LYC() {
 
 void IO::set_LYC(u8 val) {
     LYC = val;
+}
+
+u8 IO::get_BGP() {
+    return BGP;
+}
+
+void IO::set_BGP(u8 val) {
+    BGP = val;
 }
 
 bool IO::timer_tick() {

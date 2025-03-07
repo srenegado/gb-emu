@@ -19,33 +19,42 @@ PPU::~PPU() {
     SDL_Quit();
 }
 
-void PPU::tick() {
+void PPU::step() {
 
-    // Do nothing if LCD is off
-    if (!BIT(io.get_LCDC(), 7))
+    u8 lcd_enabled = BIT(io.get_LCDC(), 7);
+    if (!lcd_enabled) {
         return;
+    }
 
-    dots++; // Tick PPU
+    dots++;
 
     // Change PPU mode depending on dots
     ppu_mode prev_mode = (ppu_mode)(io.get_STAT() & 0b11);
     switch (prev_mode) {
         case Mode_OAM_Scan:
 
-            // Set to Drawing mode if OAM scan is finished
-            if (dots > 80) 
+            // Change to Drawing (mode 3)
+            if (dots > oam_duration) {
+                // std::cout << "PPU: Changing from OAM to Drawing" << std::endl;
+                // std::cout << "Dots: " << std::dec << +dots << std::endl;
+
                 io.set_STAT((io.get_STAT() & ~0b11) | 0b11);
+            }
 
             break;
         case Mode_Drawing:
 
-            // Set to HBlank once drawing is finished
-            if (dots > 80 + 172) {
-                io.set_STAT((io.get_STAT() & ~0b11) | 0b00);   
-            
-                // Request HBlank STAT interrupt
-                if (BIT(io.get_STAT(), 3)) 
-                        io.set_IF(io.get_IF() | 0b10); 
+            // Change to HBlank (mode 0)
+            if (dots > draw_duration) {
+                // std::cout << "PPU: Changing from Drawing to HBlank" << std::endl;
+                // std::cout << "Dots: " << std::dec << +dots << std::endl;
+
+                io.set_STAT((io.get_STAT() & ~0b11) | 0b00); // Set mode
+                if (BIT(io.get_STAT(), 3)) {                 // Request interrupt
+                    io.set_IF(io.get_IF() | 0b10); 
+                }
+
+                render_scanline(); // at the start HBlank
             }
             break;
         case Mode_HBlank:
@@ -55,90 +64,227 @@ void PPU::tick() {
 
                 // Update scanline and handle any interrupts and flags
                 io.set_LY(io.get_LY() + 1); 
-                bool coincidence = io.get_LYC() == io.get_LY();
-                if (coincidence) {
-
-                    // Set coincidence flag in STAT
-                    io.set_STAT(io.get_STAT() | 0b100);
-
-                    // Request a LYC==LY STAT interrupt
-                    if (BIT(io.get_STAT(), 6))
+                if (io.get_LYC() == io.get_LY()) {
+                    io.set_STAT(io.get_STAT() | 0b100); // Set coincidence flag
+                    if (BIT(io.get_STAT(), 6)) {        // Request interrupt
                         io.set_IF(io.get_IF() | 0b10 );
+                    }
                 }
-                dots = 0; // Reset for next scanline
 
                 // Change modes to VBlank or OAM Scan
-                if (io.get_LY() > lcd_height) {
-                    // Gone out of the visible LCD 
-    
-                    // Set to VBlank 
-                    io.set_STAT((io.get_STAT() & ~0b11) | 0b01);
-
-                    // Request a VBlank interrupt
-                    io.set_IF(io.get_IF() | 0b0);
-    
-                    // Request a VBlank STAT interrupt
-                    if (BIT(io.get_STAT(), 4))
+                if (io.get_LY() >= lcd_height) {
+                    // Scanline out of viewport: Change to VBlank (mode 1)
+                    // std::cout << "PPU: Changing from HBlank to VBlank" << std::endl;  
+                        
+                    io.set_STAT((io.get_STAT() & ~0b11) | 0b01); // Set mode
+                    io.set_IF(io.get_IF() | 0b0);                // Request interrupts
+                    if (BIT(io.get_STAT(), 4)) {
                         io.set_IF(io.get_IF() | 0b10);
-    
-                    // Render to SDL display
-    
+                    }
+
+                    render_frame(); // at the start of VBlank
                 } else {
-                    // Still within the LCD
+                    // Scanline in viewport: Change to OAM Scan (mode 2)
+                    // std::cout << "PPU: Changing from HBlank to OAM scan" << std::endl;
     
-                    // Set to OAM Scan
-                    io.set_STAT((io.get_STAT() & ~0b11) | 0b10);
-
-                    // Request an OAM Scan STAT interrupt
-                    if (BIT(io.get_STAT(), 5))
+                    io.set_STAT((io.get_STAT() & ~0b11) | 0b10); // Set mode
+                    if (BIT(io.get_STAT(), 5)) {                 // Request interrupt
                         io.set_IF(io.get_IF() | 0b10);
+                    }
                 }
+
+                // std::cout << "Dots: " << std::dec << +dots << std::endl;
+                // std::cout << "Scanline (LY): " << +io.get_LY() << std::endl;
+
+                dots = 0;
             }
             
             break;
         case Mode_VBlank:
+
+            // Change mode to OAM Scan or stay in VBlank
             if (dots > dots_per_line) {
 
                 // Update scanline and handle any interrupts and flags
                 io.set_LY(io.get_LY() + 1); 
-                bool coincidence = io.get_LYC() == io.get_LY();
-                if (coincidence) {
-
-                    // Set coincidence flag in STAT
-                    io.set_STAT(io.get_STAT() | 0b100);
-
-                    // Request a LYC==LY STAT interrupt if enabled
-                    if (BIT(io.get_STAT(), 6))
+                if (io.get_LYC() == io.get_LY()) {
+                    io.set_STAT(io.get_STAT() | 0b100); // Set coincidence flag
+                    if (BIT(io.get_STAT(), 6)) {        // Request interrupt
                         io.set_IF(io.get_IF() | 0b10 );
+                    }
                 }
-                dots = 0; // Reset for next scanline
 
-                if (io.get_LY() > lines_per_frame) {
-                    // VBlank is done
+                if (io.get_LY() >= lines_per_frame) {
+                    // VBlank is done: Change to OAM scan
+                    // std::cout << "PPU: Changing from VBlank to OAM scan" << std::endl;
                     
-                    // Set to OAM Scan
-                    io.set_STAT((io.get_STAT() & ~0b11) | 0b10); 
-
-                    // Request an OAM Scan STAT interrupt if enabled
-                    if (BIT(io.get_STAT(), 5))
+                    io.set_STAT((io.get_STAT() & ~0b11) | 0b10); // Set mode
+                    if (BIT(io.get_STAT(), 5)) {                 // Request interrupt
                         io.set_IF(io.get_IF() | 0b10);
+                    }
 
-                    io.set_LY(0); // Reset scanline number
+                    // std::cout << "Dots: " << std::dec << +dots << std::endl;
+                    // std::cout << "Scanline (LY): " << +io.get_LY() << std::endl;
+
+                    io.set_LY(0);
                 }
+
+                dots = 0;
             }
             
             break;
     }  
 }
 
+void PPU::render_scanline() {
+    // std::cout << "Rendering scanline " << std::dec << +io.get_LY() << std::endl;
+    // std::cout << "LCDC: 0x" << std::hex << +io.get_LCDC() << std::endl;
+
+    bgw_enabled = BIT(io.get_LCDC(), 0);
+    if (bgw_enabled) {
+
+        // Figure out which addressing mode and which tile map to use 
+        bgw_addr_mode = BIT(io.get_LCDC(), 4);
+        u16 base_ptr = bgw_addr_mode ? 0x8000 : 0x9000;
+
+        bg_map_select = BIT(io.get_LCDC(), 3);
+        u16 bg_map = bg_map_select ? 0x9C00 : 0x9800;
+
+        // std::cout << "Using 0x" << +base_ptr << " addressing mode" << std::endl; 
+        // std::cout << "Using tilemap at 0x" << +bg_map << std::endl; 
+
+        // std::cout << "Viewport pos.: x: "  << std::dec << +(io.get_SCX()/8)
+        //     << " y: " << +(io.get_SCY()/8) << std::endl; 
+
+        // Iterate by tile then by pixel
+        for (int tile_i = 0; tile_i < (int)(lcd_width / 8); tile_i++) {
+
+            // Fetching tile number
+            u16 tile_x = (io.get_SCX() / 8 + tile_i) % 32;
+            u16 tile_y = ((io.get_LY() + io.get_SCY()) % 256) / 8;
+            u16 tile_offset = (32 * tile_y + tile_x) % 1024;
+            u16 bg_tile_num_addr = bg_map + tile_offset;
+            u16 bg_tile_num = vram[bg_tile_num_addr - 0x8000];
+
+            // std::cout << "Grabbing tile " << std::dec << +bg_tile_num
+            //     << " at x: " << +tile_x << " y: " << +tile_y 
+            //     << " addr in tilemap: 0x" << std::hex << +bg_tile_num_addr << std::endl; 
+
+            // Fetch tile data
+            u16 bg_tile_addr;
+            switch (base_ptr) {
+                case 0x8000: bg_tile_addr = base_ptr + (bg_tile_num * 16);      break;
+                case 0x9000: bg_tile_addr = base_ptr + (((int)bg_tile_num) * 16); break;
+            }
+            u16 byte_offset = 2 * ((io.get_LY() + io.get_SCY()) % 8);
+            u8 lo_byte = vram[bg_tile_addr + byte_offset - 0x8000];
+            u8 hi_byte = vram[bg_tile_addr + byte_offset + 1 - 0x8000];
+
+            // std::cout << "Tile addr: 0x" << std::hex << +bg_tile_addr << std::endl; 
+
+            // std::cout << "Grabbing bytes lo: " << std::hex << "0x" << +lo_byte
+            //     << " hi: 0x" << +hi_byte
+            //     << " starting at 0x" << +(bg_tile_addr + byte_offset) << std::endl; 
+
+            // Render pixels to LCD buffer
+            // std::cout << "BGP: 0x" << std::hex << +io.get_BGP() << std::endl;
+            for (int pxl_i = 0; pxl_i < 8; pxl_i++) {
+                u8 pxl_id = (BIT(hi_byte, 7 - pxl_i) << 1) | BIT(lo_byte, 7 - pxl_i);
+                u8 colour = (io.get_BGP() >> (pxl_id * 2)) & 0b11;
+
+                // std::cout << "Pixel id: " << std::dec << +pxl_id 
+                //     << " and colour: " << +colour 
+                //     << " at (viewport) x: " << +(8 * tile_i + pxl_i) 
+                //     << " y: " << +io.get_LY() << std::endl;
+
+                lcd_buf[io.get_LY()][8 * tile_i + pxl_i] = colour;
+
+            }
+            
+        }
+
+    }
+}
+
+void PPU::render_frame() {
+    // std::cout << "Rendering frame" << std::endl;
+
+    u32 end_ms = SDL_GetTicks();
+    u32 time_taken_ms = end_ms - start_ms; 
+
+    std::cout << "Time taken: " << std::dec << +time_taken_ms << " ms" << std::endl; 
+
+    // Each frame should take a fixed number of seconds
+    if (time_taken_ms < frame_ms) {
+        u32 delay_ms = frame_ms - time_taken_ms;
+        std::cout << "Delaying for " << std::dec << +delay_ms << " ms" << std::endl; 
+        SDL_Delay(delay_ms);
+    }
+
+    start_ms = SDL_GetTicks();
+
+    for (int y = 0; y < lcd_height; y++) {
+        for (int x = 0; x < lcd_width; x++) {
+
+            SDL_Rect pxl; 
+            pxl.x = x * lcd_scale;
+            pxl.y = y * lcd_scale;
+            pxl.w = lcd_scale;
+            pxl.h = lcd_scale;
+            
+            switch (lcd_buf[y][x]) {
+                case 0: 
+                    SDL_SetRenderDrawColor(renderer, 154, 158, 63, 255); // "White"
+                    break;
+                case 1: 
+                    SDL_SetRenderDrawColor(renderer, 73, 107, 34, 255); // "Light gray"
+                    break;
+                case 2: 
+                    SDL_SetRenderDrawColor(renderer, 14, 69, 11, 255); // "Dark gray"
+                    break;
+                case 3: 
+                    SDL_SetRenderDrawColor(renderer, 27, 42, 9, 255); // "Black"
+                    break;
+
+            }
+            SDL_RenderFillRect(renderer, &pxl); 
+        }
+    }
+
+    SDL_RenderPresent(renderer);
+}
+
 u8 PPU::vram_read(u16 addr) {
+    ppu_mode curr_mode = (ppu_mode)(io.get_STAT() & 0b11);
+    if (curr_mode == Mode_Drawing) {
+        return 0xFF;
+    }
+
     u16 offset = 0x8000;
     addr -= offset;
     return vram[addr];
 }
 
 void PPU::vram_write(u16 addr, u8 val) {
+    ppu_mode curr_mode = (ppu_mode)(io.get_STAT() & 0b11);
+    if (curr_mode == Mode_Drawing) {
+        return; 
+    }
+    
     u16 offset = 0x8000;
     addr -= offset;
     vram[addr] = val;
+}
+
+void PPU::print_vram() {
+    u16 start = 0x8000;
+    std::cout << "0x" << std::hex << +start << ": ";
+    for (int i = 0; i < 0x1800; i++) {
+        std::cout << std::hex << std::setw(2) << std::setfill('0') << +vram[i] << " ";
+        if (i % 16 == 15 and i != 0) {
+            std::cout << std::endl;
+            start += 0x10;
+            std::cout << "0x" << std::hex << +start << ": ";
+        }
+    }
 }
