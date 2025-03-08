@@ -22,17 +22,17 @@ u8 MemoryBus::read(u16 addr) {
 
     } else if (addr < 0xFE00) {
         // Echo RAM is reserved
-        std::cout << "Echo ram: reading prohibited area at: 0x" << addr << std::endl;
+        std::cout << "Echo ram: reading prohibited area at: 0x" << std::hex << addr << std::endl;
         return 0;
 
     } else if (addr < 0xFEA0) {
         // Reading from OAM
-        std::cout << "Unsupported bus read at: 0x" << addr << std::endl;
+        std::cout << "Unsupported bus read at: 0x" << std::hex << addr << std::endl;
         return 0;
 
     } else if (addr < 0xFF00) {
         // Not usable
-        std::cout << "Not usable: reading prohibited area at: 0x" << addr << std::endl;
+        std::cout << "Not usable: reading prohibited area at: 0x" << std::hex << addr << std::endl;
         return 0;
 
     } else if (addr < 0xFF80) {
@@ -52,6 +52,7 @@ u8 MemoryBus::read(u16 addr) {
 void MemoryBus::write(u16 addr, u8 val) {
     if (addr < 0x8000) {
         // No writes to ROM
+        std::cout << "ROM: no writing at: 0x" << std::hex << addr << std::endl;
         return;
 
     } else if (addr < 0xA000) {
@@ -60,7 +61,7 @@ void MemoryBus::write(u16 addr, u8 val) {
 
     } else if (addr < 0xC000) {
         // Writing to Cartridge RAM
-        std::cout << "Unsupported bus write at: 0x" << addr << std::endl;
+        std::cout << "Unsupported bus write at: 0x" << std::hex << addr << std::endl;
 
     } else if (addr < 0xE000) {
         // Writing to WRAM
@@ -68,15 +69,15 @@ void MemoryBus::write(u16 addr, u8 val) {
   
     } else if (addr < 0xFE00) {
         // Echo RAM is reserved
-        std::cout << "Echo ram: writing to prohibited area at: 0x" << addr << std::endl;
+        std::cout << "Echo ram: writing to prohibited area at: 0x" << std::hex << addr << std::endl;
      
     } else if (addr < 0xFEA0) {
         // Writing to OAM
-        std::cout << "Unsupported bus write at: 0x" << addr << std::endl;
+        std::cout << "Unsupported bus write at: 0x" << std::hex << addr << std::endl;
        
     } else if (addr < 0xFF00) {
         // Not usable
-        std::cout << "Not usable: writing to prohibited area at: 0x" << addr << std::endl;
+        std::cout << "Not usable: writing to prohibited area at: 0x" << std::hex << addr << std::endl;
        
     } else if (addr < 0xFF80) {
         // Writing to I/O registers

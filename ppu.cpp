@@ -212,7 +212,14 @@ void PPU::render_frame() {
     u32 end_ms = SDL_GetTicks();
     u32 time_taken_ms = end_ms - start_ms; 
 
-    std::cout << "Time taken: " << std::dec << +time_taken_ms << " ms" << std::endl; 
+    frames++;
+    accum_frame_time_ms += time_taken_ms;
+    if (accum_frame_time_ms >= 1000) {
+        float fps = (frames / accum_frame_time_ms * 1000.0);
+        std::cout << "FPS: " << std::dec << +(u32)fps << std::endl;
+        frames = 0;
+        accum_frame_time_ms = 0;
+    }
 
     // Each frame should take a fixed number of seconds
     if (time_taken_ms < frame_ms) {
@@ -257,6 +264,7 @@ void PPU::render_frame() {
 u8 PPU::vram_read(u16 addr) {
     ppu_mode curr_mode = (ppu_mode)(io.get_STAT() & 0b11);
     if (curr_mode == Mode_Drawing) {
+        // std::cout << "PPU: Locked out of reading VRAM -> returning garbage\n";
         return 0xFF;
     }
 
@@ -268,6 +276,7 @@ u8 PPU::vram_read(u16 addr) {
 void PPU::vram_write(u16 addr, u8 val) {
     ppu_mode curr_mode = (ppu_mode)(io.get_STAT() & 0b11);
     if (curr_mode == Mode_Drawing) {
+        // std::cout << "PPU: Locked out of writing VRAM\n";
         return; 
     }
     

@@ -16,7 +16,9 @@ class PPU {
     private:
         SDL_Window *lcd = nullptr;
         SDL_Renderer *renderer = nullptr;
-
+        
+        u32 frames = 0;
+        float accum_frame_time_ms = 0;
         const u32 frame_ms = 1000 / 60;
         u32 start_ms = 0;
 
@@ -38,7 +40,7 @@ class PPU {
 
         // 0x9800 - 0x9BFF: Tile Map 0
         // 0x9C00 - 0x9FFF: Tile Map 1
-        u8 vram[0x2000]; // Video Ram: 0x8000 - 0x9FFF
+        u8 vram[0x2000] = {0}; // Video Ram: 0x8000 - 0x9FFF
         
         IO &io;
     public:

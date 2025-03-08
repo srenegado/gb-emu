@@ -54,7 +54,7 @@ u8 IO::read(u16 addr) {
     } 
     
     else {
-        std::cout << "Unsupported bus read at: 0x" << addr << std::endl;
+        std::cout << "Unsupported bus read at: 0x" << std::hex << addr << std::endl;
 
     }
 
@@ -108,7 +108,7 @@ void IO::write(u16 addr, u8 val) {
     }
     
     else {
-        std::cout << "Unsupported bus write at: 0x" << addr << std::endl;
+        std::cout << "Unsupported bus write at: 0x" << std::hex << addr << std::endl;
     }
 }
 
