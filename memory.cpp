@@ -27,7 +27,7 @@ u8 MemoryBus::read(u16 addr) {
 
     } else if (addr < 0xFEA0) {
         // Reading from OAM
-        std::cout << "Unsupported bus read at: 0x" << std::hex << addr << std::endl;
+        ppu.oam_read(addr);
         return 0;
 
     } else if (addr < 0xFF00) {
@@ -73,7 +73,7 @@ void MemoryBus::write(u16 addr, u8 val) {
      
     } else if (addr < 0xFEA0) {
         // Writing to OAM
-        std::cout << "Unsupported bus write at: 0x" << std::hex << addr << std::endl;
+        ppu.oam_write(addr, val);
        
     } else if (addr < 0xFF00) {
         // Not usable

@@ -39,6 +39,8 @@ void PPU::step() {
                 // std::cout << "Dots: " << std::dec << +dots << std::endl;
 
                 io.set_STAT((io.get_STAT() & ~0b11) | 0b11);
+
+                // oam_scan();
             }
 
             break;
@@ -140,6 +142,7 @@ void PPU::render_scanline() {
     // std::cout << "Rendering scanline " << std::dec << +io.get_LY() << std::endl;
     // std::cout << "LCDC: 0x" << std::hex << +io.get_LCDC() << std::endl;
 
+    // Rendering background
     bgw_enabled = BIT(io.get_LCDC(), 0);
     if (bgw_enabled) {
 
@@ -164,7 +167,7 @@ void PPU::render_scanline() {
             u16 tile_y = ((io.get_LY() + io.get_SCY()) % 256) / 8;
             u16 tile_offset = (32 * tile_y + tile_x) % 1024;
             u16 bg_tile_num_addr = bg_map + tile_offset;
-            u16 bg_tile_num = vram[bg_tile_num_addr - 0x8000];
+            u8 bg_tile_num = vram[bg_tile_num_addr - 0x8000];
 
             // std::cout << "Grabbing tile " << std::dec << +bg_tile_num
             //     << " at x: " << +tile_x << " y: " << +tile_y 
@@ -173,8 +176,13 @@ void PPU::render_scanline() {
             // Fetch tile data
             u16 bg_tile_addr;
             switch (base_ptr) {
-                case 0x8000: bg_tile_addr = base_ptr + (bg_tile_num * 16);      break;
-                case 0x9000: bg_tile_addr = base_ptr + (((int)bg_tile_num) * 16); break;
+                case 0x8000: 
+                    bg_tile_addr = base_ptr + ((u16)bg_tile_num * 16);
+                    break;
+                case 0x9000:
+                    int8_t signed_tile_num = (int8_t)bg_tile_num;
+                    bg_tile_addr = base_ptr + ((int16_t)signed_tile_num * 16); 
+                    break;
             }
             u16 byte_offset = 2 * ((io.get_LY() + io.get_SCY()) % 8);
             u8 lo_byte = vram[bg_tile_addr + byte_offset - 0x8000];
@@ -204,19 +212,27 @@ void PPU::render_scanline() {
         }
 
     }
+
+    // Rendering sprites
+    sprites_enabled = BIT(io.get_LCDC(), 1);
+    if (sprites_enabled) {
+        
+    }
+
 }
 
 void PPU::render_frame() {
     // std::cout << "Rendering frame" << std::endl;
 
+    // Timing 
     u32 end_ms = SDL_GetTicks();
     u32 time_taken_ms = end_ms - start_ms; 
 
+    // Calculate and show FPS every second
     frames++;
     accum_frame_time_ms += time_taken_ms;
     if (accum_frame_time_ms >= 1000) {
-        float fps = (frames / accum_frame_time_ms * 1000.0);
-        std::cout << "FPS: " << std::dec << +(u32)fps << std::endl;
+        std::cout << "FPS: " << std::dec << +frames << std::endl;
         frames = 0;
         accum_frame_time_ms = 0;
     }
@@ -230,6 +246,7 @@ void PPU::render_frame() {
 
     start_ms = SDL_GetTicks();
 
+    // Rendering pixels from buffer to SDL window
     for (int y = 0; y < lcd_height; y++) {
         for (int x = 0; x < lcd_width; x++) {
 
@@ -288,7 +305,7 @@ void PPU::vram_write(u16 addr, u8 val) {
 void PPU::print_vram() {
     u16 start = 0x8000;
     std::cout << "0x" << std::hex << +start << ": ";
-    for (int i = 0; i < 0x1800; i++) {
+    for (int i = 0; i < 0x2000; i++) {
         std::cout << std::hex << std::setw(2) << std::setfill('0') << +vram[i] << " ";
         if (i % 16 == 15 and i != 0) {
             std::cout << std::endl;
@@ -296,4 +313,64 @@ void PPU::print_vram() {
             std::cout << "0x" << std::hex << +start << ": ";
         }
     }
+}
+
+u8 PPU::oam_read(u16 addr) {
+    ppu_mode curr_mode = (ppu_mode)(io.get_STAT() & 0b11);
+    if (curr_mode == Mode_Drawing || curr_mode == Mode_OAM_Scan) {
+        // std::cout << "PPU: Locked out of reading OAM -> returning garbage\n";
+        return 0xFF;
+    }
+
+    u16 offset = 0xFE00;
+    addr -= offset;
+    return vram[addr];
+}
+
+void PPU::oam_write(u16 addr, u8 val) {
+    ppu_mode curr_mode = (ppu_mode)(io.get_STAT() & 0b11);
+    if (curr_mode == Mode_Drawing || curr_mode == Mode_OAM_Scan) {
+        // std::cout << "PPU: Locked out of writing OAM\n";
+        return; 
+    }
+    
+    u16 offset = 0xFE00;
+    addr -= offset;
+    vram[addr] = val;
+}
+
+void PPU::oam_scan() {
+    int sprites = 0;
+
+    // std::cout << "Doing OAM scan" << std::endl;
+    
+    bool adding_sprite = false;
+    u8 sprite_size = BIT(io.get_LCDC(), 2);
+
+    // There are 40 sprites in OAM
+    for (int sprite_i = 0; sprite_i < 40; sprite_i++) {
+        
+        // Grabbing sprite 
+        u8 sprite_addr = 4 * sprite_i;
+        u8 y_pos = oam[sprite_addr];
+        u8 x_pos = oam[sprite_addr + 1];
+        u8 tile_ind = oam[sprite_addr + 2];
+        u8 attribs = oam[sprite_addr + 3];
+        
+        // std::cout << "Scanning sprite at addr: 0x" << std::hex << +(0xFE00+sprite_addr) << std::endl;
+        
+        u8 height = sprite_size ? 16 : 8;
+        bool add_sprite = ((io.get_LY() + 16) >= y_pos) && ((io.get_LY() + 16) < (y_pos + height));
+        if (add_sprite) {
+            std::cout << "Adding sprite at addr: 0x" << std::hex << +(0xFE00+sprite_addr) << std::endl;
+            std::cout << "LY + 16: " << std::dec << +(io.get_LY() + 16)
+                << " sprite y: " << +y_pos << " sprite height: " << +height << std::endl;
+        } 
+
+
+        if (adding_sprite) sprites++;
+        if (sprites >= sprite_limit) break;     // only up to 10 sprites per scanline
+    }
+
+    sprite_limit = 10;
 }
