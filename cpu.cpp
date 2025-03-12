@@ -24,10 +24,10 @@ bool CPU::step() {
         // std::cout << " Opcode: 0x" << std::hex << std::setw(2) << std::setfill('0') << +opcode;
 
         // Debugging flags and registers
-        char z = BIT(regs.F, 7) ? 'Z' : '-';
-        char n = BIT(regs.F, 6) ? 'N' : '-';
-        char h = BIT(regs.F, 5) ? 'H' : '-';
-        char c = BIT(regs.F, 4) ? 'C' : '-';
+        // char z = BIT(regs.F, 7) ? 'Z' : '-';
+        // char n = BIT(regs.F, 6) ? 'N' : '-';
+        // char h = BIT(regs.F, 5) ? 'H' : '-';
+        // char c = BIT(regs.F, 4) ? 'C' : '-';
         // std::cout << " Flags set: " << z << n << h << c;
 
         // std::cout << " AF: 0x" 

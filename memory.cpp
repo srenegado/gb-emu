@@ -81,7 +81,8 @@ void MemoryBus::write(u16 addr, u8 val) {
        
     } else if (addr < 0xFF80) {
         // Writing to I/O registers
-        io.write(addr, val);
+        if (addr == 0xFF46) dma_transfer(val);
+        else io.write(addr, val);
         
     } else if (addr == 0xFFFF) {
         // Setting IE register
@@ -120,6 +121,14 @@ void MemoryBus::emulate_cycles(int cpu_cycles) {
 
         ppu.step();
 
+    }
+}
+
+void MemoryBus::dma_transfer(u8 val) {
+    std::cout << "Starting OAM DMA transfer" << std::endl;
+    u16 start = ((u16)val) << 8;
+    for (int byte_i = 0; byte_i < 0xA0; byte_i++) {
+        ppu.oam_write(byte_i, read(start + byte_i)); 
     }
 }
 

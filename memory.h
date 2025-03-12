@@ -47,6 +47,8 @@ class MemoryBus {
         u8 get_IE();
 
         void emulate_cycles(int cpu_cycles); // For cycle timing
+
+        void dma_transfer(u8 val);
 };
 
 #endif

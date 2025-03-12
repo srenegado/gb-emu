@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "io.h"
+#include "event_handler.h"
 #include "SDL.h"
 
 typedef enum {
@@ -43,13 +44,14 @@ class PPU {
         // 0x9C00 - 0x9FFF: Tile Map 1
         u8 vram[0x2000] = {0}; // Video Ram: 0x8000 - 0x9FFF
         u8 oam[0xA0]; // Object attribue memory: 0xFE00 - 0xFE9F
-
+        
         std::vector<u8> sprite_buffer;
         u8 sprite_limit = 10;
         
         IO &io;
+        EventHandler &event_handler;
     public:
-        PPU(IO &io_);
+        PPU(IO &io_, EventHandler &event_handler_);
         ~PPU();
         void step();   
         void render_scanline();

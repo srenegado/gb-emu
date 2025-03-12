@@ -1,6 +1,7 @@
 #include "ppu.h"
 
-PPU::PPU(IO &io_) : io(io_) {
+PPU::PPU(IO &io_, EventHandler &event_handler_) 
+    : io(io_), event_handler(event_handler_) {
     SDL_Init(SDL_INIT_VIDEO);
 
     // Set up display
@@ -139,6 +140,7 @@ void PPU::step() {
 }
 
 void PPU::render_scanline() {
+
     // std::cout << "Rendering scanline " << std::dec << +io.get_LY() << std::endl;
     // std::cout << "LCDC: 0x" << std::hex << +io.get_LCDC() << std::endl;
 
@@ -222,17 +224,20 @@ void PPU::render_scanline() {
 }
 
 void PPU::render_frame() {
+
     // std::cout << "Rendering frame" << std::endl;
 
     // Timing 
     u32 end_ms = SDL_GetTicks();
     u32 time_taken_ms = end_ms - start_ms; 
 
+    // std::cout << "Frame time taken (ms): " << std::dec << +time_taken_ms << std::endl;
+
     // Calculate and show FPS every second
     frames++;
     accum_frame_time_ms += time_taken_ms;
     if (accum_frame_time_ms >= 1000) {
-        std::cout << "FPS: " << std::dec << +frames << std::endl;
+        std::cout << "FPS: " << std::dec << frames << std::endl;
         frames = 0;
         accum_frame_time_ms = 0;
     }
@@ -240,7 +245,7 @@ void PPU::render_frame() {
     // Each frame should take a fixed number of seconds
     if (time_taken_ms < frame_ms) {
         u32 delay_ms = frame_ms - time_taken_ms;
-        std::cout << "Delaying for " << std::dec << +delay_ms << " ms" << std::endl; 
+        // std::cout << "Delaying for " << std::dec << +delay_ms << " ms" << std::endl; 
         SDL_Delay(delay_ms);
     }
 
@@ -276,6 +281,9 @@ void PPU::render_frame() {
     }
 
     SDL_RenderPresent(renderer);
+
+    // Handling shutdown requests every frame speeds up emulator
+    event_handler.handle_events();   
 }
 
 u8 PPU::vram_read(u16 addr) {
@@ -323,7 +331,7 @@ u8 PPU::oam_read(u16 addr) {
     }
 
     u16 offset = 0xFE00;
-    addr -= offset;
+    if (addr >= offset) addr -= offset;
     return vram[addr];
 }
 
@@ -335,16 +343,14 @@ void PPU::oam_write(u16 addr, u8 val) {
     }
     
     u16 offset = 0xFE00;
-    addr -= offset;
+    if (addr >= offset) addr -= offset;
     vram[addr] = val;
 }
 
 void PPU::oam_scan() {
-    int sprites = 0;
-
     // std::cout << "Doing OAM scan" << std::endl;
-    
-    bool adding_sprite = false;
+
+    int sprites = 0;
     u8 sprite_size = BIT(io.get_LCDC(), 2);
 
     // There are 40 sprites in OAM
@@ -362,14 +368,15 @@ void PPU::oam_scan() {
         u8 height = sprite_size ? 16 : 8;
         bool add_sprite = ((io.get_LY() + 16) >= y_pos) && ((io.get_LY() + 16) < (y_pos + height));
         if (add_sprite) {
-            std::cout << "Adding sprite at addr: 0x" << std::hex << +(0xFE00+sprite_addr) << std::endl;
-            std::cout << "LY + 16: " << std::dec << +(io.get_LY() + 16)
-                << " sprite y: " << +y_pos << " sprite height: " << +height << std::endl;
+            // std::cout << "Adding sprite at addr: 0x" << std::hex << +(0xFE00+sprite_addr) << std::endl;
+            // std::cout << "LY + 16: " << std::dec << +(io.get_LY() + 16)
+            //     << " sprite y: " << +y_pos << " sprite height: " << +height << std::endl;
+                        
         } 
 
 
-        if (adding_sprite) sprites++;
-        if (sprites >= sprite_limit) break;     // only up to 10 sprites per scanline
+        sprites++;
+        if (sprites >= sprite_limit) break;
     }
 
     sprite_limit = 10;
