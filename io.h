@@ -16,6 +16,10 @@ class IO {
         u8 LY = 0x00;   // 0xFF44: LCD Y coordinate
         u8 LYC = 0x00;  // 0xFF45: LY compare
         u8 BGP = 0xFC;  // 0xFF47: Background and window palette
+        u8 OBP0 = 0x00; // 0xFF48: Sprite palette 0
+        u8 OBP1 = 0x00; // 0xFF49: Sprite palette 1
+        u8 WY = 0x00;   // 0xFF4A: Window Y position
+        u8 WX = 0x00;   // 0xFF4B: Window X position plus 7
         Timer timer;
     public:
         IO();
@@ -40,6 +44,14 @@ class IO {
         void set_LYC(u8 val);
         u8 get_BGP();
         void set_BGP(u8 val);
+        u8 get_OBP0();
+        void set_OBP0(u8 val);
+        u8 get_OBP1();
+        void set_OBP1(u8 val);
+        u8 get_WY();
+        void set_WY(u8 val);
+        u8 get_WX();
+        void set_WX(u8 val);
         bool timer_tick();
 };
 

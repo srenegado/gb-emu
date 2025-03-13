@@ -51,7 +51,23 @@ u8 IO::read(u16 addr) {
         // Reading Background palette
         return BGP;
     
-    } 
+    } else if (addr == 0xFF48) {
+        // Reading Sprite palette 0
+        return OBP0;
+    
+    } else if (addr == 0xFF49) {
+        // Reading Sprite palette 1
+        return OBP1;
+
+    } else if (addr == 0xFF4A) {
+        // Reading Window pos Y
+        return WY;
+
+    } else if (addr == 0xFF4B) {
+        // Reading Window pos X plus 7
+        return WX;
+
+    }
     
     else {
         std::cout << "Unsupported bus read at: 0x" << std::hex << addr << std::endl;
@@ -104,6 +120,22 @@ void IO::write(u16 addr, u8 val) {
     } else if (addr == 0xFF47) {
         // Writing to Background palette
         BGP = val;
+
+    } else if (addr == 0xFF48) {
+        // Writing to Sprite palette 0
+        OBP0 = val;
+
+    } else if (addr == 0xFF49) {
+        // Writing to Sprite palette 1
+        OBP1 = val;
+
+    } else if (addr == 0xFF4A) {
+        // Writing to Window pos Y
+        WY = val;
+
+    } else if (addr == 0xFF4B) {
+        // Writing to Window pos X plus 7
+        WX = val;
 
     }
     
@@ -183,6 +215,38 @@ u8 IO::get_BGP() {
 
 void IO::set_BGP(u8 val) {
     BGP = val;
+}
+
+u8 IO::get_OBP0() {
+    return OBP0;
+}
+
+void IO::set_OBP0(u8 val) {
+    OBP0 = val;
+}
+
+u8 IO::get_OBP1() {
+    return OBP1;
+}
+
+void IO::set_OBP1(u8 val) {
+    OBP1 = val;
+}
+
+u8 IO::get_WY() {
+    return WY;
+}
+
+void IO::set_WY(u8 val) {
+    WY = val;
+}
+
+u8 IO::get_WX() {
+    return WX;
+}
+
+void IO::set_WX(u8 val) {
+    WX = val;
 }
 
 bool IO::timer_tick() {

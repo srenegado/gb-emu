@@ -13,6 +13,21 @@ typedef enum {
     Mode_Drawing
 } ppu_mode;
 
+typedef enum {
+    None_Transparent,
+    None_Mask,
+    BGW_ID_0,
+    BGW_ID_2,
+    BGW_ID_1,
+    BGW_ID_3,
+    OBP0_ID_1,
+    OBP0_ID_2,
+    OBP0_ID_3,
+    OBP1_ID_1,
+    OBP1_ID_2,
+    OBP1_ID_3,
+} colour_id;
+
 class PPU {
     private:
         SDL_Window *lcd = nullptr;
@@ -26,7 +41,7 @@ class PPU {
         const u8 lcd_width = 160;
         const u8 lcd_height = 144;
         const u8 lcd_scale = 4;
-        int lcd_buf[144][160] = {0};
+        colour_id lcd_buf[144][160];
         int dots = 0;
         const u16 dots_per_line = 456;
         const u8 lines_per_frame = 154;
@@ -43,10 +58,10 @@ class PPU {
         // 0x9800 - 0x9BFF: Tile Map 0
         // 0x9C00 - 0x9FFF: Tile Map 1
         u8 vram[0x2000] = {0}; // Video Ram: 0x8000 - 0x9FFF
-        u8 oam[0xA0]; // Object attribue memory: 0xFE00 - 0xFE9F
+        u8 oam[0xA0] = {0}; // Object attribue memory: 0xFE00 - 0xFE9F
         
-        std::vector<u8> sprite_buffer;
-        u8 sprite_limit = 10;
+        std::deque<u8> sprite_buffer; // Deque of sprites populated by OAM scan
+        const u8 sprite_limit = 10;
         
         IO &io;
         EventHandler &event_handler;
@@ -62,6 +77,7 @@ class PPU {
         u8 oam_read(u16 addr);
         void oam_write(u16 addr, u8 val);
         void oam_scan();
+        void print_oam();
 
 };
 

@@ -9,6 +9,12 @@ PPU::PPU(IO &io_, EventHandler &event_handler_)
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         lcd_width * lcd_scale, lcd_height * lcd_scale, 0);
     renderer = SDL_CreateRenderer(lcd, -1, SDL_RENDERER_ACCELERATED);
+
+    for (int y = 0; y < lcd_height; y++) {
+        for (int x = 0; x < lcd_width; x++) {
+            lcd_buf[y][x] = BGW_ID_0;
+        }
+    }
 }
 
 PPU::~PPU() {
@@ -40,8 +46,6 @@ void PPU::step() {
                 // std::cout << "Dots: " << std::dec << +dots << std::endl;
 
                 io.set_STAT((io.get_STAT() & ~0b11) | 0b11);
-
-                // oam_scan();
             }
 
             break;
@@ -197,18 +201,15 @@ void PPU::render_scanline() {
             //     << " starting at 0x" << +(bg_tile_addr + byte_offset) << std::endl; 
 
             // Render pixels to LCD buffer
-            // std::cout << "BGP: 0x" << std::hex << +io.get_BGP() << std::endl;
+            colour_id bg_palette[4] = {BGW_ID_0, BGW_ID_1, BGW_ID_2, BGW_ID_3}; 
             for (int pxl_i = 0; pxl_i < 8; pxl_i++) {
                 u8 pxl_id = (BIT(hi_byte, 7 - pxl_i) << 1) | BIT(lo_byte, 7 - pxl_i);
-                u8 colour = (io.get_BGP() >> (pxl_id * 2)) & 0b11;
 
                 // std::cout << "Pixel id: " << std::dec << +pxl_id 
-                //     << " and colour: " << +colour 
                 //     << " at (viewport) x: " << +(8 * tile_i + pxl_i) 
                 //     << " y: " << +io.get_LY() << std::endl;
 
-                lcd_buf[io.get_LY()][8 * tile_i + pxl_i] = colour;
-
+                lcd_buf[io.get_LY()][8 * tile_i + pxl_i] = bg_palette[pxl_id];
             }
             
         }
@@ -218,7 +219,126 @@ void PPU::render_scanline() {
     // Rendering sprites
     sprites_enabled = BIT(io.get_LCDC(), 1);
     if (sprites_enabled) {
-        
+
+        // Fill up sprite buffer
+        oam_scan();
+
+        // Sort sprite buffer by descending drawing priority
+        std::sort(sprite_buffer.begin(), sprite_buffer.end(), 
+            [&](u8 const &addr1, u8 const &addr2) {
+                u8 x_pos1 = oam[addr1 + 1];
+                u8 x_pos2 = oam[addr2 + 1];
+                if (x_pos1 == x_pos2) return addr1 < addr2;
+                else return x_pos1 < x_pos2;
+            }
+        );
+
+        if (!sprite_buffer.empty()) {
+            std::cout << "Printing sprite buffer contents: ";
+            std::deque<u8>::iterator it = sprite_buffer.begin();
+            while (it != sprite_buffer.end()) {
+                std::cout << " 0x" << std::hex << +(*it+0xFE00);
+                it++;
+            }
+            std::cout << std::endl;
+        }
+
+        // u8 sprite_height = BIT(io.get_LCDC(), 2) ? 16 : 8;
+        colour_id temp_scanline[lcd_width];
+        for (int i = 0; i < lcd_width; i++) temp_scanline[i] = None_Transparent;
+
+        // Go through sprite buffer from the front (which was filled by OAM Scan)
+        while (!sprite_buffer.empty()) {
+            // std::cout << "Drawing sprite" << std::endl;
+
+            // Grabbing sprite
+            u8 sprite_addr = sprite_buffer.front();
+            sprite_buffer.pop_front();
+
+            u8 y_pos = oam[sprite_addr];
+            u8 x_pos = oam[sprite_addr + 1];
+            u8 tile_num = oam[sprite_addr + 2];
+            u8 attribs = oam[sprite_addr + 3];
+
+            // Don't draw a hidden sprite
+            if (x_pos = 0 || x_pos >= 168) continue; 
+
+            // Grabbing sprite attributes
+            bool behind_bgw = BIT(attribs, 7);
+            bool y_flip = BIT(attribs, 6);
+            bool x_flip = BIT(attribs, 5);
+            bool palette_select = BIT(attribs, 4);
+
+            std::cout << "Rendering sprite at addr: 0x" << std::hex << +(0xFE00+sprite_addr)
+                << " LY: " << std::dec << +io.get_LY()
+                << " sprite y: " << +y_pos << " y_flip: " << +y_flip << " x_flip: " << +x_flip
+                << " behind_bgw: " << +behind_bgw << std::endl;
+                
+            // Fetch tile data
+            // u16 sprite_tile_addr = (u16)tile_num * 16;
+            // u16 byte_offset = 2 * ((io.get_LY() - y_pos) % 8);
+            // u8 lo_byte = vram[sprite_tile_addr + byte_offset];
+            // u8 hi_byte = vram[sprite_tile_addr + byte_offset + 1];
+            
+            // u16 sprite_tile_addr;
+            // if (sprite_height == 16) {
+            //     // Grab tile that's hit by the scanline
+            //     bool grab_top_tile = 
+            //         (!y_flip && io.get_LY() + 16 < y_pos + 8)
+            //         || (y_flip && io.get_LY() + 16 >= y_pos + 8);
+
+            //     if (grab_top_tile) {
+            //         sprite_tile_addr = ((u16)(tile_num & 0xFE)) * 16;
+            //     } else {
+            //         // Grab the bottom tile
+            //         sprite_tile_addr = ((u16)(tile_num | 0x01)) * 16;
+            //     }
+            // } else {
+            //     // Only 1 tile to grab if height is 8
+            //     sprite_tile_addr = ((u16)tile_num) * 16;
+            // }
+            // u16 byte_offset = (y_flip)               
+            //     ? 2 * ((y_pos - io.get_LY() - 1) % 8) 
+            //     : 2 * ((io.get_LY() - y_pos) % 8);
+            // u8 lo_byte = vram[sprite_tile_addr + byte_offset];
+            // u8 hi_byte = vram[sprite_tile_addr + byte_offset + 1];
+
+            // std::cout << "Sprite tile addr: 0x" << std::hex << +sprite_tile_addr << std::endl;
+            // std::cout << "Grabbing bytes lo: " << std::hex << "0x" << +lo_byte
+            //     << " hi: 0x" << +hi_byte
+            //     << " starting at 0x" << +(sprite_tile_addr + 0x8000 + byte_offset) << std::endl; 
+
+            // Render pixels to remporary buffer
+            colour_id sprite_palette[4] = {None_Transparent, OBP0_ID_1, OBP0_ID_2, OBP0_ID_3};
+            // for (int pxl_i = 0;
+            //     pxl_i < 8 && ((x_pos - 8 + pxl_i) < lcd_width);
+            //     pxl_i++) 
+            // {
+            //     if (x_pos - 8  + pxl_i < 0) continue;
+            //     u8 pxl_id = (BIT(hi_byte, 7 - pxl_i) << 1) | BIT(lo_byte, 7 - pxl_i);
+            //     temp_scanline[x_pos - 8 + pxl_i] = sprite_palette[pxl_id];
+            //     // u8 pxl_id = (x_flip) 
+            //     //     ? (BIT(hi_byte, pxl_i) << 1) | BIT(lo_byte, pxl_i)
+            //     //     : (BIT(hi_byte, 7 - pxl_i) << 1) | BIT(lo_byte, 7 - pxl_i);
+                
+            //     // if (behind_bgw) {
+            //     //     u8 bg_colour_id = lcd_buf[io.get_LY()][x_pos - 8 + pxl_i];
+            //     //     if (bg_colour_id != BGW_ID_0) {
+            //     //         temp_scanline[x_pos - 8 + pxl_i] = None_Transparent;
+            //     //     }
+            //     // } else {
+            //     //     temp_scanline[x_pos - 8 + pxl_i] = sprite_palette[pxl_id];
+            //     // }
+            // }
+            
+        }
+
+        // Render temporary buffer to LCD buffer
+        for (int pxl_i = 0; pxl_i < lcd_width; pxl_i++) {
+            if (temp_scanline[pxl_i] != None_Transparent)
+                lcd_buf[io.get_LY()][pxl_i] = temp_scanline[pxl_i];
+        }
+
     }
 
 }
@@ -233,10 +353,10 @@ void PPU::render_frame() {
 
     // std::cout << "Frame time taken (ms): " << std::dec << +time_taken_ms << std::endl;
 
-    // Calculate and show FPS every second
+    // Show FPS every second
     frames++;
     accum_frame_time_ms += time_taken_ms;
-    if (accum_frame_time_ms >= 1000) {
+    if (accum_frame_time_ms >= 1000) { // 1000 ms = 1 s
         std::cout << "FPS: " << std::dec << frames << std::endl;
         frames = 0;
         accum_frame_time_ms = 0;
@@ -260,8 +380,41 @@ void PPU::render_frame() {
             pxl.y = y * lcd_scale;
             pxl.w = lcd_scale;
             pxl.h = lcd_scale;
-            
+
+            u8 colour;
             switch (lcd_buf[y][x]) {
+                case BGW_ID_0: 
+                    colour = io.get_BGP() & 0b11;
+                    break;
+                case BGW_ID_1: 
+                    colour = (io.get_BGP() >> 2) & 0b11;
+                    break;
+                case BGW_ID_2: 
+                    colour = (io.get_BGP() >> 4) & 0b11;
+                    break;
+                case BGW_ID_3: 
+                    colour = (io.get_BGP() >> 6) & 0b11;
+                    break;
+                case OBP0_ID_1: 
+                    colour = (io.get_OBP0() >> 2) & 0b11;
+                    break;
+                case OBP0_ID_2: 
+                    colour = (io.get_OBP0() >> 4) & 0b11;
+                    break;
+                case OBP0_ID_3: 
+                    colour = (io.get_OBP0() >> 6) & 0b11;
+                    break;
+                case OBP1_ID_1: 
+                    colour = (io.get_OBP1() >> 2) & 0b11;
+                    break;
+                case OBP1_ID_2: 
+                    colour = (io.get_OBP1() >> 4) & 0b11;
+                    break;
+                case OBP1_ID_3: 
+                    colour = (io.get_OBP1() >> 6) & 0b11;
+                    break;
+            }
+            switch (colour) {
                 case 0: 
                     SDL_SetRenderDrawColor(renderer, 154, 158, 63, 255); // "White"
                     break;
@@ -324,34 +477,39 @@ void PPU::print_vram() {
 }
 
 u8 PPU::oam_read(u16 addr) {
+    // std::cout << "Reading OAM" << std::endl;
     ppu_mode curr_mode = (ppu_mode)(io.get_STAT() & 0b11);
     if (curr_mode == Mode_Drawing || curr_mode == Mode_OAM_Scan) {
-        // std::cout << "PPU: Locked out of reading OAM -> returning garbage\n";
+        std::cout << "PPU: Locked out of reading OAM -> returning garbage\n";
         return 0xFF;
     }
 
     u16 offset = 0xFE00;
-    if (addr >= offset) addr -= offset;
-    return vram[addr];
+    addr -= offset;
+    return oam[addr];
 }
 
 void PPU::oam_write(u16 addr, u8 val) {
+    // std::cout << "Writing to OAM" << std::endl;
     ppu_mode curr_mode = (ppu_mode)(io.get_STAT() & 0b11);
     if (curr_mode == Mode_Drawing || curr_mode == Mode_OAM_Scan) {
-        // std::cout << "PPU: Locked out of writing OAM\n";
+        std::cout << "PPU: Locked out of writing OAM\n";
         return; 
     }
     
     u16 offset = 0xFE00;
-    if (addr >= offset) addr -= offset;
-    vram[addr] = val;
+    addr -= offset;
+    oam[addr] = val;
 }
 
 void PPU::oam_scan() {
     // std::cout << "Doing OAM scan" << std::endl;
 
-    int sprites = 0;
     u8 sprite_size = BIT(io.get_LCDC(), 2);
+
+    if (!sprite_buffer.empty()) {
+        return;
+    }
 
     // There are 40 sprites in OAM
     for (int sprite_i = 0; sprite_i < 40; sprite_i++) {
@@ -359,25 +517,35 @@ void PPU::oam_scan() {
         // Grabbing sprite 
         u8 sprite_addr = 4 * sprite_i;
         u8 y_pos = oam[sprite_addr];
-        u8 x_pos = oam[sprite_addr + 1];
-        u8 tile_ind = oam[sprite_addr + 2];
-        u8 attribs = oam[sprite_addr + 3];
         
         // std::cout << "Scanning sprite at addr: 0x" << std::hex << +(0xFE00+sprite_addr) << std::endl;
         
+        // Push sprites that are hit by the current scanline
         u8 height = sprite_size ? 16 : 8;
         bool add_sprite = ((io.get_LY() + 16) >= y_pos) && ((io.get_LY() + 16) < (y_pos + height));
         if (add_sprite) {
-            // std::cout << "Adding sprite at addr: 0x" << std::hex << +(0xFE00+sprite_addr) << std::endl;
-            // std::cout << "LY + 16: " << std::dec << +(io.get_LY() + 16)
-            //     << " sprite y: " << +y_pos << " sprite height: " << +height << std::endl;
-                        
-        } 
+            std::cout << "OAM Scan: Adding sprite at addr: 0x" << std::hex << +(0xFE00+sprite_addr)
+                << " LY: " << std::dec << +io.get_LY()
+                << " sprite y: " << +y_pos << " sprite height: " << +height << std::endl;
+            
+            sprite_buffer.push_back(sprite_addr);
+        }
 
-
-        sprites++;
-        if (sprites >= sprite_limit) break;
+        // Stop once sprite buffer hits its limit
+        if (sprite_buffer.size() >= sprite_limit) break;
     }
+    
+}
 
-    sprite_limit = 10;
+void PPU::print_oam() {
+    u16 start = 0xFE00;
+    std::cout << "0x" << std::hex << +start << ": ";
+    for (int i = 0; i < 0xA0; i++) {
+        std::cout << std::hex << std::setw(2) << std::setfill('0') << +oam[i] << " ";
+        if (i % 16 == 15 and i != 0) {
+            std::cout << std::endl;
+            start += 0x10;
+            std::cout << "0x" << std::hex << +start << ": ";
+        }
+    }
 }

@@ -33,6 +33,7 @@ int main(int argc, char** argv) {
     }
 
     // ppu.print_vram();
+    ppu.print_oam();
     
     return 0;
 }
