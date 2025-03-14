@@ -279,6 +279,15 @@ void PPU::render_scanline() {
                 
             // Fetch tile data
             u16 sprite_tile_addr = (u16)tile_num * 16;
+            if (sprite_height == 16) {
+                bool grab_top_tile = 
+                    (!y_flip && io.get_LY() + 16 < y_pos + 8)
+                    || (y_flip && io.get_LY() + 16 >= y_pos + 8);
+
+                sprite_tile_addr = (grab_top_tile) 
+                    ? ((u16)(tile_num & 0xFE)) * 16
+                    : ((u16)(tile_num | 0x01)) * 16;   
+            }
 
             // std::cout << "Sprite tile addr (in VRAM): 0x" << std::hex << +(0x8000+sprite_tile_addr) << std::endl;
 
@@ -291,32 +300,11 @@ void PPU::render_scanline() {
             u8 lo_byte = vram[sprite_tile_addr + byte_offset];
             u8 hi_byte = vram[sprite_tile_addr + byte_offset + 1];
             
-            // u16 sprite_tile_addr;
-            // if (sprite_height == 16) {
-            //     // Grab tile that's hit by the scanline
-            //     bool grab_top_tile = 
-            //         (!y_flip && io.get_LY() + 16 < y_pos + 8)
-            //         || (y_flip && io.get_LY() + 16 >= y_pos + 8);
-
-            //     if (grab_top_tile) {
-            //         sprite_tile_addr = ((u16)(tile_num & 0xFE)) * 16;
-            //     } else {
-            //         // Grab the bottom tile
-            //         sprite_tile_addr = ((u16)(tile_num | 0x01)) * 16;
-            //     }
-            // } else {
-            //     // Only 1 tile to grab if height is 8
-            //     sprite_tile_addr = ((u16)tile_num) * 16;
-            // }
-            // u16 byte_offset = (y_flip)               
-            //     ? 2 * ((y_pos - io.get_LY() - 1) % 8) 
-            //     : 2 * ((io.get_LY() - y_pos) % 8);
-            // u8 lo_byte = vram[sprite_tile_addr + byte_offset];
-            // u8 hi_byte = vram[sprite_tile_addr + byte_offset + 1];
-
             // Render pixels to a temporary buffer
-            colour_id sprite_palette0[4] = {None_Transparent, OBP0_ID_1, OBP0_ID_2, OBP0_ID_3};
-            colour_id sprite_palette1[4] = {None_Transparent, OBP1_ID_1, OBP1_ID_2, OBP1_ID_3};
+            colour_id sprite_palette0[4] = 
+                {None_Transparent, OBP0_ID_1, OBP0_ID_2, OBP0_ID_3};
+            colour_id sprite_palette1[4] = 
+                {None_Transparent, OBP1_ID_1, OBP1_ID_2, OBP1_ID_3};
             for (
                 int pxl_i = 0; 
                 pxl_i < 8 && ((x_pos + pxl_i) < (lcd_width + 8)); 
@@ -337,9 +325,8 @@ void PPU::render_scanline() {
                 // Mask sprite by BG/W colours 1-3 when enabled 
                 if (behind_bgw) {
                     colour_id bg_cid = lcd_buf[io.get_LY()][x_pos - 8 + pxl_id];
-                    if (bg_cid != BGW_ID_0) {
+                    if (bg_cid != BGW_ID_0)
                         temp_scanline[x_pos - 8 + pxl_i] = None_Transparent;
-                    }
                 }       
             }    
         }
@@ -516,11 +503,13 @@ void PPU::oam_write(u16 addr, u8 val) {
 void PPU::oam_scan() {
     // std::cout << "Doing OAM scan" << std::endl;
 
-    u8 sprite_size = BIT(io.get_LCDC(), 2);
-
+    // Mostly a sanity check: scanline rendering should always empty it out
     if (!sprite_buffer.empty()) {
         return;
     }
+
+    u8 sprite_size = BIT(io.get_LCDC(), 2);
+    u8 height = sprite_size ? 16 : 8;
 
     // There are 40 sprites in OAM
     for (int sprite_i = 0; sprite_i < 40; sprite_i++) {
@@ -528,12 +517,11 @@ void PPU::oam_scan() {
         // Grabbing sprite 
         u8 sprite_addr = 4 * sprite_i;
         u8 y_pos = oam[sprite_addr];
-        u8 x_pos = oam[sprite_addr+1];
+        // u8 x_pos = oam[sprite_addr+1];
         
         // std::cout << "Scanning sprite at addr: 0x" << std::hex << +(0xFE00+sprite_addr) << std::endl;
         
         // Push sprites that are hit by the current scanline
-        u8 height = sprite_size ? 16 : 8;
         bool add_sprite = ((io.get_LY() + 16) >= y_pos) && ((io.get_LY() + 16) < (y_pos + height));
         if (add_sprite) {
             // std::cout << "OAM Scan: Adding sprite at addr: 0x" << std::hex << +(0xFE00+sprite_addr)
