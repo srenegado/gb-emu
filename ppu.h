@@ -15,7 +15,6 @@ typedef enum {
 
 typedef enum {
     None_Transparent,
-    None_Mask,
     BGW_ID_0,
     BGW_ID_2,
     BGW_ID_1,
