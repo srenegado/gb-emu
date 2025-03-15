@@ -1,6 +1,6 @@
-#include "cpu.h"
-#include "cart.h"
+#include "ppu.h"
 #include "memory.h"
+#include "cpu.h"
 
 int main(int argc, char** argv) {
     
@@ -8,7 +8,10 @@ int main(int argc, char** argv) {
 
     // Setup Game Boy components
     Cartridge cart;
-    MemoryBus bus(cart);
+    IO io;
+    EventHandler event_handler;
+    PPU ppu(io, event_handler);
+    MemoryBus bus(cart, io, ppu);
     CPU cpu(bus);
 
     // Load game ROM
@@ -19,15 +22,18 @@ int main(int argc, char** argv) {
     } 
 
     // Main emulation loop
-    int running = 1;
-    while (running) {
-        
+    while (!event_handler.quit_requested()) {
+    
         // Fetch, decode, and execute an instruction
         if (!cpu.step()) {
             std::cout << "CPU could not step\n";
             return -2;
         }
+       
     }
+
+    // ppu.print_vram();
+    ppu.print_oam();
     
     return 0;
 }

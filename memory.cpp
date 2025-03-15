@@ -1,6 +1,6 @@
 #include "memory.h"
 
-MemoryBus::MemoryBus(Cartridge &cart_) : cart(cart_) {}
+MemoryBus::MemoryBus(Cartridge &cart_, IO &io_, PPU &ppu_) : cart(cart_), io(io_), ppu(ppu_) {}
 MemoryBus::~MemoryBus() {}
 
 u8 MemoryBus::read(u16 addr) {
@@ -10,8 +10,7 @@ u8 MemoryBus::read(u16 addr) {
 
     } else if (addr < 0xA000) {
         // Reading from VRAM
-        std::cout << "Unsupported bus read at: 0x" << addr << std::endl;
-        return 0;
+        return ppu.vram_read(addr);
 
     } else if (addr < 0xC000) {
         // Reading from Cartridge RAM
@@ -23,17 +22,17 @@ u8 MemoryBus::read(u16 addr) {
 
     } else if (addr < 0xFE00) {
         // Echo RAM is reserved
-        std::cout << "Echo ram: reading prohibited area at: 0x" << addr << std::endl;
+        std::cout << "Echo ram: reading prohibited area at: 0x" << std::hex << addr << std::endl;
         return 0;
 
     } else if (addr < 0xFEA0) {
         // Reading from OAM
-        std::cout << "Unsupported bus read at: 0x" << addr << std::endl;
+        ppu.oam_read(addr);
         return 0;
 
     } else if (addr < 0xFF00) {
         // Not usable
-        std::cout << "Not usable: reading prohibited area at: 0x" << addr << std::endl;
+        std::cout << "Not usable: reading prohibited area at: 0x" << std::hex << addr << std::endl;
         return 0;
 
     } else if (addr < 0xFF80) {
@@ -42,7 +41,7 @@ u8 MemoryBus::read(u16 addr) {
 
     } else if (addr == 0xFFFF) {
         // Reading IE register
-        return IE;
+        return io.get_IE();
         
     }
 
@@ -53,15 +52,16 @@ u8 MemoryBus::read(u16 addr) {
 void MemoryBus::write(u16 addr, u8 val) {
     if (addr < 0x8000) {
         // No writes to ROM
+        std::cout << "ROM: no writing at: 0x" << std::hex << addr << std::endl;
         return;
 
     } else if (addr < 0xA000) {
         // Writing to VRAM
-        std::cout << "Unsupported bus write at: 0x" << addr << std::endl;
+        ppu.vram_write(addr, val);
 
     } else if (addr < 0xC000) {
         // Writing to Cartridge RAM
-        std::cout << "Unsupported bus write at: 0x" << addr << std::endl;
+        std::cout << "Unsupported bus write at: 0x" << std::hex << addr << std::endl;
 
     } else if (addr < 0xE000) {
         // Writing to WRAM
@@ -69,23 +69,24 @@ void MemoryBus::write(u16 addr, u8 val) {
   
     } else if (addr < 0xFE00) {
         // Echo RAM is reserved
-        std::cout << "Echo ram: writing to prohibited area at: 0x" << addr << std::endl;
+        std::cout << "Echo ram: writing to prohibited area at: 0x" << std::hex << addr << std::endl;
      
     } else if (addr < 0xFEA0) {
         // Writing to OAM
-        std::cout << "Unsupported bus write at: 0x" << addr << std::endl;
+        ppu.oam_write(addr, val);
        
     } else if (addr < 0xFF00) {
         // Not usable
-        std::cout << "Not usable: writing to prohibited area at: 0x" << addr << std::endl;
+        std::cout << "Not usable: writing to prohibited area at: 0x" << std::hex << addr << std::endl;
        
     } else if (addr < 0xFF80) {
         // Writing to I/O registers
-        io.write(addr, val);
+        if (addr == 0xFF46) dma_transfer(val);
+        else io.write(addr, val);
         
     } else if (addr == 0xFFFF) {
         // Setting IE register
-        IE = val;
+        io.set_IE(val);
         
     } else {
         // Writing to HRAM
@@ -104,7 +105,7 @@ void MemoryBus::set_IF(u8 val) {
 }
 
 u8 MemoryBus::get_IE() {
-    return IE;
+    return io.get_IE();
 }
 
 void MemoryBus::emulate_cycles(int cpu_cycles) {
@@ -118,6 +119,16 @@ void MemoryBus::emulate_cycles(int cpu_cycles) {
             io.set_IF(io.get_IF() | 0b100); 
         }
 
+        ppu.step();
+
+    }
+}
+
+void MemoryBus::dma_transfer(u8 val) {
+    std::cout << "Starting OAM DMA transfer" << std::endl;
+    u16 offset = ((u16)val) << 8;
+    for (u16 addr_i = 0; addr_i < 0xA0; addr_i++) {
+        ppu.oam_write(0xFE00+addr_i, read(offset+addr_i)); 
     }
 }
 
@@ -148,65 +159,36 @@ void RAM::hram_write(u16 addr, u8 val) {
     hram[addr] = val;
 }
 
-IO::IO() {}
-IO::~IO() {}
+Cartridge::Cartridge() : rom_data(nullptr) {}
+Cartridge::~Cartridge() { if (rom_data) delete[] rom_data; }
 
-u8 IO::read(u16 addr) {
-    if (addr == 0xFF01) {
-        // std::cout << "Reading from SB!" << std::endl;
-        return serial_data[0];
+bool Cartridge::load_rom(char *ROM) {
 
-    } else if (addr == 0xFF02) {
-        // std::cout << "Reading from SC!" << std::endl;
-        return serial_data[1];
-
-    } else if (0xFF04 <= addr && addr <= 0xFF07) {
-        // Reading timers
-        return timer.read(addr);
-
-    } else if (addr == 0xFF0F) {
-        // Reading Interrupt flags (IF)
-        return IF;
-
-    } else {
-        std::cout << "Unsupported bus read at: 0x" << addr << std::endl;
-
+    // Open ROM file
+    std::ifstream ifs;
+    ifs.open(ROM);
+    if (ifs.fail()) {
+        std::cout << "ROM failed to open\n";
+        return false;
     }
 
-    return 0;
+    // Figure out ROM size
+    ifs.seekg(0, std::ios::end);
+    rom_size = ifs.tellg();
+
+    // Rewind back to beginning of ROM file
+    ifs.seekg(0, std::ios::beg);
+    
+    // Load ROM data into Cartridge
+    rom_data = new u8[rom_size];
+    ifs.read((char*)rom_data, rom_size);
+    ifs.close();
+
+    std::cout << "Game cartridge loaded\n";
+
+    return true;
 }
 
-void IO::write(u16 addr, u8 val) {
-    if (addr == 0xFF01) {
-        // std::cout << "Writing to SB!" << std::endl;
-        serial_data[0] = val;
-
-    } else if (addr == 0xFF02) {
-        // std::cout << "Writing to SC!" << std::endl;
-        serial_data[1] = val;
-
-    } else if (0xFF04 <= addr && addr <= 0xFF07) {
-        // Writing to timers
-        timer.write(addr, val);
-
-    } else if (addr == 0xFF0F) {
-        // Writing to Interrupt flags (IF)
-        IF = val;
-        
-    } else {
-        std::cout << "Unsupported bus write at: 0x" << addr << std::endl;
-    }
-}
-
-u8 IO::get_IF() {
-    return IF;
-}
-
-void IO::set_IF(u8 val) {
-    std::cout << "Setting IF to: 0x" << std::hex << +val << std::endl;
-    IF = val;
-}
-
-bool IO::timer_tick() {
-    return timer.tick();
+u8 Cartridge::read(u16 addr) {
+    return rom_data[addr];
 }

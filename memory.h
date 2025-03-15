@@ -2,22 +2,19 @@
 #define MEMORY_H
 
 #include "common.h"
-#include "cart.h"
-#include "timer.h"
+#include "ppu.h"
+#include "io.h"
 
-class IO {
+class Cartridge {
     private:
-        char serial_data[2];
-        u8 IF = 0xE1; // Interrupt flag register
-        Timer timer;
+        u8 *rom_data;
+        u32 rom_size;
+
     public:
-        IO();
-        ~IO();
+        Cartridge();
+        ~Cartridge();
+        bool load_rom(char *ROM);
         u8 read(u16 addr);
-        void write(u16 addr, u8 val);
-        u8 get_IF();
-        void set_IF(u8 val);
-        bool timer_tick();
 };
 
 class RAM {
@@ -36,11 +33,12 @@ class RAM {
 class MemoryBus {
     private:
         Cartridge &cart;
-        IO io;
+        IO &io;
+        PPU &ppu;
         RAM ram;
-        u8 IE = 0x00; // Interrupt enable register
+
     public:
-        MemoryBus(Cartridge &cart_);
+        MemoryBus(Cartridge &cart_, IO &io_, PPU &ppu_);
         ~MemoryBus();
         u8 read(u16 addr);
         void write(u16 addr, u8 val);
@@ -49,6 +47,8 @@ class MemoryBus {
         u8 get_IE();
 
         void emulate_cycles(int cpu_cycles); // For cycle timing
+
+        void dma_transfer(u8 val);
 };
 
 #endif

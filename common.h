@@ -5,6 +5,8 @@
 #include <fstream>
 #include <cstdint>
 #include <iomanip>
+#include <deque>
+#include <algorithm>
 
 typedef uint8_t u8;
 typedef uint16_t u16;

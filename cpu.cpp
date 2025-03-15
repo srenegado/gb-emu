@@ -16,36 +16,36 @@ bool CPU::step() {
     
     if (!ctx.halted) {
 
-        std::cout << "PC = 0x" << std::hex << std::setw(4) << std::setfill('0') << regs.PC << ":";
+        // std::cout << "PC = 0x" << std::hex << std::setw(4) << std::setfill('0') << regs.PC << ":";
 
         // Fetch opcode
         u8 opcode = bus.read(regs.PC++); 
         bus.emulate_cycles(1);
-        std::cout << " Opcode: 0x" << std::hex << std::setw(2) << std::setfill('0') << +opcode;
+        // std::cout << " Opcode: 0x" << std::hex << std::setw(2) << std::setfill('0') << +opcode;
 
         // Debugging flags and registers
-        char z = BIT(regs.F, 7) ? 'Z' : '-';
-        char n = BIT(regs.F, 6) ? 'N' : '-';
-        char h = BIT(regs.F, 5) ? 'H' : '-';
-        char c = BIT(regs.F, 4) ? 'C' : '-';
-        std::cout << " Flags set: " << z << n << h << c;
+        // char z = BIT(regs.F, 7) ? 'Z' : '-';
+        // char n = BIT(regs.F, 6) ? 'N' : '-';
+        // char h = BIT(regs.F, 5) ? 'H' : '-';
+        // char c = BIT(regs.F, 4) ? 'C' : '-';
+        // std::cout << " Flags set: " << z << n << h << c;
 
-        std::cout << " AF: 0x" 
-            << std::hex << std::setw(2) << std::setfill('0') << +regs.A 
-            << std::hex << std::setw(2) << std::setfill('0') << +regs.F;
-        std::cout << " BC: 0x" 
-            << std::hex << std::setw(2) << std::setfill('0') << +regs.B 
-            << std::hex << std::setw(2) << std::setfill('0') << +regs.C; 
-        std::cout << " DE: 0x" 
-            << std::hex << std::setw(2) << std::setfill('0') << +regs.D 
-            << std::hex << std::setw(2) << std::setfill('0') << +regs.E; 
-        std::cout << " HL: 0x" 
-            << std::hex << std::setw(2) << std::setfill('0') << +regs.H 
-            << std::hex << std::setw(2) << std::setfill('0') << +regs.L;  
-        std::cout << " SP: 0x" 
-            << std::hex << std::setw(4) << std::setfill('0') << +regs.SP; 
+        // std::cout << " AF: 0x" 
+        //     << std::hex << std::setw(2) << std::setfill('0') << +regs.A 
+        //     << std::hex << std::setw(2) << std::setfill('0') << +regs.F;
+        // std::cout << " BC: 0x" 
+        //     << std::hex << std::setw(2) << std::setfill('0') << +regs.B 
+        //     << std::hex << std::setw(2) << std::setfill('0') << +regs.C; 
+        // std::cout << " DE: 0x" 
+        //     << std::hex << std::setw(2) << std::setfill('0') << +regs.D 
+        //     << std::hex << std::setw(2) << std::setfill('0') << +regs.E; 
+        // std::cout << " HL: 0x" 
+        //     << std::hex << std::setw(2) << std::setfill('0') << +regs.H 
+        //     << std::hex << std::setw(2) << std::setfill('0') << +regs.L;  
+        // std::cout << " SP: 0x" 
+        //     << std::hex << std::setw(4) << std::setfill('0') << +regs.SP; 
 
-        std::cout << std::endl;
+        // std::cout << std::endl;
     
         // Decode and execute opcode
         if (!decode_and_execute(opcode)) {
@@ -60,17 +60,18 @@ bool CPU::step() {
             bus.write(0xFF02, 0);
         }
 
-        if (debug_msg[0]) {
-            std::cout << "Serial port: " << debug_msg << std::endl;
-        }
+        // if (debug_msg[0]) {
+        //     std::cout << "Serial port: " << debug_msg << std::endl;
+        // }
     } else { 
         // CPU is halted
 
         // Let the timer run
         bus.emulate_cycles(1); 
 
-        if (bus.get_IF() && bus.get_IE()) { // An interrupt is pending
-            std::cout << "Waking up the CPU\n";
+        // CPU resumes execution if an interrupt is pending
+        if (bus.get_IF() && bus.get_IE()) { 
+            // std::cout << "Waking up the CPU\n";
             ctx.halted = false;
         } 
 
@@ -346,8 +347,8 @@ bool CPU::decode_and_execute(u8 opcode) {
         case 0xCB:
             opcode = bus.read(regs.PC++);
             bus.emulate_cycles(1);
-            std::cout << "Encountered prefixed 0xCB code: 0x" 
-                << std::hex << +opcode << std::endl;
+            // std::cout << "Encountered prefixed 0xCB code: 0x" 
+            //     << std::hex << +opcode << std::endl;
 
             switch (opcode) {
                 case 0x00: instr_set.shift(RLC, regs.B); break;
