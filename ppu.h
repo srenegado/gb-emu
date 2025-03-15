@@ -14,10 +14,9 @@ typedef enum {
 } ppu_mode;
 
 typedef enum {
-    None_Transparent,
     BGW_ID_0,
-    BGW_ID_2,
     BGW_ID_1,
+    BGW_ID_2,
     BGW_ID_3,
     OBP0_ID_1,
     OBP0_ID_2,
@@ -25,6 +24,7 @@ typedef enum {
     OBP1_ID_1,
     OBP1_ID_2,
     OBP1_ID_3,
+    None_Transparent
 } colour_id;
 
 class PPU {
@@ -49,11 +49,14 @@ class PPU {
         const u8 draw_duration = 80 + 172;
 
         bool lcd_enabled = 1;
+        bool win_map_select = 0;
+        bool win_enabled = 0;
         bool bgw_addr_mode = 1;
         bool bg_map_select = 0;
+        bool sprite_size = 0;
+        bool sprites_enabled = 0; 
         bool bgw_enabled = 1;    
-        bool sprites_enabled = 0;    
-
+           
         // 0x9800 - 0x9BFF: Tile Map 0
         // 0x9C00 - 0x9FFF: Tile Map 1
         u8 vram[0x2000] = {0}; // Video Ram: 0x8000 - 0x9FFF

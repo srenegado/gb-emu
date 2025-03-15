@@ -151,6 +151,7 @@ void PPU::render_scanline() {
     // Rendering background
     bgw_enabled = BIT(io.get_LCDC(), 0);
     if (bgw_enabled) {
+        colour_id bg_palette[4] = {BGW_ID_0, BGW_ID_1, BGW_ID_2, BGW_ID_3}; 
 
         // Figure out which addressing mode and which tile map to use 
         bgw_addr_mode = BIT(io.get_LCDC(), 4);
@@ -201,7 +202,6 @@ void PPU::render_scanline() {
             //     << " starting at 0x" << +(bg_tile_addr + byte_offset) << std::endl; 
 
             // Render pixels to LCD buffer
-            colour_id bg_palette[4] = {BGW_ID_0, BGW_ID_1, BGW_ID_2, BGW_ID_3}; 
             for (int pxl_i = 0; pxl_i < 8; pxl_i++) {
                 u8 pxl_id = (BIT(hi_byte, 7 - pxl_i) << 1) | BIT(lo_byte, 7 - pxl_i);
 
@@ -211,10 +211,51 @@ void PPU::render_scanline() {
 
                 lcd_buf[io.get_LY()][8 * tile_i + pxl_i] = bg_palette[pxl_id];
             }
-            
         }
 
-    }
+        // Rendering window
+        win_enabled = BIT(io.get_LCDC(), 5);
+        if (win_enabled && (io.get_WY() <= io.get_LY())) {
+
+            // Figure out which window tile map to use
+            win_map_select = BIT(io.get_LCDC(), 6);
+            u16 win_map = (win_map_select) ? 0x9C00 : 0x9800; 
+
+            // Iterate by tile then by pixel
+            for (
+                int tile_i = 0;
+                (tile_i + (io.get_WX() / 8)) < (int)((lcd_width + 7) / 8);
+                tile_i++
+            ) {
+                // Fetching tile number
+                u16 tile_y = ((io.get_LY() - io.get_WY())) / 8;
+                u16 tile_offset = (32 * tile_y + tile_i);
+                u16 win_tile_num_addr = win_map + tile_offset;
+                u8 win_tile_num = vram[win_tile_num_addr - 0x8000];
+
+                // Fetch tile data
+                u16 win_tile_addr;
+                switch (base_ptr) {
+                    case 0x8000: 
+                        win_tile_addr = base_ptr + ((u16)win_tile_num * 16);
+                        break;
+                    case 0x9000:
+                        int8_t signed_tile_num = (int8_t)win_tile_num;
+                        win_tile_addr = base_ptr + ((int16_t)signed_tile_num * 16); 
+                        break;
+                }
+                u16 byte_offset = 2 * ((io.get_LY() - io.get_WY()) % 8);
+                u8 lo_byte = vram[win_tile_addr + byte_offset - 0x8000];
+                u8 hi_byte = vram[win_tile_addr + byte_offset + 1 - 0x8000];
+
+                // Render pixels to LCD buffer
+                for (int pxl_i = 0; pxl_i < 8; pxl_i++) {
+                    u8 pxl_id = (BIT(hi_byte, 7 - pxl_i) << 1) | BIT(lo_byte, 7 - pxl_i);
+                    lcd_buf[io.get_LY()][(io.get_WX() - 7) + 8 * tile_i + pxl_i] = bg_palette[pxl_id];
+                }
+            }
+        }
+    }    
 
     // Rendering sprites
     sprites_enabled = BIT(io.get_LCDC(), 1);
@@ -247,7 +288,8 @@ void PPU::render_scanline() {
         for (int i = 0; i < lcd_width; i++) temp_scanline[i] = None_Transparent;
 
         // Sprite size is global
-        u8 sprite_height = BIT(io.get_LCDC(), 2) ? 16 : 8; 
+        sprite_size = BIT(io.get_LCDC(), 2);
+        u8 sprite_height = sprite_size ? 16 : 8; 
 
         // Go through sprite buffer (which was filled by OAM Scan)
         while (!sprite_buffer.empty()) {
@@ -295,6 +337,8 @@ void PPU::render_scanline() {
                 ? 2 * ((y_pos + 7 * (io.get_LY() + 16 + 1)) % 8)
                 : 2 * ((io.get_LY() + 16 - y_pos) % 8);
 
+            // u16 byte_offset = 2 * ((io.get_LY() + 16 - y_pos) % 8);
+
             // std::cout << "Byte offset in sprite tile: 0x" << std::hex << +(byte_offset) << std::endl;
 
             u8 lo_byte = vram[sprite_tile_addr + byte_offset];
@@ -324,8 +368,8 @@ void PPU::render_scanline() {
 
                 // Mask sprite by BG/W colours 1-3 when enabled 
                 if (behind_bgw) {
-                    colour_id bg_cid = lcd_buf[io.get_LY()][x_pos - 8 + pxl_id];
-                    if (bg_cid != BGW_ID_0)
+                    colour_id bgw_cid = lcd_buf[io.get_LY()][x_pos - 8 + pxl_i];
+                    if (bgw_cid != BGW_ID_0)
                         temp_scanline[x_pos - 8 + pxl_i] = None_Transparent;
                 }       
             }    
@@ -508,7 +552,7 @@ void PPU::oam_scan() {
         return;
     }
 
-    u8 sprite_size = BIT(io.get_LCDC(), 2);
+    sprite_size = BIT(io.get_LCDC(), 2);
     u8 height = sprite_size ? 16 : 8;
 
     // There are 40 sprites in OAM
