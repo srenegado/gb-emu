@@ -125,7 +125,7 @@ void MemoryBus::emulate_cycles(int cpu_cycles) {
 }
 
 void MemoryBus::dma_transfer(u8 val) {
-    std::cout << "Starting OAM DMA transfer" << std::endl;
+    // std::cout << "Starting OAM DMA transfer" << std::endl;
     u16 offset = ((u16)val) << 8;
     for (u16 addr_i = 0; addr_i < 0xA0; addr_i++) {
         ppu.oam_write(0xFE00+addr_i, read(offset+addr_i)); 

@@ -482,11 +482,11 @@ void PPU::render_frame() {
 }
 
 u8 PPU::vram_read(u16 addr) {
-    ppu_mode curr_mode = (ppu_mode)(io.get_STAT() & 0b11);
-    if (curr_mode == Mode_Drawing) {
-        // std::cout << "PPU: Locked out of reading VRAM -> returning garbage\n";
-        return 0xFF;
-    }
+    // ppu_mode curr_mode = (ppu_mode)(io.get_STAT() & 0b11);
+    // if (curr_mode == Mode_Drawing) {
+    //     // std::cout << "PPU: Locked out of reading VRAM -> returning garbage\n";
+    //     return 0xFF;
+    // }
 
     u16 offset = 0x8000;
     addr -= offset;
@@ -494,11 +494,11 @@ u8 PPU::vram_read(u16 addr) {
 }
 
 void PPU::vram_write(u16 addr, u8 val) {
-    ppu_mode curr_mode = (ppu_mode)(io.get_STAT() & 0b11);
-    if (curr_mode == Mode_Drawing) {
-        // std::cout << "PPU: Locked out of writing VRAM\n";
-        return; 
-    }
+    // ppu_mode curr_mode = (ppu_mode)(io.get_STAT() & 0b11);
+    // if (curr_mode == Mode_Drawing) {
+    //     // std::cout << "PPU: Locked out of writing VRAM\n";
+    //     return; 
+    // }
     
     u16 offset = 0x8000;
     addr -= offset;
@@ -520,11 +520,11 @@ void PPU::print_vram() {
 
 u8 PPU::oam_read(u16 addr) {
     // std::cout << "Reading OAM" << std::endl;
-    ppu_mode curr_mode = (ppu_mode)(io.get_STAT() & 0b11);
-    if (curr_mode == Mode_Drawing || curr_mode == Mode_OAM_Scan) {
-        std::cout << "PPU: Locked out of reading OAM -> returning garbage\n";
-        return 0xFF;
-    }
+    // ppu_mode curr_mode = (ppu_mode)(io.get_STAT() & 0b11);
+    // if (curr_mode == Mode_Drawing || curr_mode == Mode_OAM_Scan) {
+    //     // std::cout << "PPU: Locked out of reading OAM -> returning garbage\n";
+    //     return 0xFF;
+    // }
 
     u16 offset = 0xFE00;
     addr -= offset;
@@ -533,11 +533,11 @@ u8 PPU::oam_read(u16 addr) {
 
 void PPU::oam_write(u16 addr, u8 val) {
     // std::cout << "Writing to OAM" << std::endl;
-    ppu_mode curr_mode = (ppu_mode)(io.get_STAT() & 0b11);
-    if (curr_mode == Mode_Drawing || curr_mode == Mode_OAM_Scan) {
-        std::cout << "PPU: Locked out of writing OAM\n";
-        return; 
-    }
+    // ppu_mode curr_mode = (ppu_mode)(io.get_STAT() & 0b11);
+    // if (curr_mode == Mode_Drawing || curr_mode == Mode_OAM_Scan) {
+    //     // std::cout << "PPU: Locked out of writing OAM\n";
+    //     return; 
+    // }
     
     u16 offset = 0xFE00;
     addr -= offset;

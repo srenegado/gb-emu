@@ -1,10 +1,13 @@
 #include "io.h"
 
-IO::IO() {}
+IO::IO(Joypad &joypad_) : joypad(joypad_) {}
 IO::~IO() {}
 
 u8 IO::read(u16 addr) {
-    if (addr == 0xFF01) {
+    if (addr == 0xFF00) {
+        return joypad.read();
+
+    } else if (addr == 0xFF01) {
         // std::cout << "Reading from SB!" << std::endl;
         return serial_data[0];
 
@@ -68,6 +71,14 @@ u8 IO::read(u16 addr) {
         return WX;
 
     }
+
+    else if (addr >= 0xFF10 && addr <= 0xFF26) {
+        // Haven't support audio
+    }
+
+    else if (addr >= 0xFF30 && addr <= 0xFF3F) {
+        // Haven't support audio
+    }
     
     else {
         std::cout << "Unsupported bus read at: 0x" << std::hex << addr << std::endl;
@@ -78,7 +89,10 @@ u8 IO::read(u16 addr) {
 }
 
 void IO::write(u16 addr, u8 val) {
-    if (addr == 0xFF01) {
+    if (addr == 0xFF00) {
+        joypad.write(val);
+
+    } else if (addr == 0xFF01) {
         // std::cout << "Writing to SB!" << std::endl;
         serial_data[0] = val;
 
@@ -137,6 +151,16 @@ void IO::write(u16 addr, u8 val) {
         // Writing to Window pos X plus 7
         WX = val;
 
+    }
+
+    else if (addr >= 0xFF10 && addr <= 0xFF26) {
+        // Haven't support audio
+        
+    }
+
+    else if (addr >= 0xFF30 && addr <= 0xFF3F) {
+        // Haven't support audio
+        
     }
     
     else {
