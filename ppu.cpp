@@ -84,7 +84,7 @@ void PPU::step() {
                     // std::cout << "PPU: Changing from HBlank to VBlank" << std::endl;  
                         
                     io.set_STAT((io.get_STAT() & ~0b11) | 0b01); // Set mode
-                    io.set_IF(io.get_IF() | 0b0);                // Request interrupts
+                    io.set_IF(io.get_IF() | 0b1);                // Request interrupts
                     if (BIT(io.get_STAT(), 4)) {
                         io.set_IF(io.get_IF() | 0b10);
                     }
