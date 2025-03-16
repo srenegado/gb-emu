@@ -12,11 +12,11 @@ void InterruptHandler::service_interrupt(interrupt_type type) {
     u16 int_handler_addr = 0x00;
     u8 disable = 0x00; 
     switch (type) {
-        case (Joypad):   int_handler_addr = 0x60; disable = ~0x10; break;
-        case (Serial):   int_handler_addr = 0x58; disable = ~0x08; break;
-        case (Timer):    int_handler_addr = 0x50; disable = ~0x04; break;
-        case (LCD_STAT): int_handler_addr = 0x48; disable = ~0x02; break;
-        case (VBlank):   int_handler_addr = 0x40; disable = ~0x01; break;
+        case (Int_Joypad):   int_handler_addr = 0x60; disable = ~0x10; break;
+        case (Int_Serial):   int_handler_addr = 0x58; disable = ~0x08; break;
+        case (Int_Timer):    int_handler_addr = 0x50; disable = ~0x04; break;
+        case (Int_LCD_STAT): int_handler_addr = 0x48; disable = ~0x02; break;
+        case (Int_VBlank):   int_handler_addr = 0x40; disable = ~0x01; break;
     }
 
     bus.set_IF(bus.get_IF() & disable);  // Acknowledge interrupt
@@ -51,22 +51,22 @@ void InterruptHandler::handle_interrupts() {
     // Highest priority is VBlank while lowest is Joypad
     if (VBlank_enabled && VBlank_requested) {
         // std::cout << "Servicing VBlank interrupt\n";
-        service_interrupt(VBlank);
+        service_interrupt(Int_VBlank);
     } 
     else if (LCD_enabled && LCD_requested) {
         // std::cout << "Servicing LCD_STAT interrupt\n";
-        service_interrupt(LCD_STAT);
+        service_interrupt(Int_LCD_STAT);
     }
     else if (timer_enabled && timer_requested) {
         // std::cout << "Servicing Timer interrupt\n";
-        service_interrupt(Timer);
+        service_interrupt(Int_Timer);
     }
     else if (serial_enabled && serial_requested) {
         // std::cout << "Servicing Serial interrupt\n";
-        service_interrupt(Serial);
+        service_interrupt(Int_Serial);
     }
     else if (joypad_enabled && joypad_requested) {
         // std::cout << "Servicing Joypad interrupt\n";
-        service_interrupt(Joypad);
+        service_interrupt(Int_Joypad);
     }
 }
