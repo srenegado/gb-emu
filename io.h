@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "timer.h"
+#include "joypad.h"
 
 class IO {
     private:
@@ -21,8 +22,9 @@ class IO {
         u8 WY = 0x00;   // 0xFF4A: Window Y position
         u8 WX = 0x00;   // 0xFF4B: Window X position plus 7
         Timer timer;
+        Joypad &joypad;
     public:
-        IO();
+        IO(Joypad &joypad_);
         ~IO();
         u8 read(u16 addr);
         void write(u16 addr, u8 val);

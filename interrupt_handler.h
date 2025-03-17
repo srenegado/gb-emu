@@ -6,11 +6,11 @@
 #include "cpu_util.h"
 
 typedef enum {
-    VBlank,
-    LCD_STAT,
-    Timer,
-    Serial,
-    Joypad
+    Int_VBlank,
+    Int_LCD_STAT,
+    Int_Timer,
+    Int_Serial,
+    Int_Joypad
 } interrupt_type;
 
 class InterruptHandler {

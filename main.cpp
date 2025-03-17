@@ -8,8 +8,9 @@ int main(int argc, char** argv) {
 
     // Setup Game Boy components
     Cartridge cart;
-    IO io;
-    EventHandler event_handler;
+    Joypad joypad;
+    IO io(joypad);
+    EventHandler event_handler(joypad, io);
     PPU ppu(io, event_handler);
     MemoryBus bus(cart, io, ppu);
     CPU cpu(bus);
@@ -33,7 +34,7 @@ int main(int argc, char** argv) {
     }
 
     // ppu.print_vram();
-    ppu.print_oam();
+    // ppu.print_oam();
     
     return 0;
 }
