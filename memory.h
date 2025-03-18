@@ -8,13 +8,21 @@
 class Cartridge {
     private:
         u8 *rom_data;
-        u32 rom_size;
+        u8 sram[0x2000 * 4];
+        u32 rom_size; // in KB
+        u16 ram_size; // in KB
+        u8 cart_type;
+        bool enable_ram = false;
+        u8 rom_bank_num = 0x01;
+        u8 ram_bank_num = 0x00;
+        bool mode_flag;
 
     public:
         Cartridge();
         ~Cartridge();
         bool load_rom(char *ROM);
         u8 read(u16 addr);
+        void write(u16 addr, u8 val);
 };
 
 class RAM {
