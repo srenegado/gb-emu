@@ -6,11 +6,11 @@ Joypad::~Joypad() {}
 u8 Joypad::read() {
     u8 output;
     if (!dpad_select) {
-        output = (down << 3) | (up << 2) | (left << 1) | right;
+        output = 0xE0 | (down << 3) | (up << 2) | (left << 1) | right;
     } else if (!buttons_select) {
-        output = (start << 3) | (select << 2) | (b << 1) | a;
+        output = 0xD0 | (start << 3) | (select << 2) | (b << 1) | a;
     } else {
-        output = 0xF;
+        output = 0xFF;
     }
     // std::cout << "Reading joypad: 0x" << std::hex << +output << std::endl;
     return output;
@@ -18,8 +18,8 @@ u8 Joypad::read() {
 
 void Joypad::write(u8 val) {
     // std::cout << "Writing joypad: 0x" << std::hex << +val << std::endl;
-    buttons_select = val & 0x20;
-    dpad_select = val & 0x10;
+    buttons_select = BIT(val, 5);
+    dpad_select = BIT(val, 4);
 }
 
 void Joypad::update(joypad_button button, bool pressed) {
