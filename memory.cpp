@@ -201,19 +201,26 @@ bool Cartridge::load_rom(char *ROM) {
     return true;
 }
 
-bool Cartridge::save_state() {
+bool Cartridge::save_state(char *SAV) {
     std::ofstream ofs;
 
     // Create a new save file
-    ofs.open("game.sav");
+    if (!SAV) {
+        ofs.open("game.sav");
+    } else {
+        ofs.open(SAV);
+    }
+    
     if (!ofs) {
-        std::cout << "Save file failed to open\n";
+        std::cout << "Save file failed to be created\n";
         return false;
     }
 
     // Write SRAM to save file
     ofs.write((char*)sram, sizeof(sram));
     ofs.close();
+
+    std::cout << "Saved state to save file\n";
 
     return true;
 }

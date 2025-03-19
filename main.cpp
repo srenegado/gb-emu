@@ -43,7 +43,9 @@ int main(int argc, char** argv) {
 
     // Create a SAV file when supported
     if ((cart.get_type() == 0x03)) {
-        cart.save_state();
+        char *SAV = argv[2];
+        if (!cart.save_state(SAV))
+            std::cout << "Game state could not be saved\n";
     }
 
     // ppu.print_vram();
