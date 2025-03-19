@@ -228,8 +228,8 @@ void PPU::render_scanline() {
                 tile_i++
             ) {
                 // Fetching tile number
-                u16 tile_y = ((io.get_LY() - io.get_WY())) / 8;
-                u16 tile_offset = (32 * tile_y + tile_i);
+                u16 tile_y = ((io.get_LY() - io.get_WY()) % 256) / 8;
+                u16 tile_offset = (32 * tile_y + tile_i) % 1024;
                 u16 win_tile_num_addr = win_map + tile_offset;
                 u8 win_tile_num = vram[win_tile_num_addr - 0x8000];
 
@@ -250,8 +250,13 @@ void PPU::render_scanline() {
 
                 // Render pixels to LCD buffer
                 for (int pxl_i = 0; pxl_i < 8; pxl_i++) {
+                    u8 pxl_x = (io.get_WX() - 7) + 8 * tile_i + pxl_i;
+
+                    // Don't render part of window that clips out of screen
+                    if (pxl_x >= lcd_width) break;
+
                     u8 pxl_id = (BIT(hi_byte, 7 - pxl_i) << 1) | BIT(lo_byte, 7 - pxl_i);
-                    lcd_buf[io.get_LY()][(io.get_WX() - 7) + 8 * tile_i + pxl_i] = bg_palette[pxl_id];
+                    lcd_buf[io.get_LY()][pxl_x] = bg_palette[pxl_id];
                 }
             }
         }
@@ -361,17 +366,19 @@ void PPU::render_scanline() {
                 u8 pxl_id = (x_flip) 
                     ? (BIT(hi_byte, pxl_i) << 1) | BIT(lo_byte, pxl_i)
                     : (BIT(hi_byte, 7 - pxl_i)  << 1) | BIT(lo_byte, 7 - pxl_i);  
-
-                // Scanline doesn't account for offscreen coordinates
-                temp_scanline[x_pos - 8 + pxl_i] = (palette_select) 
-                    ? sprite_palette1[pxl_id] : sprite_palette0[pxl_id];   
-
-                // Mask sprite by BG/W colours 1-3 when enabled 
+                
                 if (behind_bgw) {
+                    // Mask sprite by BG/W colours 1-3
                     colour_id bgw_cid = lcd_buf[io.get_LY()][x_pos - 8 + pxl_i];
                     if (bgw_cid != BGW_ID_0)
                         temp_scanline[x_pos - 8 + pxl_i] = None_Transparent;
-                }       
+                } else {
+                    // Only draw non-transparent pixels
+                    if (pxl_id != 0) {
+                        temp_scanline[x_pos - 8 + pxl_i] = (palette_select) 
+                            ? sprite_palette1[pxl_id] : sprite_palette0[pxl_id];   
+                    }
+                }      
             }    
         }
 

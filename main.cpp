@@ -22,6 +22,14 @@ int main(int argc, char** argv) {
         return -1;
     } 
 
+    // Load game SAV file when supported
+    if (argc == 3) {
+        char *SAV = argv[3];
+        if (!cart.load_state(SAV)) {
+            std::cout << "SAV file could not be loaded\n";
+        }
+    }
+
     // Main emulation loop
     while (!event_handler.quit_requested()) {
     
@@ -31,6 +39,11 @@ int main(int argc, char** argv) {
             return -2;
         }
        
+    }
+
+    // Create a SAV file when supported
+    if ((cart.get_type() == 0x03)) {
+        cart.save_state();
     }
 
     // ppu.print_vram();
