@@ -222,7 +222,7 @@ bool Cartridge::load_state(char *SAV) {
     std::ifstream ifs;
 
     // Open SAV file
-    ifs.open("game.sav");
+    ifs.open(SAV);
     if (!ifs) {
         std::cout << "Save file failed to open\n";
         return false;

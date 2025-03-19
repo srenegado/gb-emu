@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
 
     // Load game SAV file when supported
     if (argc == 3) {
-        char *SAV = argv[3];
+        char *SAV = argv[2];
         if (!cart.load_state(SAV)) {
             std::cout << "SAV file could not be loaded\n";
         }
