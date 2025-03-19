@@ -33,9 +33,9 @@ class PPU {
         SDL_Renderer *renderer = nullptr;
         
         u32 frames = 0;
-        float accum_frame_time_ms = 0;
         const u32 frame_ms = 1000 / 60;
         u32 start_ms = 0;
+        u32 timer_start_ms = 0;
 
         const u8 lcd_width = 160;
         const u8 lcd_height = 144;

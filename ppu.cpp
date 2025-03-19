@@ -249,12 +249,8 @@ void PPU::render_scanline() {
                 u8 hi_byte = vram[win_tile_addr + byte_offset + 1 - 0x8000];
 
                 // Render pixels to LCD buffer
-                for (int pxl_i = 0; pxl_i < 8; pxl_i++) {
-                    u8 pxl_x = (io.get_WX() - 7) + 8 * tile_i + pxl_i;
-
-                    // Don't render part of window that clips out of screen
-                    if (pxl_x >= lcd_width) break;
-
+                for (int pxl_i = 0; pxl_i < 8; pxl_i++) {   
+                    u8 pxl_x = ((io.get_WX() - 7) + 8 * tile_i + pxl_i) % lcd_width;
                     u8 pxl_id = (BIT(hi_byte, 7 - pxl_i) << 1) | BIT(lo_byte, 7 - pxl_i);
                     lcd_buf[io.get_LY()][pxl_x] = bg_palette[pxl_id];
                 }
@@ -367,18 +363,18 @@ void PPU::render_scanline() {
                     ? (BIT(hi_byte, pxl_i) << 1) | BIT(lo_byte, pxl_i)
                     : (BIT(hi_byte, 7 - pxl_i)  << 1) | BIT(lo_byte, 7 - pxl_i);  
                 
+                // Only draw non-transparent pixels
+                if (pxl_id != 0) {
+                    temp_scanline[x_pos - 8 + pxl_i] = (palette_select) 
+                        ? sprite_palette1[pxl_id] : sprite_palette0[pxl_id];   
+                }   
+
                 if (behind_bgw) {
                     // Mask sprite by BG/W colours 1-3
                     colour_id bgw_cid = lcd_buf[io.get_LY()][x_pos - 8 + pxl_i];
                     if (bgw_cid != BGW_ID_0)
                         temp_scanline[x_pos - 8 + pxl_i] = None_Transparent;
-                } else {
-                    // Only draw non-transparent pixels
-                    if (pxl_id != 0) {
-                        temp_scanline[x_pos - 8 + pxl_i] = (palette_select) 
-                            ? sprite_palette1[pxl_id] : sprite_palette0[pxl_id];   
-                    }
-                }      
+                }     
             }    
         }
 
@@ -404,11 +400,10 @@ void PPU::render_frame() {
 
     // Show FPS every second
     frames++;
-    accum_frame_time_ms += time_taken_ms;
-    if (accum_frame_time_ms >= 1000) { // 1000 ms = 1 s
+    if (end_ms - timer_start_ms >= 1000) { // 1000 ms = 1 s
         std::cout << "FPS: " << std::dec << frames << std::endl;
         frames = 0;
-        accum_frame_time_ms = 0;
+        timer_start_ms = SDL_GetTicks();
     }
 
     // Each frame should take a fixed number of seconds
