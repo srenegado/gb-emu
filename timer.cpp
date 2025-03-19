@@ -8,7 +8,7 @@ bool Timer::tick() {
     
     // Get bit position from DIV determined by TAC
     u16 bit_pos = 0;
-    u8 clock_select = TAC & 0xb11;
+    u8 clock_select = TAC & 0b11;
     switch (clock_select) {
         case 0b00: bit_pos = (1 << 9); break;
         case 0b01: bit_pos = (1 << 3); break;

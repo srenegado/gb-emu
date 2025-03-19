@@ -29,7 +29,13 @@ PPU::~PPU() {
 void PPU::step() {
 
     u8 lcd_enabled = BIT(io.get_LCDC(), 7);
-    if (!lcd_enabled) {
+    if (!lcd_enabled) { 
+        // std::cout << "LCD turned off\n";
+        
+        // Effectively reset the LCD 
+        dots = 0;
+        io.set_LY(0);
+        io.set_STAT((io.get_STAT() & ~0b11) | 0b00);
         return;
     }
 
