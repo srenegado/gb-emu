@@ -172,19 +172,19 @@ void PPU::render_scanline() {
         // std::cout << "Viewport pos.: x: "  << std::dec << +(io.get_SCX()/8)
         //     << " y: " << +(io.get_SCY()/8) << std::endl; 
 
-        // Iterate by tile then by pixel
-        for (int tile_i = 0; tile_i < (int)(lcd_width / 8); tile_i++) {
+        // Iterate by pixels
+        for (
+            int pxl_i = io.get_SCX(); 
+            pxl_i < (int)(lcd_width + io.get_SCX()); 
+            pxl_i++
+        ) {
 
             // Fetching tile number
-            u16 tile_x = (io.get_SCX() / 8 + tile_i) % 32;
+            u16 tile_x = (pxl_i / 8) % 32;
             u16 tile_y = ((io.get_LY() + io.get_SCY()) % 256) / 8;
             u16 tile_offset = (32 * tile_y + tile_x) % 1024;
             u16 bg_tile_num_addr = bg_map + tile_offset;
             u8 bg_tile_num = vram[bg_tile_num_addr - 0x8000];
-
-            // std::cout << "Grabbing tile " << std::dec << +bg_tile_num
-            //     << " at x: " << +tile_x << " y: " << +tile_y 
-            //     << " addr in tilemap: 0x" << std::hex << +bg_tile_num_addr << std::endl; 
 
             // Fetch tile data
             u16 bg_tile_addr;
@@ -201,22 +201,11 @@ void PPU::render_scanline() {
             u8 lo_byte = vram[bg_tile_addr + byte_offset - 0x8000];
             u8 hi_byte = vram[bg_tile_addr + byte_offset + 1 - 0x8000];
 
-            // std::cout << "Tile addr: 0x" << std::hex << +bg_tile_addr << std::endl; 
-
-            // std::cout << "Grabbing bytes lo: " << std::hex << "0x" << +lo_byte
-            //     << " hi: 0x" << +hi_byte
-            //     << " starting at 0x" << +(bg_tile_addr + byte_offset) << std::endl; 
-
             // Render pixels to LCD buffer
-            for (int pxl_i = 0; pxl_i < 8; pxl_i++) {
-                u8 pxl_id = (BIT(hi_byte, 7 - pxl_i) << 1) | BIT(lo_byte, 7 - pxl_i);
-
-                // std::cout << "Pixel id: " << std::dec << +pxl_id 
-                //     << " at (viewport) x: " << +(8 * tile_i + pxl_i) 
-                //     << " y: " << +io.get_LY() << std::endl;
-
-                lcd_buf[io.get_LY()][8 * tile_i + pxl_i] = bg_palette[pxl_id];
-            }
+            u8 pxl_id = 
+                (BIT(hi_byte, 7 - (pxl_i % 8)) << 1) 
+                | BIT(lo_byte, 7 - (pxl_i % 8));
+            lcd_buf[io.get_LY()][pxl_i - io.get_SCX()] = bg_palette[pxl_id];
         }
 
         // Rendering window
