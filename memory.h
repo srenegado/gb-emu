@@ -21,6 +21,9 @@ class Cartridge {
         Cartridge();
         ~Cartridge();
         bool load_rom(char *ROM);
+        bool save_state();
+        bool load_state(char *SAV);
+        u8 get_type();
         u8 read(u16 addr);
         void write(u16 addr, u8 val);
 };

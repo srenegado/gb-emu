@@ -201,6 +201,46 @@ bool Cartridge::load_rom(char *ROM) {
     return true;
 }
 
+bool Cartridge::save_state() {
+    std::ofstream ofs;
+
+    // Create a new save file
+    ofs.open("game.sav");
+    if (!ofs) {
+        std::cout << "Save file failed to open\n";
+        return false;
+    }
+
+    // Write SRAM to save file
+    ofs.write((char*)sram, sizeof(sram));
+    ofs.close();
+
+    return true;
+}
+
+bool Cartridge::load_state(char *SAV) {
+    std::ifstream ifs;
+
+    // Open SAV file
+    ifs.open("game.sav");
+    if (!ifs) {
+        std::cout << "Save file failed to open\n";
+        return false;
+    }
+
+    // Load save file to SRAM
+    ifs.read((char*)sram, sizeof(sram));
+    ifs.close();
+
+    std::cout << "Save file loaded\n";
+
+    return true;
+}
+
+u8 Cartridge::get_type() {
+    return cart_type;
+}
+
 u8 Cartridge::read(u16 addr) {
     switch (cart_type) {
         case 0x00: // No MBC
