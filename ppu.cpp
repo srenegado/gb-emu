@@ -361,17 +361,19 @@ void PPU::render_scanline() {
                 u8 pxl_id = (x_flip) 
                     ? (BIT(hi_byte, pxl_i) << 1) | BIT(lo_byte, pxl_i)
                     : (BIT(hi_byte, 7 - pxl_i)  << 1) | BIT(lo_byte, 7 - pxl_i);  
-
-                // Scanline doesn't account for offscreen coordinates
-                temp_scanline[x_pos - 8 + pxl_i] = (palette_select) 
-                    ? sprite_palette1[pxl_id] : sprite_palette0[pxl_id];   
-
-                // Mask sprite by BG/W colours 1-3 when enabled 
+                
                 if (behind_bgw) {
+                    // Mask sprite by BG/W colours 1-3
                     colour_id bgw_cid = lcd_buf[io.get_LY()][x_pos - 8 + pxl_i];
                     if (bgw_cid != BGW_ID_0)
                         temp_scanline[x_pos - 8 + pxl_i] = None_Transparent;
-                }       
+                } else {
+                    // Only draw non-transparent pixels
+                    if (pxl_id != 0) {
+                        temp_scanline[x_pos - 8 + pxl_i] = (palette_select) 
+                            ? sprite_palette1[pxl_id] : sprite_palette0[pxl_id];   
+                    }
+                }      
             }    
         }
 
