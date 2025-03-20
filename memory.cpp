@@ -211,7 +211,7 @@ bool Cartridge::save_state(char *SAV) {
         ofs.open(SAV);
     }
     
-    if (!ofs) {
+    if (ofs.fail()) {
         std::cout << "Save file failed to be created\n";
         return false;
     }
@@ -228,9 +228,14 @@ bool Cartridge::save_state(char *SAV) {
 bool Cartridge::load_state(char *SAV) {
     std::ifstream ifs;
 
+    if (!SAV) {
+        std::cout << "No save file given\n";
+        return false;
+    }
+
     // Open SAV file
     ifs.open(SAV);
-    if (!ifs) {
+    if (ifs.fail()) {
         std::cout << "Save file failed to open\n";
         return false;
     }
@@ -316,7 +321,30 @@ u8 Cartridge::read(u16 addr) {
                 return sram[ram_addr];
 
             }
+        
+        case 0x11: // MBC3
+        case 0x12: // MBC3+RAM
+        case 0x13: // MBC3+RAM+BATTERY
 
+            if (addr <= 0x3FFF) {
+                // ROM Bank 00
+                return rom_data[addr];
+
+            } else if (addr <= 0x7FFF) {
+                // ROM Bank 01-7F
+                return rom_data[0x4000 * rom_bank_num + addr - 0x4000];
+
+            } else if (0xA000 <= addr && addr <= 0xBFFF) {
+                // Reading External RAM/SRAM
+
+                // Only read RAM when enabled
+                if (!enable_ram) {
+                    // std::cout << "SRAM not enabled: cannot read!\n";
+                    break;
+                }
+
+                return sram[0x2000 * ram_bank_num + addr - 0xA000];
+            }
     }
 
     return 0xFF; // Some garbage value
@@ -401,6 +429,48 @@ void Cartridge::write(u16 addr, u8 val) {
 
             } 
 
+            break;
+
+        case 0x11: // MBC3
+        case 0x12: // MBC3+RAM
+        case 0x13: // MBC3+RAM+BATTERY
+
+            if (0xA000 <= addr && addr <= 0xBFFF) {
+                // Writing to External RAM/SRAM
+
+                // Only write to RAM when enabled
+                if (!enable_ram) {
+                    // std::cout << "SRAM not enabled: cannot write!\n";
+                    break;
+                }
+    
+                sram[0x2000 * ram_bank_num + addr - 0xA000] = val;
+
+                break;   
+            }
+
+            // Writing to MBC3 Registers
+
+            if (addr <= 0x1FFF) {
+                // RAM Enable
+                enable_ram = ((val & 0xF) == 0xA) ? true : false;
+
+            } else if (addr <= 0x3FFF) {
+                // ROM Bank Number
+                if (val == 0x00) {
+                    rom_bank_num = 0x01;
+                    break;
+                }
+                rom_bank_num = val & 0x7F;
+
+            } else if (addr <= 0x5FFF) {
+                // RAM Bank Number
+                if (val <= 0x07) {
+                    ram_bank_num = val & 0b11;
+                }
+
+            }
+            
             break;
     }
 }
