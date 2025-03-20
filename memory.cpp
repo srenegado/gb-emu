@@ -211,7 +211,7 @@ bool Cartridge::save_state(char *SAV) {
         ofs.open(SAV);
     }
     
-    if (!ofs) {
+    if (ofs.fail()) {
         std::cout << "Save file failed to be created\n";
         return false;
     }
@@ -228,9 +228,14 @@ bool Cartridge::save_state(char *SAV) {
 bool Cartridge::load_state(char *SAV) {
     std::ifstream ifs;
 
+    if (!SAV) {
+        std::cout << "No save file given\n";
+        return false;
+    }
+
     // Open SAV file
     ifs.open(SAV);
-    if (!ifs) {
+    if (ifs.fail()) {
         std::cout << "Save file failed to open\n";
         return false;
     }
