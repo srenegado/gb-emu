@@ -42,10 +42,12 @@ int main(int argc, char** argv) {
     }
 
     // Create a SAV file when supported
-    if ((cart.get_type() == 0x03)) {
-        char *SAV = argv[2];
-        if (!cart.save_state(SAV))
-            std::cout << "Game state could not be saved\n";
+    switch (cart.get_type()) {
+        case 0x03: // MBC1+RAM+BATTERY
+        case 0x13: // MBC3+RAM+BATTERY
+            char *SAV = argv[2];
+            if (!cart.save_state(SAV))
+                std::cout << "Game state could not be saved\n";
     }
 
     // ppu.print_vram();
