@@ -26,9 +26,9 @@ Passed:
 The emulator fails the "Window internal line counter" test case of the `dmg-acid2` test, but passes everything else.
 
 ## Resources
-There are a ton of useful resources and other emulators freely available. Here are some useful ones I used:
+There are a ton of useful resources and other reference emulators freely available. Here are some useful ones I used:
 - [Pandocs](https://gbdev.io/pandocs/)
 - [GBEDG](https://hacktix.github.io/GBEDG/)
-- [swotGB by mitxela](https://mitxela.com/projects/swotgb/about)
+- [About swotGB](https://mitxela.com/projects/swotgb/about)
 - [Gameboy Emulator Development Series by Low Level Devel](https://www.youtube.com/watch?v=e87qKixKFME&list=PLVxiWMqQvhg_yk4qy2cSC3457wZJga_e5&ab_channel=LowLevelDevel)
 - [The Ultimate Game Boy Talk](https://www.youtube.com/watch?v=HyzD8pNlpwI&ab_channel=media.ccc.de) 
