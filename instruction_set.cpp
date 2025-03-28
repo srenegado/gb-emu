@@ -709,6 +709,7 @@ void InstructionSet::shift(addr_mode mode, u8 &reg) {
             if (bit0) { BIT_SET(regs.F, 4); }
             else { BIT_RESET(regs.F, 4); }
             break;
+        default: break;
     }
 
     if (reg == 0) { BIT_SET(regs.F, 7); }
@@ -790,6 +791,7 @@ void InstructionSet::shift_HL(addr_mode mode) {
             if (bit0) { BIT_SET(regs.F, 4); }
             else { BIT_RESET(regs.F, 4); }
             break;
+        default: break;
     }
 
     if (byte == 0) { BIT_SET(regs.F, 7); }
@@ -812,6 +814,7 @@ void InstructionSet::bit_flag(addr_mode mode, u8 bit, u8 &reg) {
         case SET:
             BIT_SET(reg, bit);
             break;
+        default: break;
     }
 }
 
@@ -837,5 +840,6 @@ void InstructionSet::bit_flag_HL(addr_mode mode, u8 bit) {
             bus.write(addr, byte);
             bus.emulate_cycles(1);
             break;
+        default: break;
     }
 }

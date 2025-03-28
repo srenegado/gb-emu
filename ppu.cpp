@@ -203,8 +203,8 @@ void PPU::render_scanline() {
 
             // Render pixels to LCD buffer
             u8 pxl_id = 
-                (BIT(hi_byte, 7 - (pxl_i % 8)) << 1) 
-                | BIT(lo_byte, 7 - (pxl_i % 8));
+                (BIT(hi_byte, (7 - (pxl_i % 8))) << 1) 
+                | BIT(lo_byte, (7 - (pxl_i % 8)));
             lcd_buf[io.get_LY()][pxl_i - io.get_SCX()] = bg_palette[pxl_id];
         }
 
@@ -246,7 +246,7 @@ void PPU::render_scanline() {
                 // Render pixels to LCD buffer
                 for (int pxl_i = 0; pxl_i < 8; pxl_i++) {   
                     u8 pxl_x = ((io.get_WX() - 7) + 8 * tile_i + pxl_i) % lcd_width;
-                    u8 pxl_id = (BIT(hi_byte, 7 - pxl_i) << 1) | BIT(lo_byte, 7 - pxl_i);
+                    u8 pxl_id = (BIT(hi_byte, (7 - pxl_i)) << 1) | BIT(lo_byte, (7 - pxl_i));
                     lcd_buf[io.get_LY()][pxl_x] = bg_palette[pxl_id];
                 }
             }
@@ -356,7 +356,7 @@ void PPU::render_scanline() {
                 // Get colour ID for pixel
                 u8 pxl_id = (x_flip) 
                     ? (BIT(hi_byte, pxl_i) << 1) | BIT(lo_byte, pxl_i)
-                    : (BIT(hi_byte, 7 - pxl_i)  << 1) | BIT(lo_byte, 7 - pxl_i);  
+                    : (BIT(hi_byte, (7 - pxl_i))  << 1) | BIT(lo_byte, (7 - pxl_i));  
                 
                 // Only draw non-transparent pixels
                 if (pxl_id != 0) {
@@ -423,6 +423,7 @@ void PPU::render_frame() {
             u8 colour;
             switch (lcd_buf[y][x]) {
                 case BGW_ID_0: 
+                case None_Transparent:
                     colour = io.get_BGP() & 0b11;
                     break;
                 case BGW_ID_1: 
@@ -452,6 +453,7 @@ void PPU::render_frame() {
                 case OBP1_ID_3: 
                     colour = (io.get_OBP1() >> 6) & 0b11;
                     break;
+                
             }
             switch (colour) {
                 case 0: // "White"

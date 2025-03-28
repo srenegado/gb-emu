@@ -40,6 +40,7 @@ void EventHandler::handle_events() {
                     case SDL_SCANCODE_RSHIFT:
                         joypad.update(Button_Select, true);
                         break;
+                    default: break;
                 } 
                 break;    
             case (SDL_KEYUP):
@@ -68,6 +69,7 @@ void EventHandler::handle_events() {
                     case SDL_SCANCODE_RSHIFT:
                         joypad.update(Button_Select, false);
                         break;
+                    default: break;
                 } 
                 break;       
         }
